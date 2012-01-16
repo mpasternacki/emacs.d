@@ -1,0 +1,90 @@
+# -*- ruby -*-
+
+# Try to load development version of evoker
+EVOKER_DIR = File.expand_path('~/Projekty/evoker/lib')
+$:.unshift(EVOKER_DIR) if File.exists?(EVOKER_DIR)
+
+require 'evoker'
+include Evoker
+
+def tarball(basename, options={})
+  tarball = wget options[:url]
+  entity basename => tarball do
+    sh "#{options[:decompress] || 'tar -xzf'} #{tarball}"
+    ln_s File.basename(options[:url], options[:ext] || '.tar.gz'), basename unless options[:no_symlink]
+  end
+end
+
+def emacswiki(filename)
+  wget "http://www.emacswiki.org/cgi-bin/wiki/download/#{filename}"
+end
+
+def darcs(url)
+  entity File.basename(url) do
+    sh "darcs clone #{url}"
+  end
+end
+
+tarball 'color-theme', :url => 'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
+wget 'http://brian.mastenbrook.net/static/files/dotfiles/color-theme-pastelmac.el'
+git 'slime', :url => 'git://sbcl.boinkor.net/slime.git'
+tarball 'php-mode', :url => 'http://downloads.sourceforge.net/php-mode/php-mode-1.5.0.tar.gz'
+subversion 'python-mode', :url => 'https://python-mode.svn.sourceforge.net/svnroot/python-mode/trunk/python-mode'
+darcs 'http://chneukirchen.org/repos/darcsum/'
+tarball 'gnuplot-mode', :url => 'http://feff.phys.washington.edu/~ravel/software/gnuplot-mode/gnuplot-mode.0.6.0.tar.gz'
+git 'org-mode', :url => 'git://repo.or.cz/org-mode.git'
+subversion 'ess', :url => 'https://svn.r-project.org/ESS/trunk/'
+git 'remember', :url => 'http://repo.or.cz/r/remember-el.git'
+tarball 'auctex', :url => 'http://ftp.gnu.org/pub/gnu/auctex/auctex-11.86.tar.gz'
+tarball 'nxhtml', :url => 'http://ourcomments.org/Emacs/DL/elisp/nxhtml/zip/nxhtml-2.08-100425.zip', :decompress => 'unzip', :no_symlink => true
+git 'magit', :url => 'git://github.com/magit/magit.git'
+git 'yasnippet', :url => 'git://github.com/capitaomorte/yasnippet.git'
+git 'clojure-mode', :url => 'git://github.com/technomancy/clojure-mode.git'
+git 'swank-clojure', :url => 'git://github.com/jochu/swank-clojure.git'
+git 'predictive', :url => 'http://www.dr-qubit.org/git/predictive.git'
+git 'undo-tree', :url => 'http://www.dr-qubit.org/git/undo-tree.git'
+git 'rvm.el', :url => 'git://github.com/senny/rvm.el.git'
+wget 'http://www.davep.org/emacs/boxquote.el'
+wget 'http://www.wonderworks.com/download/filladapt.el'
+wget 'http://cvs.savannah.gnu.org/viewvc/*checkout*/w3/lisp/socks.el?root=w3&revision=HEAD', :output_file => 'socks.el'
+wget 'http://mumble.net/~campbell/emacs/paredit.el'
+wget 'http://users.skynet.be/ppareit/projects/graphviz-dot-mode/graphviz-dot-mode.el'
+wget 'http://fly.srk.fer.hr/~hniksic/emacs/htmlize.el'
+wget 'http://homepage1.nifty.com/bmonkey/emacs/elisp/screen-lines.el'
+wget 'http://www.xsteve.at/prg/emacs/psvn.el'
+wget 'http://fresh.homeunix.net/~luke/misc/emacs/http-twiddle.el'
+wget 'http://cvs.savannah.gnu.org/viewvc/*checkout*/weblogger/lisp/xml-rpc.el?root=emacsweblogs', :output_file => 'xml-rpc.el'
+wget 'http://www.meadowy.org/~gotoh/trac-wiki/trac-wiki.el'
+emacswiki 'sierotki.el'
+emacswiki 'typopunct.el'
+emacswiki 'anything.el'
+emacswiki 'growl.el'
+emacswiki 'moccur-edit.el'
+emacswiki 'color-moccur.el'
+git 'cucumber.el', :url => 'git://github.com/michaelklishin/cucumber.el.git'
+wget 'http://github.com/ieure/scratch-el/raw/master/scratch.el'
+wget 'http://jblevins.org/projects/markdown-mode/markdown-mode.el'
+git 'yaml-mode', :url => 'git://github.com/yoshiki/yaml-mode.git'
+wget 'http://code.google.com/p/js2-mode/downloads/detail?name=js2-20090723b.el&can=2&q=', :output_file => 'js2.el'
+
+# Compiling big projects to .elc
+
+task 'gnuplot-mode' do
+  sh 'cd gnuplot-mode && ./configure && make'
+end
+  
+task 'auctex' do
+  sh <<-EOF
+    cd auctex && ./configure \
+      --prefix=\`pwd\`/+INSTALL \
+      --with-texmf-dir=$HOME/Library/texmf \
+      --with-lispdir=$HOME/.emacs.d/lisp/site-lisp \
+      && make && make install
+  EOF
+end
+
+entity :elc => ENTITIES do
+  sh '/usr/local/bin/emacs -batch -f batch-byte-compile *.el ||:'
+end
+
+task :default => ENTITIES

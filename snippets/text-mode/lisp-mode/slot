@@ -1,0 +1,3 @@
+# name : slot definition
+# --
+(${1:name} :initform ${2:nil} :accessor $1 :initarg :$1 :documentation "$3")
