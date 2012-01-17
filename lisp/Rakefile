@@ -65,7 +65,7 @@ git 'cucumber.el', :url => 'git://github.com/michaelklishin/cucumber.el.git'
 wget 'http://github.com/ieure/scratch-el/raw/master/scratch.el'
 wget 'http://jblevins.org/projects/markdown-mode/markdown-mode.el'
 git 'yaml-mode', :url => 'git://github.com/yoshiki/yaml-mode.git'
-wget 'http://code.google.com/p/js2-mode/downloads/detail?name=js2-20090723b.el&can=2&q=', :output_file => 'js2.el'
+wget 'http://js2-mode.googlecode.com/files/js2-20090723b.el', :output_file => 'js2.el'
 
 # Compiling big projects to .elc
 
