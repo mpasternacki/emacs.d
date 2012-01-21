@@ -52,6 +52,8 @@
 (add-to-list 'auto-mode-alist '("\\.d$" . c-mode))
 (add-to-list 'auto-mode-alist '("COMMON\\." . fortran-mode))
 (add-to-list 'auto-mode-alist '("\\.ya?ml$" . yaml-mode))
+(add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
+(add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 
 (add-to-list 'completion-ignored-extensions ".lx64fsl")
 (add-to-list 'completion-ignored-extensions ".dx64fsl")
