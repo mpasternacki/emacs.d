@@ -19,5 +19,6 @@
                        "rvm.el"
                        "magit"
                        "coffee-mode"
+                       "helm"
 		       ))
              load-path))

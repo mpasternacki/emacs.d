@@ -17,6 +17,7 @@
  '(graphviz-dot-auto-indent-on-newline nil)
  '(graphviz-dot-auto-indent-on-semi nil)
  '(graphviz-dot-indent-width 4)
+ '(helm-samewindow t)
  '(htmlize-html-charset "utf-8")
  '(htmlize-output-type (quote inline-css))
  '(js2-basic-offset 2)
