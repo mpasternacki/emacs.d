@@ -17,6 +17,6 @@
                        "yasnippet"
                        "clojure-mode"
                        "rvm.el"
-		       "magit"
+                       "magit"
 		       ))
              load-path))
