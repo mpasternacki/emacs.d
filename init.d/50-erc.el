@@ -108,24 +108,3 @@
                (erase-buffer)
                (doctor-doc text)
                (buffer-string))))))
-
-(defun my-erc-hook (match-type nick message)
-  "Shows a growl notification, when user's nick was mentioned.
-If the buffer is currently not visible, makes it sticky."
-  (and (eq match-type 'current-nick)
-       (not (erc-buffer-visible (current-buffer)))
-       (growl (concat "ERC: " (buffer-name (current-buffer)))
-              message)))
-
-(add-hook 'erc-text-matched-hook 'my-erc-hook)
-
-(defun my-query-notify-hook (&rest args)
-  (let ((channel-name (or (erc-default-target)
-                          (buffer-name (current-buffer)))))
-    (when (and
-           (not (erc-buffer-visible (current-buffer)))
-           (not (string-match "^[#&!]" channel-name)))
-      (growl (concat "ERC: " channel-name)
-             (buffer-substring (point-min) (point-max))))))
-
-(add-hook 'erc-insert-post-hook 'my-query-notify-hook)
