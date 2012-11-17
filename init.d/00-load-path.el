@@ -18,5 +18,6 @@
                        "clojure-mode"
                        "rvm.el"
                        "magit"
+                       "coffee-mode"
 		       ))
              load-path))
