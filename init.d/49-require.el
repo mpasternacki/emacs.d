@@ -22,3 +22,4 @@
 (load "nxhtml/autostart")
 (load "cucumber.el/feature-mode.el")
 (load "yaml-mode/yaml-mode")
+(load "haml-mode/haml-mode")
