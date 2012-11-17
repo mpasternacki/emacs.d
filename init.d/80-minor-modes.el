@@ -7,6 +7,8 @@
 (tool-bar-mode 0)
 (recentf-mode 1)
 (auto-image-file-mode 1)
-(ido-mode 1)
 (size-indication-mode 1)
 (display-time)
+(add-hook 'lisp-mode-hook 'paredit-mode)
+(add-hook 'emacs-lisp-mode-hook 'paredit-mode)
+

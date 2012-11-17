@@ -11,11 +11,6 @@ magit
 nxhtml*
 org-mode
 php-mode*
-predictive
 python-mode
-remember
-slime
-swank-clojure
-undo-tree
 yaml-mode
 yasnippet
