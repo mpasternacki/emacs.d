@@ -61,7 +61,7 @@ wget 'http://jblevins.org/projects/markdown-mode/markdown-mode.el'
 git 'yaml-mode', :url => 'git://github.com/yoshiki/yaml-mode.git'
 wget 'http://js2-mode.googlecode.com/files/js2-20090723b.el', :output_file => 'js2.el'
 
-# Compiling big projects to .elc
+# Compile big projects to .elc
 
 task 'gnuplot-mode' do
   sh 'cd gnuplot-mode && ./configure && make'
@@ -76,6 +76,8 @@ task 'auctex' do
       && make && make install
   EOF
 end
+
+# Compile all single .el files to .elc
 
 entity :elc => ENTITIES do
   sh '/usr/local/bin/emacs -batch -f batch-byte-compile *.el ||:'
