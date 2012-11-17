@@ -19,6 +19,7 @@
  '(graphviz-dot-indent-width 4)
  '(htmlize-html-charset "utf-8")
  '(htmlize-output-type (quote inline-css))
+ '(js2-basic-offset 2)
  '(longlines-show-effect "¶
 ")
  '(longlines-show-hard-newlines t)
@@ -28,8 +29,7 @@
  '(ps-print-color-p nil)
  '(ruby-deep-arglist nil)
  '(ruby-deep-indent-paren nil)
- '(safe-local-variable-values (quote ((word-wrap . t) (Base . 10) (Syntax . ANSI-COMMON-LISP) (Package MEMOIZE) (Mode . LaTeX) (coding-system . iso-8859-2) (Syntax . COMMON-LISP))))
- 
+ '(safe-local-variable-values (quote ((encoding . utf-8) (word-wrap . t) (Base . 10) (Syntax . ANSI-COMMON-LISP) (Package MEMOIZE) (Mode . LaTeX) (coding-system . iso-8859-2) (Syntax . COMMON-LISP))))
  '(tildify-pattern-alist (quote ((t "\\([,:;(][ 	]*[a]\\|\\<[AIKOSUVZUWikosuvzuw]\\)\\([ 	]+\\|[ 	]*
 [ 	]*\\)\\(\\w\\|[([{\\]\\|<[a-zA-Z]\\)" 2))))
  '(tramp-default-method "ssh")

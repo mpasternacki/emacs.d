@@ -54,6 +54,8 @@
 (add-to-list 'auto-mode-alist '("\\.ya?ml$" . yaml-mode))
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
+(add-to-list 'auto-mode-alist '("/\\(Rake\\|Gem\\|Vagrant\\)file$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(rake\\|gemspec\\)$" . ruby-mode))
 
 (add-to-list 'completion-ignored-extensions ".lx64fsl")
 (add-to-list 'completion-ignored-extensions ".dx64fsl")
@@ -61,6 +63,11 @@
 (add-to-list 'completion-ignored-extensions ".dx32fsl")
 (add-to-list 'completion-ignored-extensions ".fasl")
 
+(defalias 'perl-mode 'cperl-mode)
+
 (setq ns-command-modifier 'meta
       ns-alternate-modifier nil)
 (setenv "LC_CTYPE" "en_US.UTF-8")
+(setenv "PATH" (concat "/Users/japhy/bin:"
+                       (getenv "PATH")
+                       ":/usr/local/bin:/usr/local/sbin"))
