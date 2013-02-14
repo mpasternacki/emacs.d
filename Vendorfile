@@ -30,7 +30,7 @@ download 'http://www.xsteve.at/prg/emacs/psvn.el'
 download 'http://fresh.homeunix.net/~luke/misc/emacs/http-twiddle.el'
 download 'xml-rpc.el', :url => 'http://cvs.savannah.gnu.org/viewvc/*checkout*/weblogger/lisp/xml-rpc.el?root=emacsweblogs'
 download 'http://www.meadowy.org/~gotoh/trac-wiki/trac-wiki.el'
-download 'http://github.com/ieure/scratch-el/raw/master/scratch.el'
+download 'https://github.com/ieure/scratch-el/raw/master/scratch.el'
 download 'http://jblevins.org/projects/markdown-mode/markdown-mode.el'
 download 'http://js2-mode.googlecode.com/files/js2-mode.el'
 
