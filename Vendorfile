@@ -18,9 +18,9 @@ vendor 'python-mode', :version => '0.20130214' do
   rm_rf '.bzr'
 end
 
-vendor 'darcsum', :version => '0.20130214' do
+vendor 'darcsum', :version => '0.20130214.1' do
   system 'darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/'
-  mv 'darcsum/*', '.'
+  mv Dir['darcsum/*'], '.'
   rmdir 'darcsum'
   rm_rf '_darcs'
 end
