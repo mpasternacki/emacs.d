@@ -18,11 +18,8 @@ vendor 'python-mode', :version => '0.20130214' do
   rm_rf '.bzr'
 end
 
-vendor 'darcsum', :version => '0.20130214.1' do
-  system 'darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/'
-  mv Dir['darcsum/*'], '.'
-  rmdir 'darcsum'
-  rm_rf '_darcs'
+vendor 'darcsum', :version => '0.20130214.2' do
+  system 'rm -rf * && darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/ && mv -v darcsum/* . && rm -rf _darcs && rmdir darcsum'
 end
 
 archive 'color-theme',  :version => '6.6.0',       :url =>'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
