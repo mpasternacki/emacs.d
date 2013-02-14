@@ -11,6 +11,19 @@ git 'git://github.com/emacs-helm/helm.git'
 git 'git://github.com/michaelklishin/cucumber.el.git'
 git 'git://github.com/yoshiki/yaml-mode.git'
 git 'git://github.com/defunkt/coffee-mode.git'
+git 'git://github.com/emacs-ess/ESS.git'
+
+vendor 'python-mode', :version => '0.20130214' do
+  system 'bzr branch --use-existing-dir lp:python-mode .'
+  rm_rf '.bzr'
+end
+
+vendor 'darcsum', :version => '0.20130214' do
+  system 'darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/'
+  mv 'darcsum/*', '.'
+  rmdir 'darcsum'
+  rm_rf '_darcs'
+end
 
 archive 'color-theme',  :version => '6.6.0',       :url =>'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
 archive 'php-mode',     :version => '1.5.0',       :url => 'http://downloads.sourceforge.net/php-mode/php-mode-1.5.0.tar.gz'
