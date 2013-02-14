@@ -1,4 +1,4 @@
-;;; Add subdirs of ~/.emacs.d/lisp/ to load-path.
+;;; Add subdirs of ~/.emacs.d/site-lisp/ to load-path.
 (setq load-path
       (nconc (list
               (car (sort (file-expand-wildcards "~/.rvm/src/ruby-*/misc")
@@ -7,9 +7,8 @@
               "~/Projekty/chef-mode"
               )
              (mapcar (lambda (dir)
-                       (concat "~/.emacs.d/lisp/" dir))
+                       (concat "~/.emacs.d/site-lisp/" dir))
                      '(""
-                       "site-lisp"
                        "color-theme"
                        "gnuplot-mode"
                        "org-mode/lisp"
@@ -19,6 +18,5 @@
                        "rvm.el"
                        "magit"
                        "coffee-mode"
-                       "helm"
-		       ))
+                       "helm"))
              load-path))
