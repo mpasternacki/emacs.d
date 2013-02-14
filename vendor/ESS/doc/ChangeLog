@@ -1,0 +1,16 @@
+2013-01-23  Rodney Sparapani  <rsparapa@mcw.edu>
+
+	* currfeat.texi: cleaning up the language
+	in Languages Supported...
+	S family (R and S+ AKA S-PLUS)
+
+2012-07-06  Rodney Sparapani  <rsparapa@mcw.edu>
+
+	* ess.texi (ESS tracebug): just trying to
+	see what would make the tracebug key
+	tables look right
+
+2012-06-22  Rodney Sparapani  <rsparapa@mcw.edu>
+
+	* credits.texi: fixed a typo
+
