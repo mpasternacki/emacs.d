@@ -1,8 +1,42 @@
 # -*- ruby -*-
 
-git "git://github.com/drothlis/pretty-symbols.git"
+git 'git://github.com/drothlis/pretty-symbols.git'
+# git 'git://orgmode.org/org-mode.git'
+git 'git://github.com/magit/magit.git'
+git 'git://github.com/capitaomorte/yasnippet.git'
+git 'git://github.com/technomancy/clojure-mode.git'
+git 'git://github.com/senny/rvm.el.git'
+git 'git://github.com/nex3/haml-mode.git'
+git 'git://github.com/emacs-helm/helm.git'
+git 'git://github.com/michaelklishin/cucumber.el.git'
+git 'git://github.com/yoshiki/yaml-mode.git'
+git 'git://github.com/defunkt/coffee-mode.git'
 
-archive 'color-theme', :version => '6.6.0',
-  :url =>'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
+archive 'color-theme',  :version => '6.6.0',       :url =>'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
+archive 'php-mode',     :version => '1.5.0',       :url => 'http://downloads.sourceforge.net/php-mode/php-mode-1.5.0.tar.gz'
+archove 'gnuplot-mode', :version => '0.6.0',       :url => 'http://feff.phys.washington.edu/~ravel/software/gnuplot-mode/gnuplot-mode.0.6.0.tar.gz'
+archive 'auctex',       :version => '11.86',       :url => 'http://ftp.gnu.org/pub/gnu/auctex/auctex-11.86.tar.gz'
+archive 'nxhtml',       :version => '2.08-100425', :url => 'http://ourcomments.org/Emacs/DL/elisp/nxhtml/zip/nxhtml-2.08-100425.zip'
 
 download 'http://brian.mastenbrook.net/static/files/dotfiles/color-theme-pastelmac.el'
+download 'http://www.davep.org/emacs/boxquote.el'
+download 'http://www.wonderworks.com/download/filladapt.el'
+download 'socks.el', :url => 'http://cvs.savannah.gnu.org/viewvc/*checkout*/w3/lisp/socks.el?root=w3&revision=HEAD'
+download 'http://mumble.net/~campbell/emacs/paredit.el'
+download 'http://users.skynet.be/ppareit/projects/graphviz-dot-mode/graphviz-dot-mode.el'
+download 'http://fly.srk.fer.hr/~hniksic/emacs/htmlize.el'
+download 'http://homepage1.nifty.com/bmonkey/emacs/elisp/screen-lines.el'
+download 'http://www.xsteve.at/prg/emacs/psvn.el'
+download 'http://fresh.homeunix.net/~luke/misc/emacs/http-twiddle.el'
+download 'xml-rpc.el', :url => 'http://cvs.savannah.gnu.org/viewvc/*checkout*/weblogger/lisp/xml-rpc.el?root=emacsweblogs'
+download 'http://www.meadowy.org/~gotoh/trac-wiki/trac-wiki.el'
+download 'http://github.com/ieure/scratch-el/raw/master/scratch.el'
+download 'http://jblevins.org/projects/markdown-mode/markdown-mode.el'
+download 'http://js2-mode.googlecode.com/files/js2-mode.el'
+
+def emacswiki(filename) ; download "http://www.emacswiki.org/cgi-bin/wiki/download/#{filename}" end
+emacswiki 'sierotki.el'
+emacswiki 'typopunct.el'
+emacswiki 'anything.el'
+emacswiki 'moccur-edit.el'
+emacswiki 'color-moccur.el'
