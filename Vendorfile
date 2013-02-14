@@ -40,3 +40,5 @@ emacswiki 'typopunct.el'
 emacswiki 'anything.el'
 emacswiki 'moccur-edit.el'
 emacswiki 'color-moccur.el'
+
+::Grit::Git.git_timeout = 60*10
