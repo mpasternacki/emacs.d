@@ -17,6 +17,8 @@
  '(graphviz-dot-auto-indent-on-newline nil)
  '(graphviz-dot-auto-indent-on-semi nil)
  '(graphviz-dot-indent-width 4)
+ '(helm-idle-delay 0.05)
+ '(helm-input-idle-delay 0.25)
  '(helm-samewindow t)
  '(htmlize-html-charset "utf-8")
  '(htmlize-output-type (quote inline-css))
