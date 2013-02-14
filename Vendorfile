@@ -1,0 +1,3 @@
+# -*- ruby -*-
+
+git "git://github.com/drothlis/pretty-symbols.git"
