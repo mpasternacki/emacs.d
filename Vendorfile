@@ -1,3 +1,8 @@
 # -*- ruby -*-
 
 git "git://github.com/drothlis/pretty-symbols.git"
+
+archive 'color-theme', :version => '6.6.0',
+  :url =>'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
+
+download 'http://brian.mastenbrook.net/static/files/dotfiles/color-theme-pastelmac.el'
