@@ -1,0 +1,838 @@
+pristine:726a3507b5415eb54c5ec757a4e87721d0b07394f1eab9885a98cd563ba8516a
+[Initial import
+Christian Neukirchen <chneukirchen@gmail.com>**20050313133841
+ Import of John Wiegley's darcsum.el version 1.00
+] 
+hash: 0000040004-d9dc10847f03b9ed96e3c653658b6902f3526426ec33b2197536f0476098760f
+[Fix regexps for prompts
+Christian Neukirchen <chneukirchen@gmail.com>**20050313134209
+ The regular expressions to match "Shall I * this patch?" have been updated.
+] 
+hash: 0000000483-7c6c67c113a714435e85bcadda177eb87375bb6cb7cfc4d7f274dd2cd7b9ecf1
+[Support for context diffs
+Christian Neukirchen <chneukirchen@gmail.com>**20050313134814
+ With `u' you can now toggle whether `diff -u'-like context should be displayed.
+] 
+hash: 0000001397-411dace92b69f465707e5828077d4bf7fba3c55d19a5aa577a8126b60615a298
+[Handle changed darcs whatsnew exit value
+Christian Neukirchen <chneukirchen@gmail.com>**20050313134924
+ darcs whatsnew has been changed to return 1 if there are no changes.
+] 
+hash: 0000000348-fadfd33efe030086ef82eeb4bbe9a87742ae3742483e9dc60844fbad2ec3844a
+[Bugfix
+Christian Neukirchen <chneukirchen@gmail.com>**20050313134940] 
+hash: 0000000234-592bb45c008e252373d1f194a31bd656ae7e00ec60197f21add695088295c96d
+[Provide darcsum
+Christian Neukirchen <chneukirchen@gmail.com>**20050313135028
+ Added (provide 'darcsum) so you can load darcsum with
+ (require 'darcsum) in your .emacs.
+] 
+hash: 0000000218-e0a53aed3776905d75f73adcc55d87dd12977ae42bd897f002c48d30cda34517
+[Activate font-lock by default
+Christian Neukirchen <chneukirchen@gmail.com>**20050313135041] 
+hash: 0000000165-d596819064d5938041b5cea11c21b7f36d32ab093095dab2b4602fe6f471add4
+[Add TODO
+Christian Neukirchen <chneukirchen@gmail.com>**20050313135241] 
+hash: 0000000145-1e5455f170a91d08d0e49fdb0b11d14e47a15b90ac5c2207f69f31f3f43e2f61
+[Reenable undo for darcs-comment-mode
+Christian Neukirchen <chneukirchen@gmail.com>**20050313162549] 
+hash: 0000000151-487fb6a2ed7f7954b1b800b9985b779f9bb6c2296a5274fbb28f512547998712
+[Don't bark if there are no changes on redo
+Christian Neukirchen <chneukirchen@gmail.com>**20050313162703] 
+hash: 0000000217-041681f8c2529f96f393d1b87e529fb1fa7a16251f29a07c32a1c095be22b4a3
+[Ask whether to use existing *darcs comment* buffer and record
+Christian Neukirchen <chneukirchen@gmail.com>**20050313165044] 
+hash: 0000000845-272afaf803a80ff740104c59ebb604294c336d2046d95711777b2d3ff3d95bed
+[Add Xtla like record messaging writing
+Christian Neukirchen <chneukirchen@gmail.com>**20050313173548
+ 
+ * darcsum.el (darcsum-add-comment): New function lifted from Xtla.
+ ("\C-xD"): New keybinding.
+ 
+] 
+hash: 0000003937-f9bd5d7a00ae4674ce888fce5f0d3c16bf401093af2717da5798b31fbb61f114
+[New TODO entry
+Christian Neukirchen <chneukirchen@gmail.com>**20050313173622] 
+hash: 0000000133-e613db16e6916eae640169531da3890e7500a2ef51b9b2a31724d12047ba3d6f
+[Allow both the old and new prompts
+Christian Neukirchen <chneukirchen@gmail.com>**20050313175224] 
+hash: 0000000418-a53bda5ae4e97023ccb23d9863493ae48c8d606b3113a3c41b3109caffb37528
+[Code rearranginng
+Christian Neukirchen <chneukirchen@gmail.com>**20050313175655] 
+hash: 0000008160-7135a720e004ba7f8d275d528ee6c118e8069c1798a9b2c28c2475f671d22ce1
+[Capitalize messages
+Christian Neukirchen <chneukirchen@gmail.com>**20050313175858] 
+hash: 0000000211-55dddba468d84b698aa95517cac5adb0d6c7838a00df7752c48fd6230b9dab0f
+[Add my writing about the "perfect darcs mode"
+Christian Neukirchen <chneukirchen@gmail.com>**20050313184422] 
+hash: 0000002991-18e491b96c8610888be6fdf443cd9aca0a997225b46e0edbc2377739633fd7f2
+[Bugfix
+Christian Neukirchen <chneukirchen@gmail.com>**20050320133934] 
+hash: 0000000163-fc30b103f178415535726cf423ac1d616288e8d23cd46cae927cdd0aa5ceac49
+[Ensure TERM=emacs to (partly) disable darcs highlighting
+Christian Neukirchen <chneukirchen@gmail.com>**20050320135258] 
+hash: 0000000863-1578afcd07a6ed9cc0ee4ccd3f18a0d2d3c33f8b3bdc62e7844b21a943a40487
+[Convert left-over ANSI sequences
+Christian Neukirchen <chneukirchen@gmail.com>**20050320141912] 
+hash: 0000000394-20cff635480675e913d18543c34ae509a4344ac06ff820fada0094ca92b241cc
+[Handle question for mail adress
+Christian Neukirchen <chneukirchen@gmail.com>**20050320162240] 
+hash: 0000000684-e28523f921aae34b9525932d9237d5194dd1057e1211197110bcf93aa09d09d9
+[Use simple text properties rather than font-lock mode
+David E. Long <david@integrandsoftware.com>**20050414133002
+ 
+] 
+hash: 0000000360-f15c9f5a8069aa672add4cde62ce01d59da385be619574bb94650133f05cc43a
+[Add TERM=emacs to process-environment for record, send, and revert
+David E. Long <david@integrandsoftware.com>**20050414133135] 
+hash: 0000000923-e9d05401c8b113d455dbaf136afb6fbd1fd272751222f8fc8dfb258efe22196b
+[Handle changes and removals for binary files
+David E. Long <david@integrandsoftware.com>**20050417133500] 
+hash: 0000001005-1cf24c6d9ded29ea3d71c8949a0e8ce450323272aa24225853a35e6d0baa0805
+[Further clean-ups for addfile and rmfile patches
+David E. Long <david@integrandsoftware.com>**20050418012647
+ Internally, keep track of whatever other changes darcs spit out for
+ added or removed files, so that we'll know what to do if asked about
+ those changes during recording.  However, keep toggle from showing
+ any other changes.  Once this is done, the ignore-next-hunk stuff can
+ be dropped from parsing change sets.  It was causing problems in the
+ rmfile case, since darcs was spitting out the hunk that should have
+ been ignored before the rmfile.
+] 
+hash: 0000005068-2c48239e59e2005d3492b643b8f2737a414ff5d774a7795c14b33300b2fd6522
+[Put optional --unified at end of whatsnew options for darcsum-whatsnew
+David E. Long <david@integrandsoftware.com>**20050418144807
+ Otherwise with prefix arg, implying --look-for-adds, the command that
+ is executed is darcs whatsnew --no-summary "" --look-for-adds, which
+ darcs takes to mean look for changes in the files "" and
+ "--look-for-adds".  At any rate, darcs prints
+ 
+ What's new in "" "--look-for-adds":
+ 
+ at the start of the change set, which confuses the change set parsing.
+] 
+hash: 0000000647-70db0b5dbe4f892bc0ffecf9629aa6789a7d55f55b48edec037090e98125b93f
+[Update header
+Christian Neukirchen <chneukirchen@gmail.com>**20050419185253] 
+hash: 0000000422-54718075ec2022036998fa62ec3c34e27fc24ef70edbe23ddc0379633ef258bc
+[Handle new darcs questions
+Matthieu Lemerre <racin@free.fr>**20050727204338] 
+hash: 0000000461-9d0ee01af26e6d6234ff51a2607105858aa43bd1617399effea75bb7e9d38d6b
+[Derive darcsum-mode from fundamental-mode, not text-mode
+Christian Neukirchen <chneukirchen@gmail.com>**20050803103437
+ This will make darcsum-mode not use text-mode's hooks, which can be
+ inappropriate (proposed by Björn Lindström).
+] 
+hash: 0000000376-fcfc34818c1ad95d66b325978eae1446c4a81995d55535b88abf8270bf6ab5ad
+[require 'cl
+Christian Neukirchen <chneukirchen@gmail.com>**20050907132755
+ As reported by lelit on #darcs and Lukasz Pankowski, cl is needed for
+ some functions darcsum.el uses.  While per definition cl should not be
+ required at runtime by user libraries, I don't see an easier way yet
+ to tackle that issue.
+] 
+hash: 0000000368-a3f97cb8b5c71c3d684474c0bb807542e440f8f41f37d1b7d5977025b5855e03
+[Add definition of line-beginning-position for XEmacs
+Christian Neukirchen <chneukirchen@gmail.com>**20050918102018
+ Aaron Kaplan <kaplan@cs.rochester.edu> writes:
+ > darcsum-whatsnew doesn't work on xemacs because
+ > line-beginning-position is undefined.  I found a definition in the
+ > following file, and now that I've evaluated that definition, darcsum
+ > seems to be working fine.
+ >
+ > http://www.jl42.de/linux/boxquote.el
+] 
+hash: 0000000872-e419705d1006ef546c531b5d8470ab9df7ec912d864e78fb439c6954235718c2
+[Checking darcsum-mode in destructive interactive commands
+Christian Neukirchen <chneukirchen@gmail.com>**20050923155541
+ Lukasz Pankowski writes:
+ > Some of the interactive commands in darcsum.el are destructive. Most
+ > will replace whole content of the current buffer with darcsum-mode
+ > stuff (as darcsum-add) and one (darcsum-quit) will kill the buffer.
+ > 
+ > Their current behaviour makes sense only in the darcsum-mode. The
+ > attached patch checks this is the case. I did not add check in all
+ > interactive commands such as darcs-next-line which only move around
+ > the buffer.
+] 
+hash: 0000001170-79a1490437a42df0e3c4a4714aadc786b4c638434e645e71c5c1b25b8b583786
+[Don't record with an empty record comment
+Christian Neukirchen <chneukirchen@gmail.com>**20050926124017
+ Ryszard Kubiak writes:
+ > 2. On C-c C-c please check if the first line of the buffer
+ > offered by "c" contains any visible characters. If the line
+ > is empty darcs asks for the patch name which darcsum is not
+ > aware off. darcs creates then a lock file which blocks subsequent
+ > actions. By inspecting the first line darcsum may prevent darcs
+ > from doing that.
+] 
+hash: 0000000771-3eb6528abd73aa4eff0936db6eb07dc3e5c3f149c130371219316852df295f79
+[Remove shortcut for darcsum-remove
+Christian Neukirchen <chneukirchen@gmail.com>**20050926125203
+ Ryszard Kubiak writes:
+ > 5. Please change the meaning of "r". I am absolutely convinced
+ > that removing both the file its repo contents in one step
+ > is a very bad habbit. There are very many means in the operating
+ > system and in Emacs for removing files. Removing a file, even
+ > if preceded with a query, may be not what the user wants to achieve.
+ > For example if a file has been included to darcs's "boring"
+ > category then one may want to remove its changes from the repo but
+ > not the file as such. If you insist that the behaviour is something
+ > most users are happy with then add an option to the query that follows
+ > "r", asking whether the file should stay.
+] 
+hash: 0000000911-1848f3c382ee911b898c56d758749acee46019988a205d858c35509e2e76e771
+[Small documentation improvements
+Christian Neukirchen <chneukirchen@gmail.com>**20050926125451
+ Suggested by Ryszard Kubiak.
+] 
+hash: 0000000863-8c8459c40337a97ca40acdebbeaf118078d3a55462ead6cafb27ad17be030a3c
+[Propose the root of the repository not current directory
+lele@metapensiero.it**20051004134441
+ Now darcsum-whatsnew and darcsum-view propose the root of the darcs
+ repository, found by looking for the closer "_darcs" up in the parents,
+ instead of current-directory.
+] 
+hash: 0000001123-58f18f10a438b35996efcc2c1277761b82eb663297b4041802ad33f1177d6edf
+[Added darcsum-diff-switches
+Pekka.Pessi@nokia.com**20050908092016
+ darcsum-diff-switches are extra arguments given to diff
+] 
+hash: 0000000375-59cb32ab8eb05f6776dca90dbe39b08a8766acb1f68bcd8f2e2120d89af8dfa8
+[Added "?" command to darcs-mode.
+Pekka.Pessi@nokia.com**20050908092043] 
+hash: 0000000151-73e115a478cef53a0822985eb9174f75d11db85a56b16c676785fc459bc506f3
+[Use point-at-bol as line-beginning-position a'la XEmacs 
+Pekka Pessi <Pekka.Pessi@iki.fi>**20051005212805] 
+hash: 0000000764-99ffebcab240c39f44170cb618c865ff35f5c3cf1551ca8289234a07f271e8db
+[Allow darcsum-whatsnew to show changes within a single directory in repo.
+Pekka Pessi <Pekka.Pessi@iki.fi>**20051006122336] 
+hash: 0000001005-235886f2295205ee14308b2615a231883a93f5a9ecf96c5bc00dcc046657a2e4
+[Added darcsum-whatsnew-switches.
+Pekka Pessi <Pekka.Pessi@iki.fi>**20051006123658] 
+hash: 0000000780-e3ccfa7cc9a6293ee5523455b568c5085ca2ce8417bccb309f2ba0834daf8131
+[Fix default-directory for GNU Emacs
+Christian Neukirchen <chneukirchen@gmail.com>**20051007160738] 
+hash: 0000000333-dfd339ce88a718390483f0af22d1d9fdb513484046ebfc9bd158242ebfe69328
+[Document most interactive commands.
+lele@metapensiero.it**20051007101155] 
+hash: 0000002220-da52f9eb42a25736633bde2a8a6647ed8e28cf24912a3fb942c0dfba97197c5b
+[Fix prompt, there is no apply involved.
+lele@metapensiero.it**20051007101259] 
+hash: 0000000204-8570ff861776d804d9e99e3a658b2c00969444bd09526086d6a24fcb1d8e0db1
+[Small bugfix for darcsum-repository-root
+Christian Neukirchen <chneukirchen@gmail.com>**20051105112101
+ David Wallin writes:
+ > Attached is a small patch that you might incorporate. The reason for
+ > the patch is that if I do M-x darcsum-whatsnew on the *scratch*
+ > buffer, the function `darcsum-repository-root' gets stuck in an
+ > infinite loop (my default-directory being "~/")
+] 
+hash: 0000000508-2ff0361b9bee79bfbb3266d62d09e599fe9942da2d6607d472a4d6581778f348
+[ Use `read-file-name' if `read-directory-name' not available.
+Dave Love <fx@gnu.org>**20051123105323] 
+hash: 0000000881-16a28d5e9ff197cd2872e50422cddc0abbc553fe75425ae048eef1cf554af54b
+[Several fixes.
+Dave Love <fx@gnu.org>**20051123111653
+ (add-log, cl): Require (only) at compile time.
+ (darcsum): Remove :version.
+ (darcsum-make-temp-file): Test for feature, not XEmacs.
+ (darcsum-whatsnew-switches): Move before use.
+] 
+hash: 0000001037-abd824b23a8616f50c7dc6f157370382ccd00154413774a703b3f6bcce104c8c
+[Replace make-variable-buffer-local, string-to-int.
+Dave Love <fx@gnu.org>**20051123112759
+ The former is a mistake, the latter warned about in Emacs 22.
+ (string-to-number is long available.)
+] 
+hash: 0000000352-1fdb58a5d525e477c47c87f963055b5b2c7ef551de7614085f1b14a7ce82fc58
+[Doc and message fixes.
+Dave Love <fx@gnu.org>**20051123114009] 
+hash: 0000002258-8fca92e1330887ac4b2fbdb7207a1b173154ab82674b6d4b059e3b1c9ed790f1
+[Misc fixes.
+Dave Love <fx@gnu.org>**20051123114205
+ (line-beginning-position): Use `defalias', not `fset'.
+ (darcsum-show-context): Declare.
+ (darcsum-parse-changeset): Fix assertion.
+] 
+hash: 0000000390-99004110404d595cf1d54fa45a3596a7e84ba673e0cd4e5cac25fe2337cdc8ec
+[Fix darcsum-next-entity.
+Dave Love <fx@gnu.org>**20051123152222
+ (darcsum-line-is): New.
+ (darcsum-next-entity): Use dotimes.  Check change lines correctly
+ when showing context.
+] 
+hash: 0000001568-1cd1423c155e389a3a6442cfa315d5d9e8bcf6a1f490b23610e1c4ceae675db9
+[Use file-truename when determining the repository root to handle symlinks
+lele@metapensiero.it**20051123192616] 
+hash: 0000000346-64a17e493614ade56d13d74fdd2ae163554a4d3bf35385d6245ea13c2ddac69c
+[Make find-file functions like pcvs.
+Dave Love <fx@gnu.org>**20051123153018
+ (darcsum-find-file-other-window): New.
+ (darcsum-find-file): Use new args.  Maybe go to change position.
+] 
+hash: 0000001890-d20e9c5a8ee0e947eec49e8705a6092cdd192bd1d5f3e69edb1adb17d771b57d
+[Add menu.
+Dave Love <fx@gnu.org>**20051123183942
+ (darcsum-mode-map): Define in defvar.
+ (darcsum-menu): New.
+] 
+hash: 0000004354-f6c1dcc15e996d08df9af2d27c5e401f62721d3f68a47093cf3a9b64b8e6de76
+[Use environment to suppress darcs highlighting.
+Dave Love <fx@gnu.org>**20051124125705
+ Set DARCS_DONT_ESCAPE_TRAILING_SPACES and DARCS_DONT_COLOR in process
+ environment rather than TERM, and remove ansi-color stuff.
+] 
+hash: 0000001862-b9c898321b027776508f4cfa45d0968a950e5701735087a44199107104da77b2
+[Use easy-menu-add to display the menu on XEmacs 
+Christian Neukirchen <chneukirchen@gmail.com>**20051201131833
+ Matthias Radestock writes:
+ > the latest darcsum.el at
+ >   http://chneukirchen.org/repos/darcsum/darcsum.el
+ > doesn't display the darcs menu under XEmacs. I believe the fix is to add
+ >  (easy-menu-add darcsum-menu darcsum-mode-map)
+ > to the mode declaration, i.e.
+ > ...
+ > That certainly seems to work for me, but I am not an Emacs expert.
+] 
+hash: 0000000609-eb8cb5ce3a2ae06ff9112eb6c98004802cd23ef5913b55883e76043208e0fb0c
+[Make darcsum-whatsnew work properly when the user accepts the default root directory.
+Aaron Kaplan <kaplan@cs.rochester.edu>**20051220125145
+ Without this patch, if I just hit return when prompted for the
+ directory in which to run darcs whatsnew, it uses the current
+ directory rather than the one it proposed.  I wonder if this behavior
+ depends on the emacs version--I'm using xemacs 21.4p17.
+] 
+hash: 0000000780-0b9d1cf8b0ee7ce30aa7ab25f26951558c32c88dfc05f5ec31893832f1dbb389
+[Look for _darcs/pristine as well as _darcs/current.
+Dave Love <fx@gnu.org>**20060108010228] 
+hash: 0000000866-e904216be07b9d895ba5d6ad136395ecc86c60a7c989a8d7010235c024fd530a
+[Doc and message fixes.
+Dave Love <fx@gnu.org>**20051123151003] 
+hash: 0000002021-595527d5aba02a42045a155e956e442bd34833e3a12c0e0ec588070edfdd671d
+[Derive darcsum-comment-mode from indented-text-mode.
+Dave Love <fx@gnu.org>**20051123152630
+ (darcsum-comment-mode): Use define-derived-mode.
+ (darcsum-comment-mode-map): Re-written.
+ (darcsum-comment-mode-hook): Remove defcustom.
+] 
+hash: 0000001476-ac6026c035c0880b31a79bf3c024c37372ee38d3c7f3b4ac2d9d470bd6b70489
+[darcs-path changes.
+Dave Love <fx@gnu.org>**20060108155213
+ Make it a defun and use file-name-as-directory.  Use it elsewhere.
+] 
+hash: 0000000798-857c4f761bd1c600ddb0835914de230c435e2b6c37f2176887b5332239d67f52
+[Use `diff-switches'.
+Dave Love <fx@gnu.org>**20060108155515] 
+hash: 0000000467-728fbc328631b929f6d10b7faf06017ddb29a43a709d4aa5ba73f5b3129b89ff
+[darcsum-mode-related changes.
+Dave Love <fx@gnu.org>**20060110185207
+ Don't call font-lock-mode (unnecessary) or use-local-map (redundant).
+ Use mode-class 'special.  Add :group.  Don't use easy-menu-add in Emacs.
+ Add trailing-whitespace option to mode hook and fix
+ darcsum-display-changeset not to use trailing whitespace.
+] 
+hash: 0000001279-6d31dc26c6d05cc97850792b25daecf1fe72f47df75bfb0bad73cc08b658867b
+[Shows a buffer with the output from darcs when there is an error
+brunomlopes@gmail.com**20060317191644] 
+hash: 0000000428-c3684ce723e45acfdb0ed98625182cf83bc6868af0c0213b7bf38db07c857af2
+[xemacs does not support the 'weight' and 'slant' face attributes
+Matthias Radestock <matthias@sorted.org>**20060325111545
+ use (:italic t) instead of (:slant italic) and (:bold t) instead of
+ (:weight bold) - these seem to work fine in both Emacs and XEmacs
+] 
+hash: 0000000810-e81578ecc18bd63cb69c5322845e5e97cf0f2b13df5b528108a3fffef5d3cea9
+[always display existing *darcs comment* buffer when recording a change
+Matthias Radestock <matthias@sorted.org>**20060325171312] 
+hash: 0000000771-b3ea819806e6002222a82ebbabdcf36143120c7c8a55da8fb3eb8bf3385c9b57
+[Error when trying to diff a non-recorded file
+Christian Neukirchen <chneukirchen@gmail.com>**20060503152130
+ From: Nic <nferrier@tapsellferrier.co.uk>
+ > Anyway, here's a patch for a problem I found with diff. I'm not sure
+ > this does the right thing but it's better than the error I got in the
+ > first place:
+] 
+hash: 0000000436-630276e08fdd4a2758e997f8ca6f7a799f2f08bee850b58654dfdd9570b3b23e
+[handle patch -> change rename in darcs 1.0.7
+hanwen@lilypond.org**20060519115945] 
+hash: 0000000255-be7749a29eb9f970af1c800c0ccbbb6523f728d84ba50af927a881e78801d93a
+[Relaying "Waiting for lock" messages to emacs.
+Pekka.Pessi@nokia.com**20060527202157] 
+hash: 0000000275-6faf183881990a69843ce07255e18781e5e764c61b33a8a0c88cbe796c2baf34
+[Killing buffer when darcs gives up waiting for lock.
+Pekka.Pessi@nokia.com**20060530104943] 
+hash: 0000000271-76dcbf7829bc804f74ee85013c0416639487df3c45085b93c963a7158f05631b
+[Trying to fix darcs seeking problems.
+Pekka.Pessi@nokia.com**20060530105600
+ 
+ Sometimes darcs has read extra input from terminal and it tries to return
+ the already read characters back to input stream by seeking backwards in
+ stream. However, this is not allowed by runtime library and darcs dies with
+ runtime error. 
+ 
+ I try to avoid this bug by just sending "y" or "n" to darcs process. 
+ However, this kludge does not work if the input stream is handled in cooked
+ mode (line-by-line, as opposed to raw character-by-character mode).
+] 
+hash: 0000001001-b2c68afdbfe89d4f1eb0832f1d8595338a6e7cf062c2be4cd5c573ff188c86b7
+[Send linefeed to "do you really want" question, too.
+Pekka.Pessi@nokia.com**20060530180942] 
+hash: 0000000184-0a4ae5271d3e4733a528f3e6c4ce2c5ec3643e0ff8b3c2ebd514ed5cac8ea4ad
+[darcsum-process-sentinel displays message from unexpectedly dying darcs.
+Pekka.Pessi@nokia.com**20060531075126] 
+hash: 0000000384-54f123de9f7abc9c4196d106633e577bfd09b91e8ae448b40c091afe05a4ab2e
+[Using clone-buffer only where available.
+Pekka.Pessi@nokia.com**20060607163829] 
+hash: 0000000226-9844d206e598a9be6c45e0be359e37d823a358f3d88412419e3f3edc1e153456
+[Speed up in darcsum-process-filter.
+Pekka.Pessi@nokia.com**20060607164946
+ 
+ Do not check for changeset until complete change has been read to buffer.
+ 
+] 
+hash: 0000000526-97c341631311bbfae6f58d730e3f26ed501341cd7f256cfc3cd1fa1e7d770461
+[Updates to darcsum-whatsnew.
+Pekka.Pessi@nokia.com**20060607170041
+   
+ Added darcsum-whatsnew-at-toplevel and gave it default value of t.
+ If darcsum-whatsnew-at-toplevel is nil, use cwd as default value.
+ 
+ Allow running darcsum-whatsnew also in subdirectory of repo, too. I have lot
+ of subdirs and I don't want to clutter my view with them.
+ 
+ When calling darsum-whatsnew interactively, do look-for-adds if
+ darcsum-look-for-adds or prefix-arg is given. It looks like call to
+ (interactive) was broken and --look-for-adds was always used. 
+ --look-for-adds is awfully slow becase darcs likes to read all the
+ non-boring files in the repo to the memory.
+ 
+ Using (interactive-p) to prohibit extra (message)s.
+] 
+hash: 0000002100-92abfee35c9403776b33ce25ae1a8b218752eeb09f8193a73f539f04d5e9b77f
+[darcsum-process-filter: removed let y n used for debugging
+Pekka.Pessi@nokia.com**20060607203511] 
+hash: 0000000463-31e6d84dea79daa61277bf9dd7525c391efeedf31301c1e22347179a73794151
+[darcsum-start-process: added.
+Pekka.Pessi@nokia.com**20060607203722
+ 
+ Start darcsum process, set up environment and avoid pty's. 
+ If we use pty on Linux (2.6.16), darcs (1.0.7) fails always with seek error
+ after change #245 on XEmacs (21.4.15).
+] 
+hash: 0000004226-bf1ac12d96665ae064551fa41204d30c07143ba06fdc4e093a80ce35647ef325
+[darcsum-process-sentinel: fixed spelling mistake
+Pekka.Pessi@nokia.com**20060607204441] 
+hash: 0000000265-925aabf3591fbed37f461fa41c0b5702c42b8ef0e9881a85fe04521b62dfc5c1
+[Added support for replace, toggling file "visibility".
+Pekka.Pessi@nokia.com**20060818162247
+ 
+ In order to support "replace", the changeset format had to be updated first. 
+ For each non-hunk change, there are two symbols, e.g., -replace and replace. 
+ The replace is visible, -replace is not. These symbols can now be toggled.
+ 
+ Also suppporting file-level "visibility". addfile, newfile, rmfile and
+ binary are toggled at file level, "visible" files are shown with *.
+ 
+ Added functions (darcsum-toggle-item) to toggle item (from visible to
+ invisible, and vice versa), (darcsum-item-visible-p) to test if item is
+ visible, (darcsum-visible-item) to turn item to visible and
+ (darcsum-invisible-item) to turn item to invisible.
+ 
+ Everything that is not negative number and/or special invisible symbol are
+ considered visible.
+ 
+ Added function darcsum-change-< which is used to compare changes when adding
+ and merging changesets. For this reason, addfile, newfile, rmfile and binary
+ are sorted first.
+] 
+hash: 0000013298-de24448a3bbe9d855b78a9e8a7bd9116fd4cd46252b26978babc8c28ba853f2d
+[Fixed "Waiting for lock" regexp.
+Pekka.Pessi@nokia.com**20060818162452] 
+hash: 0000000208-611901f2dc960c58f37c8e88afffe8b1655e51193ff3713291580d0d48d2f630
+[era's trivial trailing whitespace fixes
+era eriksson <era+darcs@iki.fi>**20061002145020] 
+hash: 0000001441-599c46928d7aeb7beb65ae36fee2f61acde65f45fcc211240fbc1f45acbe1b2d
+[era's elisp convention fixes (arguments in UPPERCASE, full stop at end).
+era eriksson <era+darcs@iki.fi>**20061002145159] 
+hash: 0000001146-24ea095f42e6fe820719ea171029d23e5198908a99eab726b92ea669e97501c7
+[era's documentation fixes part II: documentation for darcsum-whatsnew
+era eriksson <era+darcs@iki.fi>**20061002164334
+ 
+ Documenting the function which is advertised as the main entry point
+ to the code kind of makes sense ...
+] 
+hash: 0000000592-70505ceff9388267403308ecec756b5139663900f65b2827f85d779a604f90f8
+[era's documentation fixes part III: explain marked vs. visible
+era eriksson <era+darcs@iki.fi>**20061002164500
+ 
+ This updates the documentation and some comments to better reflect how
+ (I understand) the code works wrt "marked" vs "visible" changes in the
+ darcsum buffer
+] 
+hash: 0000000859-78b0aa01a4683d53c9970c75e9a10adc4aef9bdef267db6c29966fa508a1a246
+[era's additional typo / consistency fixes (comments && punctuation)
+era eriksson <era+darcs@iki.fi>**20061002174744
+ 
+ These changes I'm slightly less confident in, but of course, they're
+ not changing anything too drastically, and anyway, easy enough to back
+ out. Humor me for wanting these in a separate commit ...
+] 
+hash: 0000000780-6dff6e86d3d06c4737a2881df07a10a160c07508a3080c2732d2ad980bebc911
+[era's trivial line-wrapping changes (80 columns max)
+era eriksson <era+darcs@iki.fi>**20061002174757] 
+hash: 0000001928-b21de47066a0cf6c730b77492a4dc6737ca3dc584902f973b256c76ef39b7a58
+[era's documentation fixes part IIb: documentation string for darcsum-view
+era eriksson <era+darcs@iki.fi>**20061002180436
+ 
+ The other entry point to the code, as per the ;;;###autoload comments
+] 
+hash: 0000000543-aeb7f9538c2f1e6a7e45e770143b0f9e15de6fad55597bb34fca95cddfadd224
+[era's TODO comments
+era eriksson <era+darcs@iki.fi>**20061003042715] 
+hash: 0000000434-ce6687d428cd7211105d7cccf00f3d8aa422f71be76e4dd0962b3e8a76e92847
+[era's window configuration fix: remove variable `darcsum-register'
+era eriksson <era+darcs@iki.fi>**20061003140505
+ 
+ Instead, introduce `darcs-window-configuration-temp' into which the
+ actual window configuration is stored. That way, we avoid trampling
+ any user data in a register.
+] 
+hash: 0000001194-81f3430abdf97ce4e887f052c25a1b76512201b19a01380a11336788ee2b8bf1
+[darcsum-changes
+Henrik Hjelte <henrik@evahjelte.com>**20070210123327] 
+hash: 0000000626-b63099006e08e9ae99dd77d5432a5e743c82d24f9806169b6097762eb7d09acd
+[darcsum-changes how-many argument
+Henrik Hjelte <henrik@evahjelte.com>**20070210151244] 
+hash: 0000000438-3e630106cdbd8b1597b60eec9503ea8b4d6dbe528aad571f1240f852309e1b00
+[darcsum-amend
+Henrik Hjelte <henrik@evahjelte.com>**20070210191952] 
+hash: 0000002490-9b84975f04247f71324a2409ad6fe90b6b2f87e3011535a807c302af536ce561
+[return value from darcs-changes, needed by darcs-amend
+Henrik Hjelte <henrik@evahjelte.com>**20070211104648] 
+hash: 0000000284-0bc9217fc9fa452cdc141487f1046ea4508ba1c4fd4a877a4bc53ae1fd2c0827
+[darcsum-comment-hook
+nik gaffney <nik@fo.am>**20070226144656
+ added a run-hook at the end of darcs-record, to enable hooks to be run during record (eg. on the comment buffer)
+] 
+hash: 0000000290-dae8442595393cf8f3deecc5aa56b3e8fcca3c2be75b971f31ea43c5d6e7a176
+[Added DARCS_DONT_ESCAPE_TRAILING_CR to process environment
+dag.hoidahl@fix.no**20070307091842] 
+hash: 0000000588-3de987e56b12fa4e71cc9af1c7f52b7185a9adc84709598ca2cc25d77381af57
+[darcsum-ediff opens pristine version read only, restores old window configuration.
+stucchio@math.rutgers.edu**20070517204637
+ 
+ Function darcsum-ediff causes emacs to open _darcs/pristine/filename as well as
+ filename for editing. This is simply behavior of ediff. However, 
+ _darcs/pristine/filename should not be edited. It is now opened as read only.
+ 
+ Also, the old window configuration is restored after ediff is closed.
+] 
+hash: 0000001721-91c01ac416a523df672d0ddacd5cd265bfe311f9e90b7b9c9ae6ee2c6ff8fd79
+[Match change in move case
+clinton@unknownlamer.org**20070828232046
+ Fixes darcsum hanging when a file move is in the current changeset
+] 
+hash: 0000000326-2aabdc65852461346995c60caf3996177fd6208bc53ec42f3f330d221711db27
+[Bound TAB to something useful so it doesn't trash the *darcs* buffer.
+yoni-r@actcom.com**20070902102258] 
+hash: 0000000181-118a70982f55ee178fe1705c2d433bf5d48c144ca8538b7f4fc0edd926a01f0e
+[Add support for the darcs query manifest feature.
+yonirabkin@member.fsf.org**20070926095710] 
+hash: 0000001357-a6b7f4610cdc0fda58a4052f7464401444032663195d5aa20b1eaf5159b7e4dd
+[fmt and move stuff around and suchlike to remove *most* of the byte-compile warnings. Not extensively tested, but seems to work
+gwern0@gmail.com**20071221184105] 
+hash: 0000056892-f7b137b7cdafad1c177393dc1b417d60bc3719485bdc931ff416b904c7a89a32
+[Minor documentation fix.
+yoni@rabkins.net**20080215192811] 
+hash: 0000000450-969b72b8bbbf7e9c36209be8ba76339234b08f8219626c18307cc68793c925a5
+[Extend changes-mode to support the "q", "n" and "p" keybinding idioms.
+yoni@rabkins.net**20080215193005] 
+hash: 0000002073-1470f74a7384c4dbc4536fbb2bc53131bef8284b4c9cf7800ebcf93f1b3442ec
+[darcsum.el (darcsum-record): prefer `log-edit' over `darcsum-comment-mode'
+era eriksson <era+darcsum@iki.fi>**20080406092909
+ `log-edit' ships with Emacs starting with version 21.1 and provides
+ changelog integration, commit message history, and other niceties.
+ If it is not available (as per `fboundp', fall back to `darcsum-comment-mode'.
+] 
+hash: 0000000662-783237a218d01bbdd4963619149639ba347184631f4ad132e3fd861c3152ecaf
+[darcsum.el (darcsum-query-mode): refer to `darcsum-query-manifest' in doc
+era eriksson <era+darcsum@iki.fi>**20080406093320
+ rather than nonexistent function `darcsum-query'.
+] 
+hash: 0000000353-1899bdf4b248411f110705b623a1139eeeea35905eccc78a0e2546de50cbde6a
+[darcsum.el: Trivial wrapping changes to fit code within 80 columns
+era eriksson <era+darcsum@iki.fi>**20080406094313
+ Some of the long regular expressions are still overlong
+] 
+hash: 0000002944-4710357e3a84a5f1eb7e2d171af094b1aa2ffd3ec6d855a29893300d791bf8bc
+[darcsum.el: rename `pre-darcsum-ediff-window-configuration' to darcsum-pre-...
+era eriksson <era+darcsum@iki.fi>**20080406113328
+ For consistency, and in keeping with general Elisp coding conventions,
+ all variables should have names which start with `darcsum-'
+] 
+hash: 0000000844-0090e9009360f326fd49efa8053a137eed5e1a54f9364e3ea672ad3286ea8817
+[Fix for Darcs 2: Don't depend on the patch being wrapped by {}
+Christian Neukirchen <chneukirchen@gmail.com>**20080409153927] 
+hash: 0000000404-14d305e84f0b084502ecaf10c224b9c2336f6d7e90d88c5a3717b56f1cda76ef
+[darcsum-process-filter: skipping "Skipped record of n patch." message
+pekka+darcsum@pessi.fi**20080414125335] 
+hash: 0000000268-69144fa03ad2755b490a76bfe5b451a66e15ffdab62211721550413a7241f3ec
+[darcsum-amend: fixed
+pekka+darcsum@pessi.fi**20080414141347] 
+hash: 0000001229-579be636013bd3b71e1d1d99ed8f304a8b6d6ea705a5ba42045e444de9ba8f89
+[darcsum-make-temp-file: creating temp file inside _darcs
+pekka+darcsum@pessi.fi**20080414144119] 
+hash: 0000000601-633315f61c0b4c7138483f477d3f04adf9988adf64e235fff491642bde124a20
+[darcsum-whatsnew: refactored error display
+pekka+darcsum@pessi.fi**20080414152629] 
+hash: 0000001235-464c8cf1f2e5a376a3651af9d69dc4a58fec0158a358307ad6ef207ed8f2f6f9
+[Warn users of empty changesets before darcs does.
+pekka+darcsum@pessi.fi**20080415202114] 
+hash: 0000000648-98f74580c52a0a69c67f49c37a5b48df5295196b97ab3bc7bcf9cbc2620a7d89
+[Added (darcsum-new-buffer). 
+pekka+darcsum@pessi.fi**20080415202459
+  
+ Create a buffer for darcsum-whatsnew containing repo name, like
+ *darcs darcsum*.
+] 
+hash: 0000000762-18fa952b399588e753af92b866b831a528050587a2f9695f2cff60edacb29809
+[darcsum.el: removed darcsum-change-line
+Pekka.Pessi@nokia.com**20080411131616] 
+hash: 0000000233-5f7fb365b705414a21a2b02cf911147b4e69510936a7436c2cff75828e5e20a7
+[darcsum.el: refactored changeset data structure
+pekka+darcsum@pessi.fi**20080411215041
+ 
+ Mark/hide is included in a cons cell of each change.
+ 
+ Removed item functions, added functions handling change/changeset.
+] 
+hash: 0000020429-3ddad35f1dfe93f2597fc96127fef25705fda052d77ea188677cf03bf36823c7
+[Refactoring changeset format and text properties in *darcs* buffer.
+pekka+darcsum@pessi.fi**20080414145310
+ 
+ The changeset is now flat, there is no directory substructure (making it
+ possible to add adddir/rmdir/move). The path to each change is stored
+ directly as 'darcsum-path property, it is not split to 'darcsum-dir and
+ 'darcsum-file properties.
+] 
+hash: 0000022340-4608cd48d96f911a5c81a8bccab75da5a3b7fe0a4699709ced088bce3d1342b5
+[darcsum-selected-changeset now selects change at point if there are no marks.
+pekka+darcsum@pessi.fi**20080414145420] 
+hash: 0000000229-e070b7dd406693c977bc70c27699b5350dc68413626aabe4859ae1c2564fdc59
+[Added support for move, adddir, and rmdir.
+pekka+darcsum@pessi.fi**20080414165126] 
+hash: 0000004892-81c8d97262096c052e53a0ff73de99340469f4c58a9e1be136fc7986a055814b
+[darcsum-add: work better with marked changes
+pekka+darcsum@pessi.fi**20080418133712
+ 
+ don't signal error if marked set contains at least one 'newfile or 'newdir
+] 
+hash: 0000000757-91a61184855ac9dfb792ae4f4608f39e79e01e5432d15ee22928a2ace1f16ab8
+[darcsum-mouse-toggle-mark: added
+pekka+darcsum@pessi.fi**20080418133733] 
+hash: 0000000402-55d2bd45d9346e35cbe7720e0b494cae557eba86c042859e4a6773e4be0fe48d
+[darcsum-output-environment added.
+pekka+darcsum@pessi.fi**20080418161231] 
+hash: 0000001231-85481d68cb215fa7f3e32ac433033a9db99d3cfb2b8b62409c8adf95052b92be
+[darcsum-find-file: fixed case where other is 'dont-select
+pekka+darcsum@pessi.fi**20080421204108] 
+hash: 0000000432-bf30df9d583345410dd4e2f489a797fcfc571e6c64856a7f64e000e6e2ce25ae
+[darcsum-display-change: added, bound to key v
+pekka+darcsum@pessi.fi**20080421210111] 
+hash: 0000000379-d518cbac0739878ebed6a18e53f951cc1f2a097f4286a6b5e3137e3caec33eab
+[darcsum-mark-and-next-entity, darcsum-unmark-and-next-entity: added
+pekka+darcsum@pessi.fi**20080421210708
+ 
+ darcsum-mark-and-next-entity is bound to SP
+ darcsum-unmark-and-next-entity to DEL / BS
+ 
+ Added also darcsum-change-unmark-p and darcsum-changeset-any-unmarked-p
+ used to find next unmarked entity.
+] 
+hash: 0000002648-f5378dd2a12bd4f8ca373ba6648a20b93e783397c5346aa85e75cb345ee29581
+[darcsum-remove: refactored. always ask for yes-or-no.
+pekka+darcsum@pessi.fi**20080421210825] 
+hash: 0000001471-23ea1677338d1bd5e3a865a80dd44d396df709f5006adfa1e82b71ec18822e47
+[darcsum-find-file-other-window, darcsum-goto: updated documentation
+pekka+darcsum@pessi.fi**20080421210927
+ 
+ Added (darcsum-check-darcsum-mode), too.
+] 
+hash: 0000000711-abe793d8f3f193528f3ca7958562355616e2602d2a3e288de0c0a426b18e4bdc
+[darcsum-redo, darcsum-toggle-context: try harder not to lose marks
+pekka+darcsum@pessi.fi**20080421211726] 
+hash: 0000001170-d5134bde1a53a405470730811cee52a9b24d821221b5344f0fd61ba7f83b8be2
+[darcsum-display-changeset: refactored
+pekka+darcsum@pessi.fi**20080421212623
+       
+ Renamed display properties:
+  darcsum-line-type is 'dir 'file 'change
+  darcsum-line-path contains the path to dir/file
+  darcsum-line-change contains the changes in dir/file 
+                      or the change in change in question
+ 
+ move is now shown more gracefully with other changes. 
+   
+ Added darcsum-whitespace-ateol-face, used to display eol at the end of
+ lines. Ditched show-trailing-whitespace usage.
+ 
+ Refactored darcsum-reposition, darcsum-find-file, and darcsum-next-entity
+ accordingly.
+ 
+ Added darcsum-change-add-mark, darcsum-changeset-all-p,
+ darcsum-changeset-all-marked-p, darcsum-changeset-all-visible-p.
+] 
+hash: 0000014565-ea0ecbd921aef74b41435395ca0d1a6210a2bd3c983129ed07ee650de660060d
+[darcsum-find-file: removed xemacs-ism from (recenter)
+Pekka.Pessi@nokia.com**20080423162826] 
+hash: 0000000242-38fcecc7c43c3309d410f26576f643f29d4533f5ec11f058a1c9600be64993b7
+[darcsum-amend-confirmation-function: variable: amend confirmation function
+era eriksson <era+darcsum@iki.fi>**20080426073900
+ darcsum-amend-confirmation: default function, broken out from darcsum-amend
+] 
+hash: 0000001839-a4b90970d794a88a38cdf19a5fe96b2df578682044cd06139864835d2b95a528
+[darcsum-changes-mode: docstring wrongly pointed to darcsum-comment-mode-map
+era eriksson <era+darcsum@iki.fi>**20080427090027
+ The correct keymap is darcsum-changes-mode-map
+] 
+hash: 0000000265-19ced70fb55e467c464e590c2db79fcaa07f4f29b7748d6cf2ddbadae4729138
+[ds-new-buffer, ds-changes, ds-make-temp-file: Expand documentation stubs
+era eriksson <era+darcsum@iki.fi>**20080427082218] 
+hash: 0000000861-db3bca11431a87c160cddcc6a94b4be638e9d8bbf72247b758bf2f0dc1d602f7
+[darcsum-apply-and-next-entity: using elisp idiom
+pekka+darcsum AT pessi DOT fi**20080424150453] 
+hash: 0000000238-c3986c025dfd599c50d6bc4511a48375636a28ca8ee17c61578d1cefb76094ba
+[darcsum-refresh: cleaned code (to use point-at-bol)
+pekka+darcsum AT pessi DOT fi**20080424150458] 
+hash: 0000000336-04aaca3f79adac79eb46321808dfb60efcdd69d26d2403bba9386a9b05fc72ba
+[darcsum-insert-file-line: display only basepart
+pekka+darcsum AT pessi DOT fi**20080424150508
+ 
+ Display file.c instead of ./foo/bar/baz/in/way/too/deep/dir/file.c
+] 
+hash: 0000000332-6094cefa5e40e4ca3604d981c0f29e4ed80c7da2f6fecd79a79d0cc866e4f2f8
+[darcsum-toggle-context: using darcsum-redo
+pekka+darcsum AT pessi DOT fi**20080424181136] 
+hash: 0000000545-43973c263159f62e93e4f145aee001905a9574caa4bc676c12931734256d9d11
+[Keep subdirectory with darcsum-redo.
+pekka+darcsum AT pessi DOT fi**20080424190758
+ 
+ Gracefully work with redo if working in a subdirectory.
+] 
+hash: 0000001422-e09820439ee32f47bb6bd71f66caa2fbfc725fce63d4e97d0ba61fb63049060a
+[Added command darcsum-show, bound M-RET to it.
+pekka+darcsum AT pessi DOT fi**20080425000639
+ 
+ Added function darcsum-change-remove-hide.
+] 
+hash: 0000000639-6d56267b0c2c56024e8f5015030bddcfc57f367d5ada10a00a02ce3d483c6051
+[darcsum-refresh now accepts target line as an argument.
+pekka+darcsum AT pessi DOT fi**20080425002341] 
+hash: 0000000591-bff27daceef7db835988e3d5417869ebd158cc1e35254dedcc210bd2c60a1a30
+[darcsum-display: prefer existing darcsum buffer
+pekka+darcsum AT pessi DOT fi**20080425002615
+ 
+ The command darcsum-whatsnew used to create new buffer each time it was
+ invoked. Now, if there already is a buffer for displaying changes for the
+ darcs repository (and subdirectory within it), darcsum-display uses the
+ existing buffer. It also warns user if some changes are not visible.
+ 
+ If customization variable darcsum-display-with-existing-buffer is nil,
+ darcsum-display always creates new buffer.
+ 
+ Added functions darcsum-find-buffer and darcsum-where-is.
+] 
+hash: 0000004600-4ae38a7c449b08814b3f20384b319a6c170e28bfd92a9aa9f497ca0e8f7a0171
+[darcsum-find-file: move point to correct line within hunk change
+pekka+darcsum AT pessi DOT fi**20080425094213] 
+hash: 0000000808-5f7f09899aaf9cebedf31cc027f051ad1f987adf86e8144e0956b43138ccb979
+[defsubst darcsum-get-line-type added
+pekka+darcsum AT pessi DOT fi**20080425113719] 
+hash: 0000001837-02a87cfed78e12c8aecade21e22b0a0d6ebada7357107c3dc276cf75b9f1955d
+[darcsum-apply-and-next-entity don't stop at dir unless started at dir
+pekka+darcsum AT pessi DOT fi**20080425113727
+ 
+ Make darcsum-mark-and-next-entity (SP) and darcsum-unmark-and-next-entity
+ (DEL) behave less surprisingly.
+] 
+hash: 0000000601-9f1141e23cdabba3328ca21b29f3452a8aa6df22e0a6014b91d4db28b6d5f4c7
+[defsubst darcsum-get-line-type added
+pekka+darcsum@pessi.fi**20080425102521] 
+hash: 0000003759-4613d0ca1b7cb0b4790b205ea89f8d3c0edebd48216f2e18f2c879fe4d450ddb
+[darcsum-apply-and-next-entity don't stop at dir unless started at dir
+pekka+darcsum@pessi.fi**20080425104703
+ 
+ Make darcsum-mark-and-next-entity (SP) and darcsum-unmark-and-next-entity
+ (DEL) behave less surprisingly.
+] 
+hash: 0000001008-a1a54a5e954031216c77ec14149b97cd07227608437e0c65f4cfb889839e00bc
+[Fix conflicts
+Christian Neukirchen <chneukirchen@gmail.com>**20080427104420] 
+hash: 0000002337-a15bda882a12cb8ff39ee82baa1fee0be1bc895c332573f70e02d0cb2fefae85
+[GNU Emacs alternative to sorted-key-descriptions
+Christian Neukirchen <chneukirchen@gmail.com>**20080427122614] 
+hash: 0000000299-bda2d9a6f1f69b39580fd3b3e1fe92bcd8a16e734fe268c6c8f88e637054abce
+[darcsum-process-filter skips Skipped message for revert, too
+pekka+darcsum AT pessi DOT fi**20080516130318] 
+hash: 0000000310-3a602419dd3288440451c38d77d1a003caf5b62f3e533e2af1dc3d3562961150
+[darcsum-remove now runs darcs remove
+pekka+darcsum AT pessi DOT fi**20080516130424
+ 
+ Rebound to r.
+ Check that darcs remove does not do anything wild, too.
+] 
+hash: 0000001936-a16c67fe879ed86ce110c5dc932d842d8cad28d42f1a4d34bbd01cccdedc4c36
+[darcsum-process-sentinel: check for Couldn't get lock message and show it
+pekka+darcsum AT pessi DOT fi**20080516130447] 
+hash: 0000000644-69ceb24fe0991a8f210b42323aeb31fcd74d11536452fbc50a1eec4bf3ac8a42
+[darcsum-start-process uses --quiet with darcs 2
+pekka+darcsum AT pessi DOT fi**20080516130506
+ 
+ darcs 2 inserts all kind of progress messages unless --quiet is used.
+ 
+ darcsum-darcs-2-options variable added.
+] 
+hash: 0000000792-1175565205a1822042437767e7b38b000d0b7edd6e1226f645120a2bb24228ab
+[darcsum-boring: fixed darcsum-line-path usage, proposed regexp for dir
+pekka+darcsum AT pessi DOT fi**20080516130615] 
+hash: 0000000396-79681816fd15ef6569a91396f132db22489dc643d46046c732fc3e660a10ab31
+[Use --quite for darcs 2 in darcs-whatsnew, darcs-remove and darcs-add
+Alexey Lebedeff <binarin@binarin.ru>**20081206133259] 
+hash: 0000001818-2b202bd07587605b69afc366fff0d427c62c532f996847407f0ecb18cc7c6507
+[Add ;;;###autoload comment to `darcsum-changes', too
+era eriksson <era+darcsum@iki.fi>**20081222054403] 
+hash: 0000000142-7b996bee48f7628446f05d1cff014ae6a0389e88a14337d7696205723302e1f9
+[50darcsum.el: autoloads for Debian / Ubuntu
+era eriksson <era+darcsum@iki.fi>**20081222054524] 
+hash: 0000000409-1a31d013068da6abc122b6c8bcde5341e96ed2885285d8036d1315fdc713516e
+[50darcsum.el: omit path name from autoloads; trust load-path instead
+era eriksson <era+darcsum@iki.fi>**20090121200202] 
+hash: 0000000432-80605264845f00f14ecc1ba0a6b110f46ab46b6a094b46c83290fea20a293878
+[Expand and clarify documentation for `darcsum-call-process' and wrap
+era eriksson <era+darcsum@iki.fi>**20090216194621
+ long lines in code in adherence with general 80-column conventions.
+ (Update for patch of Sat Dec  6 15:32:59 EET 2008 by Alexey Lebedeff
+ which introduced the `darcsum-call-process' wrapper.)
+] 
+hash: 0000000845-5aae66600d520a13dd1db1987c6ddee9a1f0de31df43817525212fede08c4ca8
+[Reword documentation for `darcsum-remove', hopefully clarifying it
+era eriksson <era+darcsum@iki.fi>**20090217083747] 
+hash: 0000000682-21248808502bd1f0c37124f9454633f15de9b16e3e1d8ad8c138d7911e5d7f8d
+[Add documentation string for `darcsum-really-record'
+era eriksson <era+darcsum@iki.fi>**20090217164628] 
+hash: 0000000298-b71fdc06252afb686a02fdb4ef029efb5c25fdc5c651b7e20cdd4e037a3ff196
+[Add documentation string for `darcsum-query-kill-buffer'
+era eriksson <era+darcsum@iki.fi>**20090217165247] 
+hash: 0000000174-171655182ff830f9ad49c2e5e605eceaf474b197a0ea2322e10a799993b139ce
+[Error message formatting and minor whitespace fixes for CheckDoc
+era eriksson <era+darcsum@iki.fi>**20090217165323] 
+hash: 0000000746-c6d32bb26068dd5225959afc896aa52cda5b06311ef4a76452570b251a3c8643
+[Clean up documentation strings for numerous functions.
+era eriksson <era+darcsum@iki.fi>**20090217165619
+ Make sure arguments are listed in the right order.  Also some other
+ minor formatting fixes.  Removes a good number of CheckDoc warnings.
+] 
+hash: 0000002813-ca8b9b6742471b9bd27bf20d332470051c893ca2e2cd0e43e6d2d7ead89b28ff
+[amend after revert produces a warning prompt which was not handled
+era eriksson <era+darcsum@iki.fi>**20090404070514] 
+hash: 0000000330-5323ae0310eba5240b681d0ca9821220555201f1fd74680f656a92658591d0f7
