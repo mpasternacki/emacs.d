@@ -1,4 +1,4 @@
-(load "js2.elc")
+(load "js2-mode.elc")
 
 (add-to-list 'auto-mode-alist '("\\.json$" . js2-mode))
 
