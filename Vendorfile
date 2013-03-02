@@ -20,7 +20,8 @@ git 'ruby-mode', :repository => 'git://github.com/ruby/ruby.git' do
   FileUtils::rmdir 'misc'
 end
 
-vendor 'python-mode', :version => '0.20130302' do
+vendor 'python-mode', :version => '0.20130302.1' do
+  FileUtils::rm_rf Dir.entries('.') - %w|. ..|
   system 'bzr branch --use-existing-dir lp:python-mode .'
   FileUtils::rm_rf '.bzr'
 end
