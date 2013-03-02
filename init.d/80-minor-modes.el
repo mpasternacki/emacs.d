@@ -8,7 +8,7 @@
 (recentf-mode 1)
 (auto-image-file-mode 1)
 (size-indication-mode 1)
+(pretty-symbols-mode 1)
 (display-time)
 (add-hook 'lisp-mode-hook 'paredit-mode)
 (add-hook 'emacs-lisp-mode-hook 'paredit-mode)
-
