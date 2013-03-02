@@ -15,14 +15,14 @@ git 'git://github.com/emacs-ess/ESS.git'
 git 'git://github.com/bmaland/yasnippet-ruby-mode.git'
 
 git 'ruby-mode', :repository => 'git://github.com/ruby/ruby.git' do
-  rm_rf Dir.entries('.') - %w(. .. .git misc)
-  mv Dir['misc/*'], '.'
-  rmdir 'misc'
+  FileUtils::rm_rf Dir.entries('.') - %w(. .. .git misc)
+  FileUtils::mv Dir['misc/*'], '.'
+  FileUtils::rmdir 'misc'
 end
 
-vendor 'python-mode', :version => '0.20130214' do
+vendor 'python-mode', :version => '0.20130302' do
   system 'bzr branch --use-existing-dir lp:python-mode .'
-  rm_rf '.bzr'
+  FileUtils::rm_rf '.bzr'
 end
 
 vendor 'darcsum', :version => '0.20130214.2' do
