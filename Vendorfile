@@ -12,6 +12,7 @@ git 'git://github.com/michaelklishin/cucumber.el.git'
 git 'git://github.com/yoshiki/yaml-mode.git'
 git 'git://github.com/defunkt/coffee-mode.git'
 git 'git://github.com/emacs-ess/ESS.git'
+git 'git://github.com/bmaland/yasnippet-ruby-mode.git'
 
 git 'ruby-mode', :repository => 'git://github.com/ruby/ruby.git' do
   rm_rf Dir.entries('.') - %w(. .. .git misc)
