@@ -3,7 +3,7 @@ PATH
   specs:
     vendorificator (0.1.1)
       escape
-      minigit
+      minigit (>= 0.0.3)
       mixlib-config
       thor (>= 0.17.0)
 
@@ -67,8 +67,7 @@ GEM
     metaclass (0.0.1)
     method_source (0.8.1)
     mime-types (1.21)
-    minigit (0.0.1)
-      mixlib-shellout
+    minigit (0.0.3)
     mixlib-authentication (1.3.0)
       mixlib-log
     mixlib-cli (1.3.0)
@@ -141,7 +140,6 @@ DEPENDENCIES
   aruba
   chef (>= 10.16.0)
   cucumber
-  mixlib-shellout
   mocha
   pry
   pry-debugger
