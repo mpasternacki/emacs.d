@@ -15,6 +15,7 @@ git 'git://github.com/emacs-ess/ESS.git'
 git 'git://github.com/bmaland/yasnippet-ruby-mode.git'
 
 git 'ruby-mode', :repository => 'git://github.com/ruby/ruby.git' do
+  # Remove all of Ruby except ruby-mode
   FileUtils::rm_rf Dir.entries('.') - %w(. .. .git misc)
   FileUtils::mv Dir['misc/*'], '.'
   FileUtils::rmdir 'misc'
