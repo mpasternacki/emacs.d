@@ -1,0 +1,14 @@
+---
+:vendorificator_version: 0.3.0
+:current_branch: true
+:current_sha: true
+:git_describe: true
+:module_version: 31b4b4b9cc3a6f96d3697d5fa0ff472385bbea20
+:module_category:
+:module_name: git://github.com/stsquad/emacs_chrome.git
+:unparsed_args:
+  :path: servers
+:parsed_args:
+  :path: servers
+  :repository: git://github.com/stsquad/emacs_chrome.git
+:git_revision: 31b4b4b9cc3a6f96d3697d5fa0ff472385bbea20
