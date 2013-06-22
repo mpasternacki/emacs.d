@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.3.0
+:current_branch: true
+:current_sha: true
+:git_describe: true
+:module_version: b05e6ab85c86ef9a59320fe1688a32984a607089
+:module_category:
+:module_name: git://github.com/senny/rvm.el.git
+:unparsed_args: {}
+:parsed_args:
+  :repository: git://github.com/senny/rvm.el.git
+:git_revision: b05e6ab85c86ef9a59320fe1688a32984a607089
