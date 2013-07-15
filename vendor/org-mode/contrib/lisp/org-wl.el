@@ -7,14 +7,14 @@
 ;; Keywords: outlines, hypermedia, calendar, wp
 ;; Homepage: http://orgmode.org
 ;;
-;; This file is part of GNU Emacs.
+;; This file is not part of GNU Emacs.
 ;;
-;; GNU Emacs is free software: you can redistribute it and/or modify
+;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
+;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
@@ -46,13 +46,11 @@
 (defcustom org-wl-link-remove-filter nil
   "Remove filter condition if message is filter folder."
   :group 'org-wl
-  :version "24.1"
   :type 'boolean)
 
 (defcustom org-wl-shimbun-prefer-web-links nil
   "If non-nil create web links for shimbun messages."
   :group 'org-wl
-  :version "24.1"
   :type 'boolean)
 
 (defcustom org-wl-nntp-prefer-web-links nil
@@ -60,19 +58,16 @@
 When folder name contains string \"gmane\" link to gmane,
 googlegroups otherwise."
   :type 'boolean
-  :version "24.1"
   :group 'org-wl)
 
 (defcustom org-wl-disable-folder-check t
   "Disable check for new messages when open a link."
   :type 'boolean
-  :version "24.1"
   :group 'org-wl)
 
 (defcustom org-wl-namazu-default-index nil
   "Default namazu search index."
-  :type 'directory
-  :version "24.1"
+  :type '(choice (const nil) (directory))
   :group 'org-wl)
 
 ;; Declare external functions and variables

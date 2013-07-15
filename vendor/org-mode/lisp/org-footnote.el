@@ -138,13 +138,13 @@ will be used to define the footnote at the reference position."
   "Non-nil means define automatically new labels for footnotes.
 Possible values are:
 
-nil        prompt the user for each label
-t          create unique labels of the form [fn:1], [fn:2], ...
-confirm    like t, but let the user edit the created value.  In particular,
-           the label can be removed from the minibuffer, to create
+nil        Prompt the user for each label.
+t          Create unique labels of the form [fn:1], [fn:2], etc.
+confirm    Like t, but let the user edit the created value.
+           The label can be removed from the minibuffer to create
            an anonymous footnote.
 random	   Automatically generate a unique, random label.
-plain      Automatically create plain number labels like [1]"
+plain      Automatically create plain number labels like [1]."
   :group 'org-footnote
   :type '(choice
 	  (const :tag "Prompt for label" nil)
@@ -166,6 +166,7 @@ The main values of this variable can be set with in-buffer options:
 #+STARTUP: nofnadjust"
   :group 'org-footnote
   :type '(choice
+	  (const :tag "No adjustment" nil)
 	  (const :tag "Renumber" renumber)
 	  (const :tag "Sort" sort)
 	  (const :tag "Renumber and Sort" t)))
@@ -251,11 +252,12 @@ otherwise."
   (when (save-excursion (beginning-of-line) (org-footnote-in-valid-context-p))
     (save-excursion
       (end-of-line)
-      ;; Footnotes definitions are separated by new headlines or blank
-      ;; lines.
-      (let ((lim (save-excursion (re-search-backward
-				  (concat org-outline-regexp-bol
-					  "\\|^[ \t]*$") nil t))))
+      ;; Footnotes definitions are separated by new headlines, another
+      ;; footnote definition or 2 blank lines.
+      (let ((lim (save-excursion
+		   (re-search-backward
+		    (concat org-outline-regexp-bol
+			    "\\|^\\([ \t]*\n\\)\\{2,\\}") nil t))))
 	(when (re-search-backward org-footnote-definition-re lim t)
 	  (let ((label (org-match-string-no-properties 1))
 		(beg (match-beginning 0))
@@ -271,7 +273,7 @@ otherwise."
 			     (re-search-forward
 			      (concat org-outline-regexp-bol "\\|"
 				      org-footnote-definition-re "\\|"
-				      "^[ \t]*$") bound 'move))
+				      "^\\([ \t]*\n\\)\\{2,\\}") bound 'move))
 			   (match-beginning 0)
 			 (point)))))
 	    (list label beg end

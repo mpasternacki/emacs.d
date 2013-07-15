@@ -30,52 +30,61 @@
 
 
 ;;;; Code:
-(require 'org-test-ob-consts)
 
-(let* ((org-test-dir (expand-file-name
-		      (file-name-directory
-		       (or load-file-name buffer-file-name))))
-       (org-lisp-dir (expand-file-name
-		      (concat org-test-dir "../lisp"))))
+;;; Ob constants
 
-  (unless (featurep 'org)
-    (setq load-path (cons org-lisp-dir load-path))
-    (require 'org)
-    (require 'org-id)
-    (org-babel-do-load-languages
-     'org-babel-load-languages '((sh . t) (org . t))))
+(defconst org-test-file-ob-anchor
+  "94839181-184f-4ff4-a72f-94214df6f5ba")
 
-  (let* ((load-path (cons
-		     org-test-dir
-		     (cons
-		      (expand-file-name "jump" org-test-dir)
-		      load-path))))
-    (require 'cl)
-    (when (= emacs-major-version 22)
-      (defvar special-mode-map
-	(let ((map (make-sparse-keymap)))
-	  (suppress-keymap map)
-	  (define-key map "q" 'quit-window)
-	  (define-key map " " 'scroll-up)
-	  (define-key map "\C-?" 'scroll-down)
-	  (define-key map "?" 'describe-mode)
-	  (define-key map "h" 'describe-mode)
-	  (define-key map ">" 'end-of-buffer)
-	  (define-key map "<" 'beginning-of-buffer)
-	  (define-key map "g" 'revert-buffer)
-	  (define-key map "z" 'kill-this-buffer)
-	  map))
+(defconst org-test-link-in-heading-file-ob-anchor
+  "a8b1d111-eca8-49f0-8930-56d4f0875155")
 
-      (put 'special-mode 'mode-class 'special)
-      (define-derived-mode special-mode nil "Special"
-	"Parent major mode from which special major modes should inherit."
-	(setq buffer-read-only t)))
-    (require 'ert)
-    (require 'ert-x)
-    (when (file-exists-p
-	   (expand-file-name "jump/jump.el" org-test-dir))
-      (require 'jump)
-      (require 'which-func))))
+(unless (and (boundp 'org-batch-test) org-batch-test)
+  (let* ((org-test-dir (expand-file-name
+			(file-name-directory
+			 (or load-file-name buffer-file-name))))
+	 (org-lisp-dir (expand-file-name
+			(concat org-test-dir "../lisp"))))
+
+    (unless (featurep 'org)
+      (setq load-path (cons org-lisp-dir load-path))
+      (require 'org)
+      (require 'org-id)
+      (require 'ox)
+      (org-babel-do-load-languages
+       'org-babel-load-languages '((sh . t) (org . t))))
+
+    (let* ((load-path (cons
+		       org-test-dir
+		       (cons
+			(expand-file-name "jump" org-test-dir)
+			load-path))))
+      (require 'cl)
+      (when (= emacs-major-version 22)
+	(defvar special-mode-map
+	  (let ((map (make-sparse-keymap)))
+	    (suppress-keymap map)
+	    (define-key map "q" 'quit-window)
+	    (define-key map " " 'scroll-up)
+	    (define-key map "\C-?" 'scroll-down)
+	    (define-key map "?" 'describe-mode)
+	    (define-key map "h" 'describe-mode)
+	    (define-key map ">" 'end-of-buffer)
+	    (define-key map "<" 'beginning-of-buffer)
+	    (define-key map "g" 'revert-buffer)
+	    (define-key map "z" 'kill-this-buffer)
+	    map))
+
+	(put 'special-mode 'mode-class 'special)
+	(define-derived-mode special-mode nil "Special"
+	  "Parent major mode from which special major modes should inherit."
+	  (setq buffer-read-only t)))
+      (require 'ert)
+      (require 'ert-x)
+      (when (file-exists-p
+	     (expand-file-name "jump/jump.el" org-test-dir))
+	(require 'jump)
+	(require 'which-func)))))
 
 (defconst org-test-default-test-file-name "tests.el"
   "For each defun a separate file with tests may be defined.
@@ -102,6 +111,9 @@ org-test searches this directory up the directory tree.")
 
 (defconst org-test-link-in-heading-file
   (expand-file-name "link-in-heading.org" org-test-dir))
+
+(defconst org-id-locations-file
+  (expand-file-name ".test-org-id-locations" org-test-dir))
 
 
 ;;; Functions for writing tests
@@ -231,15 +243,14 @@ get the table stable.  Anyhow, if LAPS is 'iterate then iterate,
 but this will run one recalculation longer.  When EXPECT is nil
 it will be set to TARGET.
 
-If running a test interactively in ERT is not enough and you need
-to examine the target table with e. g. the Org formula debugger
-or an Emacs Lisp debugger (e. g. with point in a data field and
-calling the instrumented `org-table-eval-formula') then copy and
-paste the table with formula from the ERT results buffer or
-temporarily substitute the `org-test-with-temp-text' of this
-function with `org-test-with-temp-text-in-file'.
-
-Consider setting `pp-escape-newlines' to nil manually."
+When running a test interactively in ERT is not enough and you
+need to examine the target table with e. g. the Org formula
+debugger or an Emacs Lisp debugger (e. g. with point in a data
+field and calling the instrumented `org-table-eval-formula') then
+copy and paste the table with formula from the ERT results buffer
+or temporarily substitute the `org-test-with-temp-text' of this
+function with `org-test-with-temp-text-in-file'.  Also consider
+setting `pp-escape-newlines' to nil manually."
   (require 'pp)
   (let ((back pp-escape-newlines) (current-tblfm))
     (unless tblfm
@@ -248,9 +259,11 @@ Consider setting `pp-escape-newlines' to nil manually."
     (unless expect (setq expect target))
     (while (setq current-tblfm (pop tblfm))
       (org-test-with-temp-text (concat target current-tblfm)
-	;; Search table, stop ERT at end of buffer if not found.
+	;; Search the last of possibly several tables, let the ERT
+	;; test fail if not found.
+	(goto-char (point-max))
 	(while (not (org-at-table-p))
-	  (should (eq 0 (forward-line))))
+	  (should (eq 0 (forward-line -1))))
 	(when laps
 	  (if (and (symbolp laps) (eq laps 'iterate))
 	      (should (org-table-recalculate 'iterate t))
@@ -303,8 +316,7 @@ Consider setting `pp-escape-newlines' to nil manually."
 	 "			\"..\" (file-name-directory\n"
 	 "			      (or load-file-name buffer-file-name)))\n"
 	 "		       load-path)))\n"
-	 "  (require 'org-test)\n"
-	 "  (require 'org-test-ob-consts))\n\n"
+	 "  (require 'org-test)\n\n"
 	 "\n"
 	 ";;; Tests\n"
 	 "(ert-deftest " name "/example-test ()\n"
@@ -400,20 +412,18 @@ Consider setting `pp-escape-newlines' to nil manually."
     org-test-example-dir 'full
     "^\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*\\.org$")))
 
-(defun org-test-run-batch-tests ()
-  "Run all defined tests matching \"\\(org\\|ob\\)\".
+(defun org-test-run-batch-tests (&optional org-test-selector)
+  "Run all tests matching an optional regex which defaults to \"\\(org\\|ob\\)\".
 Load all test files first."
   (interactive)
   (let ((org-id-track-globally t)
-	(org-id-locations-file
-	 (convert-standard-filename
-	  (expand-file-name
-	   "testing/.test-org-id-locations"
-	   org-base-dir))))
+	(org-test-selector
+	 (if org-test-selector org-test-selector "\\(org\\|ob\\)"))
+	org-confirm-babel-evaluate vc-handled-backends)
     (org-test-touch-all-examples)
     (org-test-update-id-locations)
     (org-test-load)
-    (ert-run-tests-batch-and-exit "\\(org\\|ob\\)")))
+    (ert-run-tests-batch-and-exit org-test-selector)))
 
 (defun org-test-run-all-tests ()
   "Run all defined tests matching \"\\(org\\|ob\\)\".

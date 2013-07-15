@@ -78,9 +78,10 @@ org-agenda-text-search-extra-files
 
 (defcustom org-mobile-allpriorities "A B C"
   "Default set of priority cookies for the index file."
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'string
-  :group 'org-mobile
-  :version "24.3")
+  :group 'org-mobile)
 
 (defcustom org-mobile-use-encryption nil
   "Non-nil means keep only encrypted files on the WebDAV server.
@@ -305,8 +306,6 @@ Also exclude files matching `org-mobile-files-exclude-regexp'."
 	  (setq link-name (file-name-nondirectory uname)))
 	(push (cons file link-name) rtn)))
     (nreverse rtn)))
-
-(defvar org-agenda-filter)
 
 ;;;###autoload
 (defun org-mobile-push ()
@@ -1067,10 +1066,13 @@ be returned that indicates what went wrong."
 	 (t (error "Heading changed in MobileOrg and on the computer")))))
 
      ((eq what 'addheading)
-      (if (org-on-heading-p) ; if false we are in top-level of file
+      (if (org-at-heading-p) ; if false we are in top-level of file
 	  (progn
+	    ;; Workaround a `org-insert-heading-respect-content' bug
+	    ;; which prevents correct insertion when point is invisible
+	    (org-show-subtree)
 	    (end-of-line 1)
-	    (org-insert-heading-respect-content t)
+	    (org-insert-heading-respect-content '(16) t)
 	    (org-demote))
 	(beginning-of-line)
 	(insert "* "))
@@ -1079,7 +1081,7 @@ be returned that indicates what went wrong."
      ((eq what 'refile)
       (org-copy-subtree)
       (org-with-point-at (org-mobile-locate-entry new)
-	(if (org-on-heading-p) ; if false we are in top-level of file
+	(if (org-at-heading-p) ; if false we are in top-level of file
 	    (progn
 	      (setq level (org-get-valid-level (funcall outline-level) 1))
 	      (org-end-of-subtree t t)

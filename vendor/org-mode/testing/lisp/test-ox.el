@@ -24,30 +24,22 @@
 (unless (featurep 'ox)
   (signal 'missing-test-dependency "org-export"))
 
-(defmacro org-test-with-backend (backend &rest body)
-  "Execute body with an export back-end defined.
-
-BACKEND is the name of the back-end.  BODY is the body to
-execute.  The defined back-end simply returns parsed data as Org
-syntax."
-  (declare (debug (form body)) (indent 1))
-  `(let ((org-export-registered-backends
-	  ',(list
-	     (list backend
-		   :translate-alist
-		   (let (transcode-table)
-		     (dolist (type (append org-element-all-elements
-					   org-element-all-objects)
-				   transcode-table)
-		       (push
-			(cons type
-			      (lambda (obj contents info)
-				(funcall
-				 (intern (format "org-element-%s-interpreter"
-						 type))
-				 obj contents)))
-			transcode-table)))))))
-     (progn ,@body)))
+(defun org-test-default-backend ()
+  "Return a default export back-end.
+This back-end simply returns parsed data as Org syntax."
+  (org-export-create-backend
+   :transcoders (let (transcode-table)
+		  (dolist (type (append org-element-all-elements
+					org-element-all-objects)
+				transcode-table)
+		    (push
+		     (cons type
+			   (lambda (obj contents info)
+			     (funcall
+			      (intern (format "org-element-%s-interpreter"
+					      type))
+			      obj contents)))
+		     transcode-table)))))
 
 (defmacro org-test-with-parsed-data (data &rest body)
   "Execute body with parsed data available.
@@ -75,22 +67,45 @@ already filled in `info'."
   "Test reading #+BIND: keywords."
   ;; Test with `org-export-allow-bind-keywords' set to t.
   (should
-   (org-test-with-temp-text "#+BIND: variable value"
+   (org-test-with-temp-text "#+BIND: test-ox-var value"
      (let ((org-export-allow-bind-keywords t))
-       (org-export--install-letbind-maybe)
-       (eq variable 'value))))
+       (org-export-get-environment)
+       (eq test-ox-var 'value))))
   ;; Test with `org-export-allow-bind-keywords' set to nil.
   (should-not
-   (org-test-with-temp-text "#+BIND: variable value"
+   (org-test-with-temp-text "#+BIND: test-ox-var value"
      (let ((org-export-allow-bind-keywords nil))
-       (org-export--install-letbind-maybe)
-       (boundp 'variable))))
+       (org-export-get-environment)
+       (boundp 'test-ox-var))))
   ;; BIND keywords are case-insensitive.
   (should
-   (org-test-with-temp-text "#+bind: variable value"
+   (org-test-with-temp-text "#+bind: test-ox-var value"
      (let ((org-export-allow-bind-keywords t))
-       (org-export--install-letbind-maybe)
-       (eq variable 'value)))))
+       (org-export-get-environment)
+       (eq test-ox-var 'value))))
+  ;; Preserve order of BIND keywords.
+  (should
+   (org-test-with-temp-text "#+BIND: test-ox-var 1\n#+BIND: test-ox-var 2"
+     (let ((org-export-allow-bind-keywords t))
+       (org-export-get-environment)
+       (eq test-ox-var 2))))
+  ;; Read BIND keywords in setup files.
+  (should
+   (org-test-with-temp-text
+       (format "#+SETUPFILE: \"%s/examples/setupfile.org\"" org-test-dir)
+     (let ((org-export-allow-bind-keywords t))
+       (org-export-get-environment)
+       (eq variable 'value))))
+  ;; Verify that bound variables are seen during export.
+  (should
+   (equal "Yes\n"
+	  (org-test-with-temp-text "#+BIND: test-ox-var value"
+	    (let ((org-export-allow-bind-keywords t))
+	      (org-export-as
+	       (org-export-create-backend
+		:transcoders
+		'((section . (lambda (s c i)
+			       (if (eq test-ox-var 'value) "Yes" "No")))))))))))
 
 (ert-deftest test-org-export/parse-option-keyword ()
   "Test reading all standard #+OPTIONS: items."
@@ -122,26 +137,53 @@ already filled in `info'."
 
 (ert-deftest test-org-export/get-inbuffer-options ()
   "Test reading all standard export keywords."
+  ;; Properties should follow buffer order.
   (should
    (equal
-    (org-test-with-temp-text "#+AUTHOR: Me, Myself and I
-#+CREATOR: Idem
-#+DATE: Today
-#+DESCRIPTION: Testing
-#+DESCRIPTION: with two lines
-#+EMAIL: some@email.org
-#+EXCLUDE_TAGS: noexport invisible
-#+KEYWORDS: test
-#+LANGUAGE: en
-#+SELECT_TAGS: export
-#+TITLE: Some title
-#+TITLE: with spaces"
+    (org-test-with-temp-text "#+LANGUAGE: fr\n#+CREATOR: Me\n#+EMAIL: email"
       (org-export--get-inbuffer-options))
-    '(:author
-      ("Me, Myself and I") :creator "Idem" :date ("Today")
-      :description "Testing\nwith two lines" :email "some@email.org"
-      :exclude-tags ("noexport" "invisible") :keywords "test" :language "en"
-      :select-tags ("export") :title ("Some title with spaces")))))
+    '(:language "fr" :creator "Me" :email "email")))
+  ;; Parse document keywords.
+  (should
+   (equal
+    (org-test-with-temp-text "#+AUTHOR: Me"
+      (org-export--get-inbuffer-options))
+    '(:author ("Me"))))
+  ;; Test `space' behaviour.
+  (should
+   (equal
+    (org-test-with-temp-text "#+TITLE: Some title\n#+TITLE: with spaces"
+      (org-export--get-inbuffer-options))
+    '(:title ("Some title with spaces"))))
+  ;; Test `newline' behaviour.
+  (should
+   (equal
+    (org-test-with-temp-text "#+DESCRIPTION: With\n#+DESCRIPTION: two lines"
+      (org-export--get-inbuffer-options))
+    '(:description "With\ntwo lines")))
+  ;; Test `split' behaviour.
+  (should
+   (equal
+    (org-test-with-temp-text "#+SELECT_TAGS: a\n#+SELECT_TAGS: b"
+      (org-export--get-inbuffer-options))
+    '(:select-tags ("a" "b"))))
+  ;; Options set through SETUPFILE.
+  (should
+   (equal
+    (org-test-with-temp-text
+	(format "#+DESCRIPTION: l1
+#+LANGUAGE: es
+#+SELECT_TAGS: a
+#+TITLE: a
+#+SETUPFILE: \"%s/examples/setupfile.org\"
+#+DESCRIPTION: l3
+#+LANGUAGE: fr
+#+SELECT_TAGS: c
+#+TITLE: c"
+		org-test-dir)
+      (org-export--get-inbuffer-options))
+    '(:description "l1\nl2\nl3":language "fr" :select-tags ("a" "b" "c")
+		   :title ("a b c")))))
 
 (ert-deftest test-org-export/get-subtree-options ()
   "Test setting options from headline's properties."
@@ -218,158 +260,254 @@ Paragraph"
 	    (progn (forward-line 2)
 		   (plist-get (org-export-get-environment nil t) :title))))))
 
+(ert-deftest test-org-export/set-title ()
+  "Test title setting."
+  ;; If no title if specified, use file name.
+  (should
+   (apply
+    'equal
+    (org-test-with-temp-text-in-file "Test"
+      (org-mode)
+      (list (org-export-as
+	     (org-export-create-backend
+	      :transcoders
+	      '((template . (lambda (text info)
+			      (org-element-interpret-data
+			       (plist-get info :title) info))))))
+	    (file-name-nondirectory
+	     (file-name-sans-extension (buffer-file-name)))))))
+  ;; If no title is specified, and no file is associated to the
+  ;; buffer, use buffer's name.
+  (should
+   (apply
+    'equal
+    (org-test-with-temp-text "Test"
+      (org-mode)
+      (list (org-export-as
+	     (org-export-create-backend
+	      :transcoders
+	      '((template . (lambda (text info)
+			      (org-element-interpret-data
+			       (plist-get info :title) info))))))
+	    (buffer-name)))))
+  ;; If a title is specified, use it.
+  (should
+   (equal
+    "Title"
+    (org-test-with-temp-text-in-file "#+TITLE: Title\nTest"
+      (org-mode)
+      (org-export-as
+       (org-export-create-backend
+	:transcoders
+	'((template . (lambda (text info)
+			(org-element-interpret-data
+			 (plist-get info :title) info)))))))))
+  ;; If an empty title is specified, do not set it.
+  (should
+   (equal
+    ""
+    (org-test-with-temp-text-in-file "#+TITLE:\nTest"
+      (org-mode)
+      (org-export-as
+       (org-export-create-backend
+	:transcoders
+	'((template . (lambda (text info)
+			(org-element-interpret-data
+			 (plist-get info :title) info))))))))))
+
 (ert-deftest test-org-export/handle-options ()
   "Test if export options have an impact on output."
-  ;; Test exclude tags.
-  (org-test-with-temp-text "* Head1 :noexport:"
-    (org-test-with-backend test
-      (should
-       (equal (org-export-as 'test nil nil nil '(:exclude-tags ("noexport")))
-	      ""))))
-  ;; Test include tags.
-  (org-test-with-temp-text "
-* Head1
-* Head2
-** Sub-Head2.1 :export:
-*** Sub-Head2.1.1
-* Head2"
-    (org-test-with-backend test
-      (should
-       (equal
-	"* Head2\n** Sub-Head2.1 :export:\n*** Sub-Head2.1.1\n"
-	(let ((org-tags-column 0))
-	  (org-export-as 'test nil nil nil '(:select-tags ("export"))))))))
+  ;; Test exclude tags for headlines and inlinetasks.
+  (should
+   (equal ""
+	  (org-test-with-temp-text "* Head1 :noexp:"
+	    (org-export-as (org-test-default-backend)
+			   nil nil nil '(:exclude-tags ("noexp"))))))
+  ;; Test include tags for headlines and inlinetasks.
+  (should
+   (equal "* H2\n** Sub :exp:\n*** Sub Sub\n"
+	  (org-test-with-temp-text "* H1\n* H2\n** Sub :exp:\n*** Sub Sub\n* H3"
+	    (let ((org-tags-column 0))
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:select-tags ("exp")))))))
   ;; Test mixing include tags and exclude tags.
-  (org-test-with-temp-text "
+  (should
+   (string-match
+    "\\* Head1[ \t]+:export:\n\\*\\* Sub-Head2\n"
+    (org-test-with-temp-text "
 * Head1 :export:
 ** Sub-Head1 :noexport:
 ** Sub-Head2
 * Head2 :noexport:
 ** Sub-Head1 :export:"
-    (org-test-with-backend test
-      (should
-       (string-match
-	"\\* Head1[ \t]+:export:\n\\*\\* Sub-Head2\n"
-	(org-export-as
-	 'test nil nil nil
-	 '(:select-tags ("export") :exclude-tags ("noexport")))))))
+      (org-export-as (org-test-default-backend) nil nil nil
+		     '(:select-tags ("export") :exclude-tags ("noexport"))))))
   ;; Ignore tasks.
-  (let ((org-todo-keywords '((sequence "TODO" "DONE"))))
-    (org-test-with-temp-text "* TODO Head1"
-      (org-test-with-backend test
-	(should (equal (org-export-as 'test nil nil nil '(:with-tasks nil))
-		       "")))))
-  (let ((org-todo-keywords '((sequence "TODO" "DONE"))))
-    (org-test-with-temp-text "* TODO Head1"
-      (org-test-with-backend test
-	(should (equal (org-export-as 'test nil nil nil '(:with-tasks t))
-		       "* TODO Head1\n")))))
+  (should
+   (equal ""
+	  (let ((org-todo-keywords '((sequence "TODO" "DONE"))))
+	    (org-test-with-temp-text "* TODO Head1"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-tasks nil))))))
+  (should
+   (equal "* TODO Head1\n"
+	  (let ((org-todo-keywords '((sequence "TODO" "DONE"))))
+	    (org-test-with-temp-text "* TODO Head1"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-tasks t))))))
   ;; Archived tree.
-  (org-test-with-temp-text "* Head1 :archive:"
-    (let ((org-archive-tag "archive"))
-      (org-test-with-backend test
-	(should
-	 (equal (org-export-as 'test nil nil nil '(:with-archived-trees nil))
-		"")))))
-  (org-test-with-temp-text "* Head1 :archive:\nbody\n** Sub-head 2"
-    (let ((org-archive-tag "archive"))
-      (org-test-with-backend test
-	(should
-	 (string-match
-	  "\\* Head1[ \t]+:archive:"
-	  (org-export-as 'test nil nil nil
-			 '(:with-archived-trees headline)))))))
-  (org-test-with-temp-text "* Head1 :archive:"
-    (let ((org-archive-tag "archive"))
-      (org-test-with-backend test
-	(should
-	 (string-match
-	  "\\`\\* Head1[ \t]+:archive:\n\\'"
-	  (org-export-as 'test nil nil nil '(:with-archived-trees t)))))))
+  (should
+   (equal ""
+	  (org-test-with-temp-text "* Head1 :archive:"
+	    (let ((org-archive-tag "archive"))
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-archived-trees nil))))))
+  (should
+   (string-match
+    "\\* Head1[ \t]+:archive:"
+    (org-test-with-temp-text "* Head1 :archive:\nbody\n** Sub-head 2"
+      (let ((org-archive-tag "archive"))
+	(org-export-as (org-test-default-backend) nil nil nil
+		       '(:with-archived-trees headline))))))
+  (should
+   (string-match
+    "\\`\\* Head1[ \t]+:archive:\n\\'"
+    (org-test-with-temp-text "* Head1 :archive:"
+      (let ((org-archive-tag "archive"))
+	(org-export-as (org-test-default-backend)
+		       nil nil nil '(:with-archived-trees t))))))
   ;; Clocks.
-  (let ((org-clock-string "CLOCK:"))
-    (org-test-with-temp-text "CLOCK: [2012-04-29 sun. 10:45]"
-      (org-test-with-backend test
-	(should
-	 (equal (org-export-as 'test nil nil nil '(:with-clocks t))
-		"CLOCK: [2012-04-29 sun. 10:45]\n"))
-	(should
-	 (equal (org-export-as 'test nil nil nil '(:with-clocks nil)) "")))))
+  (should
+   (equal "CLOCK: [2012-04-29 sun. 10:45]\n"
+	  (let ((org-clock-string "CLOCK:"))
+	    (org-test-with-temp-text "CLOCK: [2012-04-29 sun. 10:45]"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-clocks t))))))
+  (should
+   (equal ""
+	  (let ((org-clock-string "CLOCK:"))
+	    (org-test-with-temp-text "CLOCK: [2012-04-29 sun. 10:45]"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-clocks nil))))))
   ;; Drawers.
-  (let ((org-drawers '("TEST")))
-    (org-test-with-temp-text ":TEST:\ncontents\n:END:"
-      (org-test-with-backend test
-	(should (equal (org-export-as 'test nil nil nil '(:with-drawers nil))
-		       ""))
-	(should (equal (org-export-as 'test nil nil nil '(:with-drawers t))
-		       ":TEST:\ncontents\n:END:\n")))))
-  (let ((org-drawers '("FOO" "BAR")))
-    (org-test-with-temp-text ":FOO:\nkeep\n:END:\n:BAR:\nremove\n:END:"
-      (org-test-with-backend test
-	(should
-	 (equal (org-export-as 'test nil nil nil '(:with-drawers ("FOO")))
-		":FOO:\nkeep\n:END:\n")))))
-  (let ((org-drawers '("FOO" "BAR")))
-    (org-test-with-temp-text ":FOO:\nkeep\n:END:\n:BAR:\nremove\n:END:"
-      (org-test-with-backend test
-	(should
-	 (equal (org-export-as 'test nil nil nil '(:with-drawers (not "BAR")))
-		":FOO:\nkeep\n:END:\n")))))
+  (should
+   (equal ""
+	  (let ((org-drawers '("TEST")))
+	    (org-test-with-temp-text ":TEST:\ncontents\n:END:"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-drawers nil))))))
+  (should
+   (equal ":TEST:\ncontents\n:END:\n"
+	  (let ((org-drawers '("TEST")))
+	    (org-test-with-temp-text ":TEST:\ncontents\n:END:"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-drawers t))))))
+  (should
+   (equal ":FOO:\nkeep\n:END:\n"
+	  (let ((org-drawers '("FOO" "BAR")))
+	    (org-test-with-temp-text ":FOO:\nkeep\n:END:\n:BAR:\nremove\n:END:"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-drawers ("FOO")))))))
+  (should
+   (equal ":FOO:\nkeep\n:END:\n"
+	  (let ((org-drawers '("FOO" "BAR")))
+	    (org-test-with-temp-text ":FOO:\nkeep\n:END:\n:BAR:\nremove\n:END:"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-drawers (not "BAR")))))))
+  ;; Footnotes.
+  (should
+   (equal "Footnote?"
+	  (let ((org-footnote-section nil))
+	    (org-test-with-temp-text "Footnote?[fn:1]\n\n[fn:1] Def"
+	      (org-trim (org-export-as (org-test-default-backend)
+				       nil nil nil '(:with-footnotes nil)))))))
+  (should
+   (equal "Footnote?[fn:1]\n\n[fn:1] Def"
+	  (let ((org-footnote-section nil))
+	    (org-test-with-temp-text "Footnote?[fn:1]\n\n[fn:1] Def"
+	      (org-trim (org-export-as (org-test-default-backend)
+				       nil nil nil '(:with-footnotes t)))))))
   ;; Inlinetasks.
   (when (featurep 'org-inlinetask)
     (should
      (equal
+      ""
       (let ((org-inlinetask-min-level 15))
 	(org-test-with-temp-text "*************** Task"
-	  (org-test-with-backend test
-	    (org-export-as 'test nil nil nil '(:with-inlinetasks nil)))))
-      ""))
+	  (org-export-as (org-test-default-backend)
+			 nil nil nil '(:with-inlinetasks nil))))))
     (should
      (equal
+      ""
       (let ((org-inlinetask-min-level 15))
 	(org-test-with-temp-text
 	    "*************** Task\nContents\n*************** END"
-	  (org-test-with-backend test
-	    (org-export-as 'test nil nil nil '(:with-inlinetasks nil)))))
-      "")))
+	  (org-export-as (org-test-default-backend)
+			 nil nil nil '(:with-inlinetasks nil)))))))
   ;; Plannings.
-  (let ((org-closed-string "CLOSED:"))
-    (org-test-with-temp-text "CLOSED: [2012-04-29 sun. 10:45]"
-      (org-test-with-backend test
-	(should
-	 (equal (org-export-as 'test nil nil nil '(:with-plannings t))
-		"CLOSED: [2012-04-29 sun. 10:45]\n"))
-	(should
-	 (equal (org-export-as 'test nil nil nil '(:with-plannings nil))
-		"")))))
+  (should
+   (equal "CLOSED: [2012-04-29 sun. 10:45]\n"
+	  (let ((org-closed-string "CLOSED:"))
+	    (org-test-with-temp-text "CLOSED: [2012-04-29 sun. 10:45]"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-planning t))))))
+  (should
+   (equal ""
+	  (let ((org-closed-string "CLOSED:"))
+	    (org-test-with-temp-text "CLOSED: [2012-04-29 sun. 10:45]"
+	      (org-export-as (org-test-default-backend)
+			     nil nil nil '(:with-planning nil))))))
   ;; Statistics cookies.
   (should
    (equal ""
 	  (org-test-with-temp-text "[0/0]"
-	    (org-test-with-backend test
-	      (org-export-as
-	       'test nil nil nil '(:with-statistics-cookies nil))))))
-  ;; Timestamps.
-  (org-test-with-temp-text "[2012-04-29 sun. 10:45]<2012-04-29 sun. 10:45>"
-    (org-test-with-backend test
-      (should
-       (equal (org-export-as 'test nil nil nil '(:with-timestamps t))
-	      "[2012-04-29 sun. 10:45]<2012-04-29 sun. 10:45>\n"))
-      (should
-       (equal (org-export-as 'test nil nil nil '(:with-timestamps nil)) ""))
-      (should
-       (equal (org-export-as 'test nil nil nil '(:with-timestamps active))
-	      "<2012-04-29 sun. 10:45>\n"))
-      (should
-       (equal (org-export-as 'test nil nil nil '(:with-timestamps inactive))
-	      "[2012-04-29 sun. 10:45]\n")))))
+	    (org-export-as (org-test-default-backend)
+			   nil nil nil '(:with-statistics-cookies nil))))))
+
+(ert-deftest test-org-export/with-timestamps ()
+  "Test `org-export-with-timestamps' specifications."
+  ;; t value.
+  (should
+   (equal
+    "[2012-04-29 sun. 10:45]<2012-04-29 sun. 10:45>\n"
+    (org-test-with-temp-text "[2012-04-29 sun. 10:45]<2012-04-29 sun. 10:45>"
+      (org-export-as (org-test-default-backend)
+		     nil nil nil '(:with-timestamps t)))))
+  ;; nil value.
+  (should
+   (equal
+    ""
+    (org-test-with-temp-text "[2012-04-29 sun. 10:45]<2012-04-29 sun. 10:45>"
+      (org-export-as (org-test-default-backend)
+		     nil nil nil '(:with-timestamps nil)))))
+  ;; `active' value.
+  (should
+   (equal
+    "<2012-03-29 Thu>\n\nParagraph <2012-03-29 Thu>[2012-03-29 Thu]"
+    (org-test-with-temp-text
+	"<2012-03-29 Thu>[2012-03-29 Thu]
+
+Paragraph <2012-03-29 Thu>[2012-03-29 Thu]"
+      (org-trim (org-export-as (org-test-default-backend)
+			       nil nil nil '(:with-timestamps active))))))
+  ;; `inactive' value.
+  (should
+   (equal
+    "[2012-03-29 Thu]\n\nParagraph <2012-03-29 Thu>[2012-03-29 Thu]"
+    (org-test-with-temp-text
+	"<2012-03-29 Thu>[2012-03-29 Thu]
+
+Paragraph <2012-03-29 Thu>[2012-03-29 Thu]"
+      (org-trim (org-export-as (org-test-default-backend)
+			       nil nil nil '(:with-timestamps inactive)))))))
 
 (ert-deftest test-org-export/comment-tree ()
   "Test if export process ignores commented trees."
-  (let ((org-comment-string "COMMENT"))
-    (org-test-with-temp-text "* COMMENT Head1"
-      (org-test-with-backend test
-	(should (equal (org-export-as 'test) ""))))))
+  (should
+   (equal ""
+	  (let ((org-comment-string "COMMENT"))
+	    (org-test-with-temp-text "* COMMENT Head1"
+	      (org-export-as (org-test-default-backend)))))))
 
 (ert-deftest test-org-export/export-scope ()
   "Test all export scopes."
@@ -378,22 +516,23 @@ Paragraph"
 ** Head2
 text
 *** Head3"
-    (org-test-with-backend test
-      ;; Subtree.
-      (forward-line 3)
-      (should (equal (org-export-as 'test 'subtree) "text\n*** Head3\n"))
-      ;; Visible.
-      (goto-char (point-min))
-      (forward-line)
-      (org-cycle)
-      (should (equal (org-export-as 'test nil 'visible) "* Head1\n"))
-      ;; Region.
-      (goto-char (point-min))
-      (forward-line 3)
-      (transient-mark-mode 1)
-      (push-mark (point) t t)
-      (goto-char (point-at-eol))
-      (should (equal (org-export-as 'test) "text\n"))))
+    ;; Subtree.
+    (forward-line 3)
+    (should (equal (org-export-as (org-test-default-backend) 'subtree)
+		   "text\n*** Head3\n"))
+    ;; Visible.
+    (goto-char (point-min))
+    (forward-line)
+    (org-cycle)
+    (should (equal (org-export-as (org-test-default-backend) nil 'visible)
+		   "* Head1\n"))
+    ;; Region.
+    (goto-char (point-min))
+    (forward-line 3)
+    (transient-mark-mode 1)
+    (push-mark (point) t t)
+    (goto-char (point-at-eol))
+    (should (equal (org-export-as (org-test-default-backend)) "text\n")))
   ;; Subtree with a code block calling another block outside.
   (should
    (equal ": 3\n"
@@ -407,19 +546,55 @@ text
 #+BEGIN_SRC emacs-lisp
 \(+ 1 2)
 #+END_SRC"
-	    (org-test-with-backend test
-	      (forward-line 1)
-	      (org-export-as 'test 'subtree)))))
+	    (forward-line 1)
+	    (org-export-as (org-test-default-backend) 'subtree))))
   ;; Body only.
-  (org-test-with-temp-text "Text"
-    (org-test-with-backend test
-      (plist-put
-       (cdr (assq 'test org-export-registered-backends))
-       :translate-alist
-       (cons (cons 'template (lambda (body info) (format "BEGIN\n%sEND" body)))
-	     (org-export-backend-translate-table 'test)))
-      (should (equal (org-export-as 'test nil nil 'body-only) "Text\n"))
-      (should (equal (org-export-as 'test) "BEGIN\nText\nEND")))))
+  (let ((backend (org-test-default-backend)))
+    (setf (org-export-backend-transcoders backend)
+	  (cons '(template . (lambda (body i)
+			       (format "BEGIN\n%sEND" body)))
+		(org-export-backend-transcoders backend)))
+    (org-test-with-temp-text "Text"
+      (should (equal (org-export-as backend nil nil 'body-only)
+		     "Text\n"))
+      (should (equal (org-export-as backend) "BEGIN\nText\nEND")))))
+
+(ert-deftest test-org-export/output-file-name ()
+  "Test `org-export-output-file-name' specifications."
+  ;; Export from a file: name is built from original file name.
+  (should
+   (org-test-with-temp-text-in-file "Test"
+     (equal (concat (file-name-as-directory ".")
+		    (file-name-nondirectory
+		     (file-name-sans-extension (buffer-file-name))))
+	    (file-name-sans-extension (org-export-output-file-name ".ext")))))
+  ;; When exporting to subtree, check EXPORT_FILE_NAME property first.
+  (should
+   (org-test-with-temp-text-in-file
+       "* Test\n  :PROPERTIES:\n  :EXPORT_FILE_NAME: test\n  :END:"
+     (equal (org-export-output-file-name ".ext" t) "./test.ext")))
+  ;; From a buffer not associated to a file, too.
+  (should
+   (org-test-with-temp-text
+       "* Test\n  :PROPERTIES:\n  :EXPORT_FILE_NAME: test\n  :END:"
+     (equal (org-export-output-file-name ".ext" t) "./test.ext")))
+  ;; When provided name is absolute, preserve it.
+  (should
+   (org-test-with-temp-text
+       (format "* Test\n  :PROPERTIES:\n  :EXPORT_FILE_NAME: %s\n  :END:"
+	       (expand-file-name "test"))
+     (file-name-absolute-p (org-export-output-file-name ".ext" t))))
+  ;; When PUB-DIR argument is provided, use it.
+  (should
+   (org-test-with-temp-text-in-file "Test"
+     (equal (file-name-directory
+	     (org-export-output-file-name ".ext" nil "dir/"))
+	    "dir/")))
+  ;; When returned name would overwrite original file, add EXTENSION
+  ;; another time.
+  (should
+   (org-test-at-id "75282ba2-f77a-4309-a970-e87c149fe125"
+     (equal (org-export-output-file-name ".org") "./normal.org.org"))))
 
 (ert-deftest test-org-export/expand-include ()
   "Test file inclusion in an Org buffer."
@@ -448,12 +623,24 @@ body\n")))
     (should (equal (buffer-string)
 		   "Small Org file with an include keyword.\n")))
   ;; Insertion with constraints on headlines level.
-  (org-test-with-temp-text
-      (format
-       "* Top heading\n#+INCLUDE: \"%s/examples/include.org\" :lines \"9-\""
-       org-test-dir)
-    (org-export-expand-include-keyword)
-    (should (equal (buffer-string) "* Top heading\n** Heading\nbody\n")))
+  (should
+   (equal
+    "* Top heading\n** Heading\nbody\n"
+    (org-test-with-temp-text
+	(format
+	 "* Top heading\n#+INCLUDE: \"%s/examples/include.org\" :lines \"9-\""
+	 org-test-dir)
+      (org-export-expand-include-keyword)
+      (buffer-string))))
+  (should
+   (equal
+    "* Top heading\n* Heading\nbody\n"
+    (org-test-with-temp-text
+	(format
+	 "* Top heading\n#+INCLUDE: \"%s/examples/include.org\" :lines \"9-\" :minlevel 1"
+	 org-test-dir)
+      (org-export-expand-include-keyword)
+      (buffer-string))))
   ;; Inclusion within an example block.
   (org-test-with-temp-text
       (format "#+INCLUDE: \"%s/examples/include.org\" :lines \"1-2\" example"
@@ -478,7 +665,7 @@ body\n")))
   (should
    (equal "#+MACRO: macro1 value\nvalue\n"
 	  (org-test-with-temp-text "#+MACRO: macro1 value\n{{{macro1}}}"
-	    (org-test-with-backend test (org-export-as 'test)))))
+	    (org-export-as (org-test-default-backend)))))
   ;; Expand specific macros.
   (should
    (equal "me 2012-03-29 me@here Title\n"
@@ -489,7 +676,7 @@ body\n")))
 #+AUTHOR: me
 #+EMAIL: me@here
 {{{author}}} {{{date}}} {{{email}}} {{{title}}}"
-	    (let ((output (org-test-with-backend test (org-export-as 'test))))
+	    (let ((output (org-export-as (org-test-default-backend))))
 	      (substring output (string-match ".*\n\\'" output))))))
   ;; Expand specific macros when property contained a regular macro
   ;; already.
@@ -499,7 +686,7 @@ body\n")))
 #+MACRO: macro1 value
 #+TITLE: {{{macro1}}}
 {{{title}}}"
-	    (let ((output (org-test-with-backend test (org-export-as 'test))))
+	    (let ((output (org-export-as (org-test-default-backend))))
 	      (substring output (string-match ".*\n\\'" output))))))
   ;; Expand macros with templates in included files.
   (should
@@ -507,58 +694,65 @@ body\n")))
 	  (org-test-with-temp-text
 	      (format "#+INCLUDE: \"%s/examples/macro-templates.org\"
 {{{included-macro}}}" org-test-dir)
-	    (let ((output (org-test-with-backend test (org-export-as 'test))))
+	    (let ((output (org-export-as (org-test-default-backend))))
 	      (substring output (string-match ".*\n\\'" output)))))))
 
 (ert-deftest test-org-export/user-ignore-list ()
   "Test if `:ignore-list' accepts user input."
-  (org-test-with-backend test
-    (flet ((skip-note-head
-	    (data backend info)
-	    ;; Ignore headlines with the word "note" in their title.
-	    (org-element-map
-	     data 'headline
-	     (lambda (headline)
-	       (when (string-match "\\<note\\>"
-				   (org-element-property :raw-value headline))
-		 (org-export-ignore-element headline info)))
-	     info)
-	    data))
-      ;; Install function in parse tree filters.
-      (let ((org-export-filter-parse-tree-functions '(skip-note-head)))
-	(org-test-with-temp-text "* Head1\n* Head2 (note)\n"
-	  (should (equal (org-export-as 'test) "* Head1\n")))))))
+  (let ((backend (org-test-default-backend)))
+    (setf (org-export-backend-transcoders backend)
+	  (cons '(template . (lambda (body i)
+			       (format "BEGIN\n%sEND" body)))
+		(org-export-backend-transcoders backend)))
+    (org-test-with-temp-text "Text"
+      (should (equal (org-export-as backend nil nil 'body-only)
+		     "Text\n"))
+      (should (equal (org-export-as backend) "BEGIN\nText\nEND"))))
+  (should
+   (equal
+    "* Head1\n"
+    (let ((org-export-filter-parse-tree-functions
+	   '((lambda (data backend info)
+	       ;; Ignore headlines with the word "note" in their title.
+	       (org-element-map data 'headline
+		 (lambda (headline)
+		   (when (string-match "\\<note\\>"
+				       (org-element-property :raw-value
+							     headline))
+		     (org-export-ignore-element headline info)))
+		 info)
+	       data))))
+      (org-test-with-temp-text "* Head1\n* Head2 (note)\n"
+	(org-export-as (org-test-default-backend)))))))
 
 (ert-deftest test-org-export/before-processing-hook ()
   "Test `org-export-before-processing-hook'."
   (should
    (equal
     "#+MACRO: mac val\nTest\n"
-    (org-test-with-backend test
-      (org-test-with-temp-text "#+MACRO: mac val\n{{{mac}}} Test"
-	(let ((org-export-before-processing-hook
-	       '((lambda (backend)
-		   (while (re-search-forward "{{{" nil t)
-		     (let ((object (org-element-context)))
-		       (when (eq (org-element-type object) 'macro)
-			 (delete-region
-			  (org-element-property :begin object)
-			  (org-element-property :end object)))))))))
-	  (org-export-as 'test)))))))
+    (org-test-with-temp-text "#+MACRO: mac val\n{{{mac}}} Test"
+      (let ((org-export-before-processing-hook
+	     '((lambda (backend)
+		 (while (re-search-forward "{{{" nil t)
+		   (let ((object (org-element-context)))
+		     (when (eq (org-element-type object) 'macro)
+		       (delete-region
+			(org-element-property :begin object)
+			(org-element-property :end object)))))))))
+	(org-export-as (org-test-default-backend)))))))
 
 (ert-deftest test-org-export/before-parsing-hook ()
   "Test `org-export-before-parsing-hook'."
   (should
    (equal "Body 1\nBody 2\n"
-	  (org-test-with-backend test
-            (org-test-with-temp-text "* Headline 1\nBody 1\n* Headline 2\nBody 2"
-              (let ((org-export-before-parsing-hook
-                     '((lambda (backend)
-                         (goto-char (point-min))
-                         (while (re-search-forward org-outline-regexp-bol nil t)
-                           (delete-region
-                            (point-at-bol) (progn (forward-line) (point))))))))
-                (org-export-as 'test)))))))
+	  (org-test-with-temp-text "* Headline 1\nBody 1\n* Headline 2\nBody 2"
+	    (let ((org-export-before-parsing-hook
+		   '((lambda (backend)
+		       (goto-char (point-min))
+		       (while (re-search-forward org-outline-regexp-bol nil t)
+			 (delete-region
+			  (point-at-bol) (progn (forward-line) (point))))))))
+	      (org-export-as (org-test-default-backend)))))))
 
 
 
@@ -573,12 +767,47 @@ body\n")))
      :attr_html
      (org-test-with-temp-text "#+ATTR_HTML: :a 1 :b 2\nParagraph"
        (org-element-at-point)))
-    '(:a 1 :b 2)))
+    '(:a "1" :b "2")))
   ;; Return nil on empty attribute.
   (should-not
    (org-export-read-attribute
     :attr_html
-    (org-test-with-temp-text "Paragraph" (org-element-at-point)))))
+    (org-test-with-temp-text "Paragraph" (org-element-at-point))))
+  ;; Return nil on "nil" string.
+  (should
+   (equal '(:a nil :b nil)
+	  (org-export-read-attribute
+	   :attr_html
+	   (org-test-with-temp-text "#+ATTR_HTML: :a nil :b nil\nParagraph"
+	     (org-element-at-point)))))
+  ;; Return nil on empty string.
+  (should
+   (equal '(:a nil :b nil)
+	  (org-export-read-attribute
+	   :attr_html
+	   (org-test-with-temp-text "#+ATTR_HTML: :a :b\nParagraph"
+	     (org-element-at-point)))))
+  ;; Return empty string when value is "".
+  (should
+   (equal '(:a "")
+	  (org-export-read-attribute
+	   :attr_html
+	   (org-test-with-temp-text "#+ATTR_HTML: :a \"\"\nParagraph"
+	     (org-element-at-point)))))
+  ;; Return \"\" when value is """".
+  (should
+   (equal '(:a "\"\"")
+	  (org-export-read-attribute
+	   :attr_html
+	   (org-test-with-temp-text "#+ATTR_HTML: :a \"\"\"\"\nParagraph"
+	     (org-element-at-point)))))
+  ;; Ignore text before first property.
+  (should-not
+   (member "ignore"
+	   (org-export-read-attribute
+	    :attr_html
+	    (org-test-with-temp-text "#+ATTR_HTML: ignore :a 1\nParagraph"
+	      (org-element-at-point))))))
 
 (ert-deftest test-org-export/get-caption ()
   "Test `org-export-get-caption' specifications."
@@ -610,155 +839,258 @@ body\n")))
   ;; Translate table.
   (should
    (equal '((headline . my-headline-test))
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test ((headline . my-headline-test)))
-	    (org-export-backend-translate-table 'test))))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'test '((headline . my-headline-test)))
+	    (org-export-get-all-transcoders 'test))))
   ;; Filters.
   (should
    (equal '((:filter-headline . my-filter))
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test
-	      ((headline . my-headline-test))
-	      :filters-alist ((:filter-headline . my-filter)))
-	    (org-export-backend-filters 'test))))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'test
+	      '((headline . my-headline-test))
+	      :filters-alist '((:filter-headline . my-filter)))
+	    (org-export-backend-filters (org-export-get-backend 'test)))))
   ;; Options.
   (should
    (equal '((:prop value))
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test
-	      ((headline . my-headline-test))
-	      :options-alist ((:prop value)))
-	    (org-export-backend-options 'test))))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'test
+	      '((headline . my-headline-test))
+	      :options-alist '((:prop value)))
+	    (org-export-backend-options (org-export-get-backend 'test)))))
   ;; Menu.
   (should
    (equal '(?k "Test Export" test)
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test
-	      ((headline . my-headline-test))
-	      :menu-entry (?k "Test Export" test))
-	    (org-export-backend-menu 'test))))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'test
+	      '((headline . my-headline-test))
+	      :menu-entry '(?k "Test Export" test))
+	    (org-export-backend-menu (org-export-get-backend 'test)))))
   ;; Export Blocks.
   (should
    (equal '(("TEST" . org-element-export-block-parser))
-	  (let (org-export-registered-backends org-element-block-name-alist)
-	    (org-export-define-backend test
-	      ((headline . my-headline-test))
-	      :export-block ("test"))
+	  (let (org-export--registered-backends org-element-block-name-alist)
+	    (org-export-define-backend 'test
+	      '((headline . my-headline-test))
+	      :export-block '("test"))
 	    org-element-block-name-alist))))
 
 (ert-deftest test-org-export/define-derived-backend ()
   "Test `org-export-define-derived-backend' specifications."
   ;; Error when parent back-end is not defined.
   (should-error
-   (let (org-export-registered-backends)
-     (org-export-define-derived-backend test parent)))
+   (let (org-export--registered-backends)
+     (org-export-define-derived-backend 'test 'parent)))
   ;; Append translation table to parent's.
   (should
    (equal '((:headline . test) (:headline . parent))
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend parent ((:headline . parent)))
-	    (org-export-define-derived-backend test parent
-	      :translate-alist ((:headline . test)))
-	    (org-export-backend-translate-table 'test))))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'parent '((:headline . parent)))
+	    (org-export-define-derived-backend 'test 'parent
+	      :translate-alist '((:headline . test)))
+	    (org-export-get-all-transcoders 'test))))
   ;; Options defined in the new back have priority over those defined
   ;; in parent.
   (should
    (eq 'test
-       (let (org-export-registered-backends)
-	 (org-export-define-backend parent
-	   ((:headline . parent))
-	   :options-alist ((:a nil nil 'parent)))
-	 (org-export-define-derived-backend test parent
-	   :options-alist ((:a nil nil 'test)))
-	 (plist-get (org-export--get-global-options 'test) :a)))))
+       (let (org-export--registered-backends)
+	 (org-export-define-backend 'parent
+	   '((:headline . parent))
+	   :options-alist '((:a nil nil 'parent)))
+	 (org-export-define-derived-backend 'test 'parent
+	   :options-alist '((:a nil nil 'test)))
+	 (plist-get (org-export--get-global-options
+		     (org-export-get-backend 'test))
+		    :a)))))
 
 (ert-deftest test-org-export/derived-backend-p ()
   "Test `org-export-derived-backend-p' specifications."
   ;; Non-nil with direct match.
   (should
-   (let (org-export-registered-backends)
-     (org-export-define-backend test ((headline . test)))
+   (let (org-export--registered-backends)
+     (org-export-define-backend 'test '((headline . test)))
      (org-export-derived-backend-p 'test 'test)))
   (should
-   (let (org-export-registered-backends)
-     (org-export-define-backend test ((headline . test)))
-     (org-export-define-derived-backend test2 test)
+   (let (org-export--registered-backends)
+     (org-export-define-backend 'test '((headline . test)))
+     (org-export-define-derived-backend 'test2 'test)
      (org-export-derived-backend-p 'test2 'test2)))
   ;; Non-nil with a direct parent.
   (should
-   (let (org-export-registered-backends)
-     (org-export-define-backend test ((headline . test)))
-     (org-export-define-derived-backend test2 test)
+   (let (org-export--registered-backends)
+     (org-export-define-backend 'test '((headline . test)))
+     (org-export-define-derived-backend 'test2 'test)
      (org-export-derived-backend-p 'test2 'test)))
   ;; Non-nil with an indirect parent.
   (should
-   (let (org-export-registered-backends)
-     (org-export-define-backend test ((headline . test)))
-     (org-export-define-derived-backend test2 test)
-     (org-export-define-derived-backend test3 test2)
+   (let (org-export--registered-backends)
+     (org-export-define-backend 'test '((headline . test)))
+     (org-export-define-derived-backend 'test2 'test)
+     (org-export-define-derived-backend 'test3 'test2)
      (org-export-derived-backend-p 'test3 'test)))
   ;; Nil otherwise.
   (should-not
-   (let (org-export-registered-backends)
-     (org-export-define-backend test ((headline . test)))
-     (org-export-define-backend test2 ((headline . test2)))
+   (let (org-export--registered-backends)
+     (org-export-define-backend 'test '((headline . test)))
+     (org-export-define-backend 'test2 '((headline . test2)))
      (org-export-derived-backend-p 'test2 'test)))
   (should-not
-   (let (org-export-registered-backends)
-     (org-export-define-backend test ((headline . test)))
-     (org-export-define-backend test2 ((headline . test2)))
-     (org-export-define-derived-backend test3 test2)
+   (let (org-export--registered-backends)
+     (org-export-define-backend 'test '((headline . test)))
+     (org-export-define-backend 'test2 '((headline . test2)))
+     (org-export-define-derived-backend 'test3 'test2)
      (org-export-derived-backend-p 'test3 'test))))
+
+(ert-deftest test-org-export/get-all-transcoders ()
+  "Test `org-export-get-all-transcoders' specifications."
+  ;; Return nil when back-end cannot be found.
+  (should-not (org-export-get-all-transcoders nil))
+  ;; Same as `org-export-transcoders' if no parent.
+  (should
+   (equal '((headline . ignore))
+	  (org-export-get-all-transcoders
+	   (org-export-create-backend
+	    :transcoders '((headline . ignore))))))
+  ;; But inherit from all ancestors whenever possible.
+  (should
+   (equal '((section . ignore) (headline . ignore))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'b1 '((headline . ignore)))
+	    (org-export-get-all-transcoders
+	     (org-export-create-backend
+	      :parent 'b1 :transcoders '((section . ignore)))))))
+  (should
+   (equal '((paragraph . ignore) (section . ignore) (headline . ignore))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'b1 '((headline . ignore)))
+	    (org-export-define-derived-backend 'b2 'b1
+	      :translate-alist '((section . ignore)))
+	    (org-export-get-all-transcoders
+	     (org-export-create-backend
+	      :parent 'b2 :transcoders '((paragraph . ignore)))))))
+  ;; Back-end transcoders overrule inherited ones.
+  (should
+   (eq 'b
+       (let (org-export--registered-backends)
+	 (org-export-define-backend 'b1 '((headline . a)))
+	 (cdr (assq 'headline
+		    (org-export-get-all-transcoders
+		     (org-export-create-backend
+		      :parent 'b1 :transcoders '((headline . b))))))))))
+
+(ert-deftest test-org-export/get-all-options ()
+  "Test `org-export-get-all-options' specifications."
+  ;; Return nil when back-end cannot be found.
+  (should-not (org-export-get-all-options nil))
+  ;; Same as `org-export-options' if no parent.
+  (should
+   (equal '((headline . ignore))
+	  (org-export-get-all-options
+	   (org-export-create-backend
+	    :options '((headline . ignore))))))
+  ;; But inherit from all ancestors whenever possible.
+  (should
+   (equal '((:key2 value2) (:key1 value1))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'b1 nil :options-alist '((:key1 value1)))
+	    (org-export-get-all-options
+	     (org-export-create-backend
+	      :parent 'b1 :options '((:key2 value2)))))))
+  (should
+   (equal '((:key3 value3) (:key2 value2) (:key1 value1))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'b1 nil :options-alist '((:key1 value1)))
+	    (org-export-define-derived-backend 'b2 'b1
+	      :options-alist '((:key2 value2)))
+	    (org-export-get-all-options
+	     (org-export-create-backend
+	      :parent 'b2 :options '((:key3 value3)))))))
+  ;; Back-end options overrule inherited ones.
+  (should
+   (eq 'b
+       (let (org-export--registered-backends)
+	 (org-export-define-backend 'b1 nil :options-alist '((:key1 . a)))
+	 (cdr (assq :key1
+		    (org-export-get-all-options
+		     (org-export-create-backend
+		      :parent 'b1 :options '((:key1 . b))))))))))
+
+(ert-deftest test-org-export/get-all-filters ()
+  "Test `org-export-get-all-filters' specifications."
+  ;; Return nil when back-end cannot be found.
+  (should-not (org-export-get-all-filters nil))
+  ;; Same as `org-export-filters' if no parent.
+  (should
+   (equal '((:filter-headline . ignore))
+	  (org-export-get-all-filters
+	   (org-export-create-backend
+	    :filters '((:filter-headline . ignore))))))
+  ;; But inherit from all ancestors whenever possible.
+  (should
+   (equal '((:filter-section . ignore) (:filter-headline . ignore))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'b1
+	      nil :filters-alist '((:filter-headline . ignore)))
+	    (org-export-get-all-filters
+	     (org-export-create-backend
+	      :parent 'b1 :filters '((:filter-section . ignore)))))))
+  (should
+   (equal '((:filter-paragraph . ignore)
+	    (:filter-section . ignore)
+	    (:filter-headline . ignore))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'b1
+	      nil :filters-alist '((:filter-headline . ignore)))
+	    (org-export-define-derived-backend 'b2 'b1
+	      :filters-alist '((:filter-section . ignore)))
+	    (org-export-get-all-filters
+	     (org-export-create-backend
+	      :parent 'b2 :filters '((:filter-paragraph . ignore)))))))
+  ;; Back-end filters overrule inherited ones.
+  (should
+   (eq 'b
+       (let (org-export--registered-backends)
+	 (org-export-define-backend 'b1 '((:filter-headline . a)))
+	 (cdr (assq :filter-headline
+		    (org-export-get-all-filters
+		     (org-export-create-backend
+		      :parent 'b1 :filters '((:filter-headline . b))))))))))
 
 (ert-deftest test-org-export/with-backend ()
   "Test `org-export-with-backend' definition."
   ;; Error when calling an undefined back-end
-  (should-error
-   (let (org-export-registered-backends)
-     (org-export-with-backend 'test "Test")))
+  (should-error (org-export-with-backend nil "Test"))
   ;; Error when called back-end doesn't have an appropriate
   ;; transcoder.
   (should-error
-   (let (org-export-registered-backends)
-     (org-export-define-backend test ((headline . ignore)))
-     (org-export-with-backend 'test "Test")))
+   (org-export-with-backend
+    (org-export-create-backend :transcoders '((headline . ignore)))
+    "Test"))
   ;; Otherwise, export using correct transcoder
   (should
    (equal "Success"
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test
-	      ((plain-text . (lambda (text contents info) "Failure"))))
-	    (org-export-define-backend test2
-	      ((plain-text . (lambda (text contents info) "Success"))))
+	  (let (org-export--registered-backends)
+	    (org-export-define-backend 'test
+	      '((plain-text . (lambda (text contents info) "Failure"))))
+	    (org-export-define-backend 'test2
+	      '((plain-text . (lambda (text contents info) "Success"))))
 	    (org-export-with-backend 'test2 "Test")))))
-
-(ert-deftest test-org-export/data-with-translations ()
-  "Test `org-export-data-with-translations' specifications."
-  (should
-   (equal
-    "Success!"
-    (org-export-data-with-translations
-     '(bold nil "Test")
-     '((plain-text . (lambda (text info) "Success"))
-       (bold . (lambda (bold contents info) (concat contents "!"))))
-     '(:with-emphasize t)))))
 
 (ert-deftest test-org-export/data-with-backend ()
   "Test `org-export-data-with-backend' specifications."
   ;; Error when calling an undefined back-end.
-  (should-error
-   (let (org-export-registered-backends)
-     (org-export-data-with-backend 'test "Test" nil)))
+  (should-error (org-export-data-with-backend nil "nil" nil))
   ;; Otherwise, export data recursively, using correct back-end.
   (should
    (equal
     "Success!"
-    (let (org-export-registered-backends)
-      (org-export-define-backend test
-	((plain-text . (lambda (text info) "Success"))
-	 (bold . (lambda (bold contents info) (concat contents "!")))))
-      (org-export-data-with-backend
-       '(bold nil "Test") 'test '(:with-emphasize t))))))
+    (org-export-data-with-backend
+     '(bold nil "Test")
+     (org-export-create-backend
+      :transcoders
+      '((plain-text . (lambda (text info) "Success"))
+	(bold . (lambda (bold contents info) (concat contents "!")))))
+     '(:with-emphasize t)))))
 
 
 
@@ -766,20 +1098,31 @@ body\n")))
 
 (ert-deftest test-org-export/export-snippet ()
   "Test export snippets transcoding."
+  ;; Standard test.
   (org-test-with-temp-text "@@test:A@@@@t:B@@"
-    (org-test-with-backend test
-      (plist-put
-       (cdr (assq 'test org-export-registered-backends))
-       :translate-alist
-       (cons (cons 'export-snippet
-		   (lambda (snippet contents info)
-		     (when (eq (org-export-snippet-backend snippet) 'test)
-		       (org-element-property :value snippet))))
-	     (org-export-backend-translate-table 'test)))
+    (let ((backend (org-test-default-backend)))
+      (setf (org-export-backend-name backend) 'test)
+      (setf (org-export-backend-transcoders backend)
+	    (cons (cons 'export-snippet
+			(lambda (snippet contents info)
+			  (when (eq (org-export-snippet-backend snippet) 'test)
+			    (org-element-property :value snippet))))
+		  (org-export-backend-transcoders backend)))
       (let ((org-export-snippet-translation-alist nil))
-	(should (equal (org-export-as 'test) "A\n")))
+	(should (equal (org-export-as backend) "A\n")))
       (let ((org-export-snippet-translation-alist '(("t" . "test"))))
-	(should (equal (org-export-as 'test) "AB\n"))))))
+	(should (equal (org-export-as backend) "AB\n")))))
+  ;; Ignored export snippets do not remove any blank.
+  (should
+   (equal "begin  end\n"
+	  (org-test-with-parsed-data "begin @@test:A@@ end"
+	    (org-export-data-with-backend
+	     tree
+	     (org-export-create-backend
+	      :transcoders
+	      '((paragraph . (lambda (paragraph contents info) contents))
+		(section . (lambda (section contents info) contents))))
+	     info)))))
 
 
 
@@ -795,8 +1138,7 @@ body\n")))
       '((1 . "A\n") (2 . "B") (3 . "C") (4 . "D"))
       (org-test-with-parsed-data
 	  "Text[fn:1] [1] [fn:label:C] [fn::D]\n\n[fn:1] A\n\n[1] B"
-	(org-element-map
-	    tree 'footnote-reference
+	(org-element-map tree 'footnote-reference
 	  (lambda (ref)
 	    (let ((def (org-export-get-footnote-definition ref info)))
 	      (cons (org-export-get-footnote-number ref info)
@@ -805,13 +1147,12 @@ body\n")))
 			    (car (org-element-contents def))))))))
 	  info))))
     ;; 2. Test nested footnotes order.
-    (org-test-with-parsed-data
-	"Text[fn:1:A[fn:2]] [fn:3].\n\n[fn:2] B [fn:3] [fn::D].\n\n[fn:3] C."
-      (should
-       (equal
-	'((1 . "fn:1") (2 . "fn:2") (3 . "fn:3") (4))
-	(org-element-map
-	    tree 'footnote-reference
+    (should
+     (equal
+      '((1 . "fn:1") (2 . "fn:2") (3 . "fn:3") (4))
+      (org-test-with-parsed-data
+	  "Text[fn:1:A[fn:2]] [fn:3].\n\n[fn:2] B [fn:3] [fn::D].\n\n[fn:3] C."
+	(org-element-map tree 'footnote-reference
 	  (lambda (ref)
 	    (when (org-export-footnote-first-reference-p ref info)
 	      (cons (org-export-get-footnote-number ref info)
@@ -830,29 +1171,30 @@ body\n")))
 	(should
 	 (= (length (org-export-collect-footnote-definitions tree info)) 2))))
     ;; 4. Test footnotes definitions collection.
-    (org-test-with-parsed-data "Text[fn:1:A[fn:2]] [fn:3].
+    (should
+     (= 4
+	(org-test-with-parsed-data "Text[fn:1:A[fn:2]] [fn:3].
 
 \[fn:2] B [fn:3] [fn::D].
 
 \[fn:3] C."
-      (should (= (length (org-export-collect-footnote-definitions tree info))
-		 4)))
+	  (length (org-export-collect-footnote-definitions tree info)))))
     ;; 5. Test export of footnotes defined outside parsing scope.
-    (org-test-with-temp-text "[fn:1] Out of scope
+    (should
+     (equal
+      "ParagraphOut of scope\n"
+      (org-test-with-temp-text "[fn:1] Out of scope
 * Title
 Paragraph[fn:1]"
-      (org-test-with-backend test
-	(plist-put
-	 (cdr (assq 'test org-export-registered-backends))
-	 :translate-alist
-	 (cons (cons 'footnote-reference
-		     (lambda (fn contents info)
-		       (org-element-interpret-data
-			(org-export-get-footnote-definition fn info))))
-	       (org-export-backend-translate-table 'test)))
-	(forward-line)
-	(should (equal "ParagraphOut of scope\n"
-		       (org-export-as 'test 'subtree)))))
+	(let ((backend (org-test-default-backend)))
+	  (setf (org-export-backend-transcoders backend)
+		(cons (cons 'footnote-reference
+			    (lambda (fn contents info)
+			      (org-element-interpret-data
+			       (org-export-get-footnote-definition fn info))))
+		      (org-export-backend-transcoders backend)))
+	  (forward-line)
+	  (org-export-as backend 'subtree)))))
     ;; 6. Footnotes without a definition should be provided a fallback
     ;;    definition.
     (should
@@ -886,19 +1228,17 @@ Paragraph[fn:1]"
    (equal '(1 2)
 	  (let ((org-odd-levels-only nil))
 	    (org-test-with-parsed-data "* Headline 1\n** Headline 2"
-	      (org-element-map
-	       tree 'headline
-	       (lambda (h) (org-export-get-relative-level h info))
-	       info)))))
+	      (org-element-map tree 'headline
+		(lambda (h) (org-export-get-relative-level h info))
+		info)))))
   ;; Missing levels
   (should
    (equal '(1 3)
 	  (let ((org-odd-levels-only nil))
 	    (org-test-with-parsed-data "** Headline 1\n**** Headline 2"
-	      (org-element-map
-	       tree 'headline
-	       (lambda (h) (org-export-get-relative-level h info))
-	       info))))))
+	      (org-element-map tree 'headline
+		(lambda (h) (org-export-get-relative-level h info))
+		info))))))
 
 (ert-deftest test-org-export/low-level-p ()
   "Test `org-export-low-level-p' specifications."
@@ -907,10 +1247,9 @@ Paragraph[fn:1]"
     '(no yes)
     (let ((org-odd-levels-only nil))
       (org-test-with-parsed-data "* Headline 1\n** Headline 2"
-	(org-element-map
-	 tree 'headline
-	 (lambda (h) (if (org-export-low-level-p h info) 'yes 'no))
-	 (plist-put info :headline-levels 1)))))))
+	(org-element-map tree 'headline
+	  (lambda (h) (if (org-export-low-level-p h info) 'yes 'no))
+	  (plist-put info :headline-levels 1)))))))
 
 (ert-deftest test-org-export/get-headline-number ()
   "Test `org-export-get-headline-number' specifications."
@@ -920,47 +1259,42 @@ Paragraph[fn:1]"
     '((1) (1 1))
     (let ((org-odd-levels-only nil))
       (org-test-with-parsed-data "* Headline 1\n** Headline 2"
-	(org-element-map
-	 tree 'headline
-	 (lambda (h) (org-export-get-headline-number h info))
-	 info)))))
+	(org-element-map tree 'headline
+	  (lambda (h) (org-export-get-headline-number h info))
+	  info)))))
   ;; Missing levels are replaced with 0.
   (should
    (equal
     '((1) (1 0 1))
     (let ((org-odd-levels-only nil))
       (org-test-with-parsed-data "* Headline 1\n*** Headline 2"
-	(org-element-map
-	 tree 'headline
-	 (lambda (h) (org-export-get-headline-number h info))
-	 info))))))
+	(org-element-map tree 'headline
+	  (lambda (h) (org-export-get-headline-number h info))
+	  info))))))
 
 (ert-deftest test-org-export/numbered-headline-p ()
   "Test `org-export-numbered-headline-p' specifications."
   ;; If `:section-numbers' is nil, never number headlines.
   (should-not
    (org-test-with-parsed-data "* Headline"
-     (org-element-map
-      tree 'headline
-      (lambda (h) (org-export-numbered-headline-p h info))
-      (plist-put info :section-numbers nil))))
+     (org-element-map tree 'headline
+       (lambda (h) (org-export-numbered-headline-p h info))
+       (plist-put info :section-numbers nil))))
   ;; If `:section-numbers' is a number, only number headlines with
   ;; a level greater that it.
   (should
    (equal
     '(yes no)
     (org-test-with-parsed-data "* Headline 1\n** Headline 2"
-      (org-element-map
-       tree 'headline
-       (lambda (h) (if (org-export-numbered-headline-p h info) 'yes 'no))
-       (plist-put info :section-numbers 1)))))
+      (org-element-map tree 'headline
+	(lambda (h) (if (org-export-numbered-headline-p h info) 'yes 'no))
+	(plist-put info :section-numbers 1)))))
   ;; Otherwise, headlines are always numbered.
   (should
    (org-test-with-parsed-data "* Headline"
-     (org-element-map
-      tree 'headline
-      (lambda (h) (org-export-numbered-headline-p h info))
-      (plist-put info :section-numbers t)))))
+     (org-element-map tree 'headline
+       (lambda (h) (org-export-numbered-headline-p h info))
+       (plist-put info :section-numbers t)))))
 
 (ert-deftest test-org-export/number-to-roman ()
   "Test `org-export-number-to-roman' specifications."
@@ -968,6 +1302,24 @@ Paragraph[fn:1]"
   (should (equal (org-export-number-to-roman -1) "-1"))
   ;; Otherwise, return it as a roman number.
   (should (equal (org-export-number-to-roman 1449) "MCDXLIX")))
+
+(ert-deftest test-org-export/get-optional-title ()
+  "Test `org-export-get-alt-title' specifications."
+  ;; If ALT_TITLE property is defined, use it.
+  (should
+   (equal '("opt")
+	  (org-test-with-parsed-data
+	      "* Headline\n:PROPERTIES:\n:ALT_TITLE: opt\n:END:"
+	    (org-export-get-alt-title
+	     (org-element-map tree 'headline 'identity info t)
+	     info))))
+  ;; Otherwise, fall-back to regular title.
+  (should
+   (equal '("Headline")
+	  (org-test-with-parsed-data "* Headline"
+	    (org-export-get-alt-title
+	     (org-element-map tree 'headline 'identity info t)
+	     info)))))
 
 (ert-deftest test-org-export/get-tags ()
   "Test `org-export-get-tags' specifications."
@@ -1005,17 +1357,15 @@ Paragraph[fn:1]"
      (equal
       '(("tag") ("tag"))
       (org-test-with-parsed-data "* Headline :tag:\n** Sub-heading"
-	(org-element-map
-	 tree 'headline
-	 (lambda (hl) (org-export-get-tags hl info nil t)) info))))
+	(org-element-map tree 'headline
+	  (lambda (hl) (org-export-get-tags hl info nil t)) info))))
     ;; Tag inheritance checks FILETAGS keywords.
     (should
      (equal
       '(("a" "b" "tag"))
       (org-test-with-parsed-data "#+FILETAGS: :a:b:\n* Headline :tag:"
-	(org-element-map
-	 tree 'headline
-	 (lambda (hl) (org-export-get-tags hl info nil t)) info))))))
+	(org-element-map tree 'headline
+	  (lambda (hl) (org-export-get-tags hl info nil t)) info))))))
 
 (ert-deftest test-org-export/get-node-property ()
   "Test`org-export-get-node-property' specifications."
@@ -1027,7 +1377,7 @@ Paragraph[fn:1]"
   :prop:     value
   :END:"
 	    (org-export-get-node-property
-	     :prop (org-element-map tree 'headline 'identity nil t)))))
+	     :PROP (org-element-map tree 'headline 'identity nil t)))))
   ;; Test inheritance.
   (should
    (equal "value"
@@ -1038,7 +1388,7 @@ Paragraph[fn:1]"
 ** Headline
    Paragraph"
 	    (org-export-get-node-property
-	     :prop (org-element-map tree 'paragraph 'identity nil t) t))))
+	     :PROP (org-element-map tree 'paragraph 'identity nil t) t))))
   ;; Cannot return a value before the first headline.
   (should-not
    (org-test-with-parsed-data "Paragraph
@@ -1047,7 +1397,7 @@ Paragraph[fn:1]"
   :prop:     value
   :END:"
      (org-export-get-node-property
-      :prop (org-element-map tree 'paragraph 'identity nil t)))))
+      :PROP (org-element-map tree 'paragraph 'identity nil t)))))
 
 (ert-deftest test-org-export/get-category ()
   "Test `org-export-get-category' specifications."
@@ -1068,9 +1418,8 @@ Paragraph[fn:1]"
   :CATEGORY:     value
   :END:
 ** Headline2"
-	    (org-element-map
-	     tree 'headline
-	     (lambda (hl) (org-export-get-category hl info)) info))))
+	    (org-element-map tree 'headline
+	      (lambda (hl) (org-export-get-category hl info)) info))))
   ;; Test inheritance from #+CATEGORY keyword
   (should
    (equal "value"
@@ -1099,20 +1448,18 @@ Paragraph[fn:1]"
    (equal
     '(yes yes no)
     (org-test-with-parsed-data "* Headline\n** Headline 2\n** Headline 3"
-      (org-element-map
-       tree 'headline
-       (lambda (h) (if (org-export-first-sibling-p h info) 'yes 'no))
-       info))))
+      (org-element-map tree 'headline
+	(lambda (h) (if (org-export-first-sibling-p h info) 'yes 'no))
+	info))))
   ;; Ignore headlines not exported.
   (should
    (equal
     '(yes)
     (let ((org-export-exclude-tags '("ignore")))
       (org-test-with-parsed-data "* Headline :ignore:\n* Headline 2"
-	(org-element-map
-	 tree 'headline
-	 (lambda (h) (if (org-export-first-sibling-p h info) 'yes 'no))
-	 info))))))
+	(org-element-map tree 'headline
+	  (lambda (h) (if (org-export-first-sibling-p h info) 'yes 'no))
+	  info))))))
 
 (ert-deftest test-org-export/last-sibling-p ()
   "Test `org-export-last-sibling-p' specifications."
@@ -1121,20 +1468,79 @@ Paragraph[fn:1]"
    (equal
     '(yes no yes)
     (org-test-with-parsed-data "* Headline\n** Headline 2\n** Headline 3"
-      (org-element-map
-       tree 'headline
-       (lambda (h) (if (org-export-last-sibling-p h info) 'yes 'no))
-       info))))
+      (org-element-map tree 'headline
+	(lambda (h) (if (org-export-last-sibling-p h info) 'yes 'no))
+	info))))
   ;; Ignore headlines not exported.
   (should
    (equal
     '(yes)
     (let ((org-export-exclude-tags '("ignore")))
       (org-test-with-parsed-data "* Headline\n* Headline 2 :ignore:"
-	(org-element-map
-	 tree 'headline
-	 (lambda (h) (if (org-export-last-sibling-p h info) 'yes 'no))
-	 info))))))
+	(org-element-map tree 'headline
+	  (lambda (h) (if (org-export-last-sibling-p h info) 'yes 'no))
+	  info))))))
+
+(ert-deftest test-org-export/handle-inlinetasks ()
+  "Test inlinetask export."
+  ;; Inlinetask with an exclude tag.
+  (when (featurep 'org-inlinetask)
+    (should
+     (equal
+      ""
+      (let ((org-inlinetask-min-level 3))
+	(org-test-with-temp-text "*** Inlinetask :noexp:\nContents\n*** end"
+	  (org-export-as (org-test-default-backend)
+			 nil nil nil '(:exclude-tags ("noexp")))))))
+    ;; Inlinetask with an include tag.
+    (should
+     (equal
+      "* H2\n*** Inline :exp:\n"
+      (let ((org-inlinetask-min-level 3)
+	    (org-tags-column 0))
+	(org-test-with-temp-text "* H1\n* H2\n*** Inline :exp:"
+	  (org-export-as (org-test-default-backend)
+			 nil nil nil '(:select-tags ("exp")))))))
+    ;; Ignore inlinetask with a TODO keyword and tasks excluded.
+    (should
+     (equal ""
+	    (let ((org-todo-keywords '((sequence "TODO" "DONE")))
+		  (org-inlinetask-min-level 3))
+	      (org-test-with-temp-text "*** TODO Inline"
+		(org-export-as (org-test-default-backend)
+			       nil nil nil '(:with-tasks nil))))))))
+
+
+
+;;; Keywords
+
+(ert-deftest test-org-export/get-date ()
+  "Test `org-export-get-date' specifications."
+  ;; Return a properly formatted string when
+  ;; `org-export-date-timestamp-format' is non-nil and DATE keyword
+  ;; consists in a single timestamp.
+  (should
+   (equal "29 03 2012"
+	  (let ((org-export-date-timestamp-format "%d %m %Y"))
+	    (org-test-with-parsed-data "#+DATE: <2012-03-29 Thu>"
+	      (org-export-get-date info)))))
+  ;; Return a secondary string otherwise.
+  (should-not
+   (stringp
+    (let ((org-export-date-timestamp-format nil))
+      (org-test-with-parsed-data "#+DATE: <2012-03-29 Thu>"
+	(org-export-get-date info)))))
+  (should
+   (equal '("Date")
+	  (org-test-with-parsed-data "#+DATE: Date"
+	    (org-export-get-date info))))
+  ;; Optional argument has precedence over
+  ;; `org-export-date-timestamp-format'.
+  (should
+   (equal "29 03"
+	  (let ((org-export-date-timestamp-format "%d %m %Y"))
+	    (org-test-with-parsed-data "#+DATE: <2012-03-29 Thu>"
+	      (org-export-get-date info "%d %m"))))))
 
 
 
@@ -1157,76 +1563,84 @@ Paragraph[fn:1]"
   (should
    (org-export-inline-image-p
     (org-test-with-temp-text "[[#id]]"
-      (org-element-map
-       (org-element-parse-buffer) 'link 'identity nil t))
+      (org-element-map (org-element-parse-buffer) 'link 'identity nil t))
     '(("custom-id" . "id")))))
 
 (ert-deftest test-org-export/fuzzy-link ()
   "Test fuzzy links specifications."
-  ;; 1. Links to invisible (keyword) targets should be ignored.
-  (org-test-with-parsed-data
-      "Paragraph.\n#+TARGET: Test\n[[Test]]"
-    (should-not
-     (org-element-map
-      tree 'link
-      (lambda (link)
-	(org-export-get-ordinal
-	 (org-export-resolve-fuzzy-link link info) info)) info)))
-  ;; 2. Link to an headline should return headline's number.
+  ;; Link to an headline should return headline's number.
   (org-test-with-parsed-data
       "Paragraph.\n* Head1\n* Head2\n* Head3\n[[Head2]]"
     (should
      ;; Note: Headline's number is in fact a list of numbers.
      (equal '(2)
-	    (org-element-map
-	     tree 'link
-	     (lambda (link)
-	       (org-export-get-ordinal
-		(org-export-resolve-fuzzy-link link info) info)) info t))))
-  ;; 3. Link to a target in an item should return item's number.
+	    (org-element-map tree 'link
+	      (lambda (link)
+		(org-export-get-ordinal
+		 (org-export-resolve-fuzzy-link link info) info)) info t))))
+  ;; Link to a target in an item should return item's number.
   (org-test-with-parsed-data
       "- Item1\n  - Item11\n  - <<test>>Item12\n- Item2\n\n\n[[test]]"
     (should
      ;; Note: Item's number is in fact a list of numbers.
      (equal '(1 2)
-	    (org-element-map
-	     tree 'link
-	     (lambda (link)
-	       (org-export-get-ordinal
-		(org-export-resolve-fuzzy-link link info) info)) info t))))
-  ;; 4. Link to a target in a footnote should return footnote's
-  ;;    number.
+	    (org-element-map tree 'link
+	      (lambda (link)
+		(org-export-get-ordinal
+		 (org-export-resolve-fuzzy-link link info) info)) info t))))
+  ;; Link to a target in a footnote should return footnote's number.
   (org-test-with-parsed-data "
 Paragraph[1][2][fn:lbl3:C<<target>>][[test]][[target]]\n[1] A\n\n[2] <<test>>B"
     (should
      (equal '(2 3)
-	    (org-element-map
-	     tree 'link
-	     (lambda (link)
-	       (org-export-get-ordinal
-		(org-export-resolve-fuzzy-link link info) info)) info))))
-  ;; 5. Link to a named element should return sequence number of that
-  ;;    element.
+	    (org-element-map tree 'link
+	      (lambda (link)
+		(org-export-get-ordinal
+		 (org-export-resolve-fuzzy-link link info) info)) info))))
+  ;; Link to a named element should return sequence number of that
+  ;; element.
   (org-test-with-parsed-data
       "#+NAME: tbl1\n|1|2|\n#+NAME: tbl2\n|3|4|\n#+NAME: tbl3\n|5|6|\n[[tbl2]]"
     (should
      (= 2
-	(org-element-map
-	 tree 'link
-	 (lambda (link)
-	   (org-export-get-ordinal
-	    (org-export-resolve-fuzzy-link link info) info)) info t))))
-  ;; 6. Link to a target not within an item, a table, a footnote
-  ;;    reference or definition should return section number.
+	(org-element-map tree 'link
+	  (lambda (link)
+	    (org-export-get-ordinal
+	     (org-export-resolve-fuzzy-link link info) info)) info t))))
+  ;; Link to a target not within an item, a table, a footnote
+  ;; reference or definition should return section number.
   (org-test-with-parsed-data
       "* Head1\n* Head2\nParagraph<<target>>\n* Head3\n[[target]]"
     (should
      (equal '(2)
-	    (org-element-map
-	     tree 'link
-	     (lambda (link)
-	       (org-export-get-ordinal
-		(org-export-resolve-fuzzy-link link info) info)) info t)))))
+	    (org-element-map tree 'link
+	      (lambda (link)
+		(org-export-get-ordinal
+		 (org-export-resolve-fuzzy-link link info) info)) info t))))
+  ;; Space are not significant when matching a fuzzy link.
+  (should
+   (org-test-with-parsed-data "* Head 1\n[[Head\n  1]]"
+     (org-element-map tree 'link
+       (lambda (link) (org-export-resolve-fuzzy-link link info))
+       info t)))
+  ;; Statistics cookies are ignored for headline match.
+  (should
+   (org-test-with-parsed-data "* Head [0/0]\n[[Head]]"
+     (org-element-map tree 'link
+       (lambda (link) (org-export-resolve-fuzzy-link link info))
+       info t)))
+  (should
+   (org-test-with-parsed-data "* Head [100%]\n[[Head]]"
+     (org-element-map tree 'link
+       (lambda (link) (org-export-resolve-fuzzy-link link info))
+       info t)))
+  ;; Headline match is position dependent.
+  (should-not
+   (apply
+    'eq
+    (org-test-with-parsed-data "* H1\n[[*H1]]\n* H1\n[[*H1]]"
+      (org-element-map tree 'link
+	(lambda (link) (org-export-resolve-fuzzy-link link info)) info)))))
 
 (ert-deftest test-org-export/resolve-coderef ()
   "Test `org-export-resolve-coderef' specifications."
@@ -1295,64 +1709,66 @@ Another text. (ref:text)
 
 (ert-deftest test-org-export/resolve-fuzzy-link ()
   "Test `org-export-resolve-fuzzy-link' specifications."
-  ;; 1. Match target objects.
-  (org-test-with-parsed-data "<<target>> [[target]]"
-    (should
+  ;; Match target objects.
+  (should
+   (org-test-with-parsed-data "<<target>> [[target]]"
      (org-export-resolve-fuzzy-link
       (org-element-map tree 'link 'identity info t) info)))
-  ;; 2. Match target elements.
-  (org-test-with-parsed-data "#+TARGET: target\n[[target]]"
-    (should
+  ;; Match named elements.
+  (should
+   (org-test-with-parsed-data "#+NAME: target\nParagraph\n\n[[target]]"
      (org-export-resolve-fuzzy-link
       (org-element-map tree 'link 'identity info t) info)))
-  ;; 3. Match named elements.
-  (org-test-with-parsed-data "#+NAME: target\nParagraph\n\n[[target]]"
-    (should
+  ;; Match exact headline's name.
+  (should
+   (org-test-with-parsed-data "* My headline\n[[My headline]]"
      (org-export-resolve-fuzzy-link
       (org-element-map tree 'link 'identity info t) info)))
-  ;; 4. Match exact headline's name.
-  (org-test-with-parsed-data "* My headline\n[[My headline]]"
-    (should
-     (org-export-resolve-fuzzy-link
-      (org-element-map tree 'link 'identity info t) info)))
-  ;; 5. Targets objects have priority over named elements and headline
-  ;;    titles.
-  (org-test-with-parsed-data
-      "* target\n#+NAME: target\n<<target>>\n\n[[target]]"
-    (should
-     (eq 'target
+  ;; Targets objects have priority over named elements and headline
+  ;; titles.
+  (should
+   (eq 'target
+       (org-test-with-parsed-data
+	   "* target\n#+NAME: target\n<<target>>\n\n[[target]]"
 	 (org-element-type
 	  (org-export-resolve-fuzzy-link
 	   (org-element-map tree 'link 'identity info t) info)))))
-  ;; 6. Named elements have priority over headline titles.
-  (org-test-with-parsed-data
-      "* target\n#+NAME: target\nParagraph\n\n[[target]]"
-    (should
-     (eq 'paragraph
+  ;; Named elements have priority over headline titles.
+  (should
+   (eq 'paragraph
+       (org-test-with-parsed-data
+	   "* target\n#+NAME: target\nParagraph\n\n[[target]]"
 	 (org-element-type
 	  (org-export-resolve-fuzzy-link
 	   (org-element-map tree 'link 'identity info t) info)))))
-  ;; 7. If link's path starts with a "*", only match headline titles,
-  ;;    though.
-  (org-test-with-parsed-data
-      "* target\n#+NAME: target\n<<target>>\n\n[[*target]]"
-    (should
-     (eq 'headline
+  ;; If link's path starts with a "*", only match headline titles,
+  ;; though.
+  (should
+   (eq 'headline
+       (org-test-with-parsed-data
+	   "* target\n#+NAME: target\n<<target>>\n\n[[*target]]"
 	 (org-element-type
 	  (org-export-resolve-fuzzy-link
 	   (org-element-map tree 'link 'identity info t) info)))))
-  ;; 8. Return nil if no match.
-  (org-test-with-parsed-data "[[target]]"
-    (should-not
+  ;; Return nil if no match.
+  (should-not
+   (org-test-with-parsed-data "[[target]]"
      (org-export-resolve-fuzzy-link
-      (org-element-map tree 'link 'identity info t) info))))
+      (org-element-map tree 'link 'identity info t) info)))
+  ;; Match fuzzy link even when before first headline.
+  (should
+   (eq 'headline
+       (org-test-with-parsed-data "[[hl]]\n* hl"
+	 (org-element-type
+	  (org-export-resolve-fuzzy-link
+	   (org-element-map tree 'link 'identity info t) info))))))
 
 (ert-deftest test-org-export/resolve-id-link ()
   "Test `org-export-resolve-id-link' specifications."
   ;; 1. Regular test for custom-id link.
   (org-test-with-parsed-data "* Headline1
 :PROPERTIES:
-:CUSTOM-ID: test
+:CUSTOM_ID: test
 :END:
 * Headline 2
 \[[#test]]"
@@ -1362,7 +1778,7 @@ Another text. (ref:text)
   ;; 2. Failing test for custom-id link.
   (org-test-with-parsed-data "* Headline1
 :PROPERTIES:
-:CUSTOM-ID: test
+:CUSTOM_ID: test
 :END:
 * Headline 2
 \[[#no-match]]"
@@ -1389,23 +1805,52 @@ Another text. (ref:text)
 (ert-deftest test-org-export/resolve-radio-link ()
   "Test `org-export-resolve-radio-link' specifications."
   ;; Standard test.
-  (org-test-with-temp-text "<<<radio>>> radio"
-    (org-update-radio-target-regexp)
-    (should
+  (should
+   (org-test-with-temp-text "<<<radio>>> radio"
+     (org-update-radio-target-regexp)
+     (let* ((tree (org-element-parse-buffer))
+	    (info `(:parse-tree ,tree)))
+       (org-export-resolve-radio-link
+	(org-element-map tree 'link 'identity info t)
+	info))))
+  ;; Radio targets are case-insensitive.
+  (should
+   (org-test-with-temp-text "<<<RADIO>>> radio"
+     (org-update-radio-target-regexp)
      (let* ((tree (org-element-parse-buffer))
 	    (info `(:parse-tree ,tree)))
        (org-export-resolve-radio-link
 	(org-element-map tree 'link 'identity info t)
 	info))))
   ;; Radio target with objects.
-  (org-test-with-temp-text "<<<radio \\alpha>>> radio \\alpha"
-    (org-update-radio-target-regexp)
-    (should
+  (should
+   (org-test-with-temp-text "<<<radio \\alpha>>> radio \\alpha"
+     (org-update-radio-target-regexp)
      (let* ((tree (org-element-parse-buffer))
 	    (info `(:parse-tree ,tree)))
        (org-export-resolve-radio-link
 	(org-element-map tree 'link 'identity info t)
-	info)))))
+	info))))
+  ;; Multiple radio targets.
+  (should
+   (equal '("radio1" "radio2")
+	  (org-test-with-temp-text "<<<radio1>>> <<<radio2>>> radio1 radio2"
+	    (org-update-radio-target-regexp)
+	    (let* ((tree (org-element-parse-buffer))
+		   (info `(:parse-tree ,tree)))
+	      (org-element-map tree 'link
+		(lambda (link)
+		  (org-element-property
+		   :value (org-export-resolve-radio-link link info)))
+		info)))))
+  ;; Radio target is whitespace insensitive.
+  (should
+   (org-test-with-temp-text "<<<a radio>>> a\n  radio"
+     (org-update-radio-target-regexp)
+     (let* ((tree (org-element-parse-buffer))
+	    (info `(:parse-tree ,tree)))
+       (org-element-map tree 'link
+	 (lambda (link) (org-export-resolve-radio-link link info)) info t)))))
 
 
 
@@ -1413,23 +1858,30 @@ Another text. (ref:text)
 
 (ert-deftest test-org-export/unravel-code ()
   "Test `org-export-unravel-code' function."
-  (let ((org-coderef-label-format "(ref:%s)"))
-    ;; 1. Code without reference.
-    (org-test-with-temp-text "#+BEGIN_EXAMPLE\n(+ 1 1)\n#+END_EXAMPLE"
-      (should (equal (org-export-unravel-code (org-element-at-point))
-		     '("(+ 1 1)\n"))))
-    ;; 2. Code with reference.
-    (org-test-with-temp-text
-	"#+BEGIN_EXAMPLE\n(+ 1 1) (ref:test)\n#+END_EXAMPLE"
-      (should (equal (org-export-unravel-code (org-element-at-point))
-		     '("(+ 1 1)\n" (1 . "test")))))
-    ;; 3. Code with user-defined reference.
+  ;; Code without reference.
+  (should
+   (equal '("(+ 1 1)\n")
+	  (org-test-with-temp-text "#+BEGIN_EXAMPLE\n(+ 1 1)\n#+END_EXAMPLE"
+	    (org-export-unravel-code (org-element-at-point)))))
+  ;; Code with reference.
+  (should
+   (equal '("(+ 1 1)\n" (1 . "test"))
+	  (org-test-with-temp-text
+	      "#+BEGIN_EXAMPLE\n(+ 1 1) (ref:test)\n#+END_EXAMPLE"
+	    (let  ((org-coderef-label-format "(ref:%s)"))
+	      (org-export-unravel-code (org-element-at-point))))))
+  ;; Code with user-defined reference.
+  (should
+   (equal
+    '("(+ 1 1)\n" (1 . "test"))
     (org-test-with-temp-text
 	"#+BEGIN_EXAMPLE -l \"[ref:%s]\"\n(+ 1 1) [ref:test]\n#+END_EXAMPLE"
-      (should (equal (org-export-unravel-code (org-element-at-point))
-		     '("(+ 1 1)\n" (1 . "test")))))
-    ;; 4. Code references keys are relative to the current block.
-    (org-test-with-temp-text "
+      (let ((org-coderef-label-format "(ref:%s)"))
+	(org-export-unravel-code (org-element-at-point))))))
+  ;; Code references keys are relative to the current block.
+  (should
+   (equal '("(+ 2 2)\n(+ 3 3)\n" (2 . "one"))
+	  (org-test-with-temp-text "
 #+BEGIN_EXAMPLE -n
 \(+ 1 1)
 #+END_EXAMPLE
@@ -1437,9 +1889,34 @@ Another text. (ref:text)
 \(+ 2 2)
 \(+ 3 3) (ref:one)
 #+END_EXAMPLE"
-      (goto-line 5)
-      (should (equal (org-export-unravel-code (org-element-at-point))
-		     '("(+ 2 2)\n(+ 3 3)\n" (2 . "one")))))))
+	    (goto-line 5)
+	    (let ((org-coderef-label-format "(ref:%s)"))
+	      (org-export-unravel-code (org-element-at-point)))))))
+
+(ert-deftest test-org-export/format-code-default ()
+  "Test `org-export-format-code-default' specifications."
+  ;; Return the empty string when code is empty.
+  (should
+   (equal ""
+	  (org-test-with-parsed-data "#+BEGIN_SRC emacs-lisp\n\n\n#+END_SRC"
+	    (org-export-format-code-default
+	     (org-element-map tree 'src-block 'identity info t) info))))
+  ;; Number lines, two whitespace characters before the actual loc.
+  (should
+   (equal "1  a\n2  b\n"
+	  (org-test-with-parsed-data
+	      "#+BEGIN_SRC emacs-lisp +n\na\nb\n#+END_SRC"
+	    (org-export-format-code-default
+	     (org-element-map tree 'src-block 'identity info t) info))))
+  ;; Put references 6 whitespace characters after the widest line,
+  ;; wrapped within parenthesis.
+  (should
+   (equal "123      (a)\n1        (b)\n"
+	  (let ((org-coderef-label-format "(ref:%s)"))
+	    (org-test-with-parsed-data
+		"#+BEGIN_SRC emacs-lisp\n123 (ref:a)\n1 (ref:b)\n#+END_SRC"
+	      (org-export-format-code-default
+	       (org-element-map tree 'src-block 'identity info t) info))))))
 
 
 
@@ -1453,116 +1930,104 @@ Another text. (ref:text)
     '("some &ldquo;paragraph")
     (let ((org-export-default-language "en"))
       (org-test-with-parsed-data "some \"paragraph"
-	(org-element-map
-	 tree 'plain-text
-	 (lambda (s) (org-export-activate-smart-quotes s :html info))
-	 info)))))
+	(org-element-map tree 'plain-text
+	  (lambda (s) (org-export-activate-smart-quotes s :html info))
+	  info)))))
   ;; Opening quotes: at the beginning of a paragraph.
   (should
    (equal
     '("&ldquo;begin")
     (let ((org-export-default-language "en"))
       (org-test-with-parsed-data "\"begin"
-	(org-element-map
-	 tree 'plain-text
-	 (lambda (s) (org-export-activate-smart-quotes s :html info))
-	 info)))))
+	(org-element-map tree 'plain-text
+	  (lambda (s) (org-export-activate-smart-quotes s :html info))
+	  info)))))
   ;; Opening quotes: after an object.
   (should
    (equal
     '("&ldquo;begin")
     (let ((org-export-default-language "en"))
       (org-test-with-parsed-data "=verb= \"begin"
-	(org-element-map
-	 tree 'plain-text
-	 (lambda (s) (org-export-activate-smart-quotes s :html info))
-	 info)))))
+	(org-element-map tree 'plain-text
+	  (lambda (s) (org-export-activate-smart-quotes s :html info))
+	  info)))))
   ;; Closing quotes: standard test.
   (should
    (equal
     '("some&rdquo; paragraph")
     (let ((org-export-default-language "en"))
       (org-test-with-parsed-data "some\" paragraph"
-	(org-element-map
-	 tree 'plain-text
-	 (lambda (s) (org-export-activate-smart-quotes s :html info))
-	 info)))))
+	(org-element-map tree 'plain-text
+	  (lambda (s) (org-export-activate-smart-quotes s :html info))
+	  info)))))
   ;; Closing quotes: at the end of a paragraph.
   (should
    (equal
     '("end&rdquo;")
     (let ((org-export-default-language "en"))
       (org-test-with-parsed-data "end\""
-	(org-element-map
-	 tree 'plain-text
-	 (lambda (s) (org-export-activate-smart-quotes s :html info))
-	 info)))))
+	(org-element-map tree 'plain-text
+	  (lambda (s) (org-export-activate-smart-quotes s :html info))
+	  info)))))
   ;; Apostrophe: standard test.
   (should
    (equal
     '("It shouldn&rsquo;t fail")
     (let ((org-export-default-language "en"))
       (org-test-with-parsed-data "It shouldn't fail"
-	(org-element-map
-	 tree 'plain-text
-	 (lambda (s) (org-export-activate-smart-quotes s :html info))
-	 info)))))
+	(org-element-map tree 'plain-text
+	  (lambda (s) (org-export-activate-smart-quotes s :html info))
+	  info)))))
   ;; Apostrophe: before an object.
   (should
    (equal
     '("a&rsquo;")
     (let ((org-export-default-language "en"))
       (org-test-with-parsed-data "a'=b="
-	(org-element-map
-	 tree 'plain-text
-	 (lambda (s) (org-export-activate-smart-quotes s :html info))
-	 info)))))
+	(org-element-map tree 'plain-text
+	  (lambda (s) (org-export-activate-smart-quotes s :html info))
+	  info)))))
   ;; Apostrophe: after an object.
   (should
    (equal
     '("&rsquo;s")
     (let ((org-export-default-language "en"))
       (org-test-with-parsed-data "=code='s"
-	(org-element-map
-	 tree 'plain-text
-	 (lambda (s) (org-export-activate-smart-quotes s :html info))
-	 info)))))
+	(org-element-map tree 'plain-text
+	  (lambda (s) (org-export-activate-smart-quotes s :html info))
+	  info)))))
   ;; Special case: isolated quotes.
   (should
    (equal '("&ldquo;" "&rdquo;")
 	  (let ((org-export-default-language "en"))
 	    (org-test-with-parsed-data "\"$x$\""
-	      (org-element-map
-	       tree 'plain-text
-	       (lambda (s) (org-export-activate-smart-quotes s :html info))
-	       info)))))
+	      (org-element-map tree 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :html info))
+		info)))))
   ;; Smart quotes in secondary strings.
   (should
    (equal '("&ldquo;" "&rdquo;")
 	  (let ((org-export-default-language "en"))
 	    (org-test-with-parsed-data "* \"$x$\""
-	      (org-element-map
-	       tree 'plain-text
-	       (lambda (s) (org-export-activate-smart-quotes s :html info))
-	       info)))))
+	      (org-element-map tree 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :html info))
+		info)))))
   ;; Smart quotes in document keywords.
   (should
    (equal '("&ldquo;" "&rdquo;")
 	  (let ((org-export-default-language "en"))
 	    (org-test-with-parsed-data "#+TITLE: \"$x$\""
-	      (org-element-map
-	       (plist-get info :title) 'plain-text
-	       (lambda (s) (org-export-activate-smart-quotes s :html info))
-	       info)))))
+	      (org-element-map (plist-get info :title) 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :html info))
+		info)))))
   ;; Smart quotes in parsed affiliated keywords.
   (should
    (equal '("&ldquo;" "&rdquo;" "Paragraph")
 	  (let ((org-export-default-language "en"))
 	    (org-test-with-parsed-data "#+CAPTION: \"$x$\"\nParagraph"
-	      (org-element-map
-	       tree 'plain-text
-	       (lambda (s) (org-export-activate-smart-quotes s :html info))
-	       info nil nil t))))))
+	      (org-element-map tree 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :html info))
+		info nil nil t))))))
 
 
 
@@ -1578,7 +2043,7 @@ Another text. (ref:text)
     (should
      (org-export-table-has-special-column-p
       (org-element-map
-       (org-element-parse-buffer) 'table 'identity nil 'first-match))))
+	  (org-element-parse-buffer) 'table 'identity nil 'first-match))))
   ;; 2. If the column contains anything else, it isn't special.
   (org-test-with-temp-text "
 | ! | 1 |
@@ -1586,7 +2051,7 @@ Another text. (ref:text)
     (should-not
      (org-export-table-has-special-column-p
       (org-element-map
-       (org-element-parse-buffer) 'table 'identity nil 'first-match))))
+	  (org-element-parse-buffer) 'table 'identity nil 'first-match))))
   ;; 3. Special marking characters are "#", "^", "*", "_", "/", "$"
   ;;    and "!".
   (org-test-with-temp-text "
@@ -1600,7 +2065,7 @@ Another text. (ref:text)
     (should
      (org-export-table-has-special-column-p
       (org-element-map
-       (org-element-parse-buffer) 'table 'identity nil 'first-match))))
+	  (org-element-parse-buffer) 'table 'identity nil 'first-match))))
   ;; 4. A first column with only empty cells isn't considered as
   ;;    special.
   (org-test-with-temp-text "
@@ -1609,7 +2074,7 @@ Another text. (ref:text)
     (should-not
      (org-export-table-has-special-column-p
       (org-element-map
-       (org-element-parse-buffer) 'table 'identity nil 'first-match)))))
+	  (org-element-parse-buffer) 'table 'identity nil 'first-match)))))
 
 (ert-deftest test-org-export/table-row-is-special-p ()
   "Test `org-export-table-row-is-special-p' specifications."
@@ -1676,36 +2141,70 @@ Another text. (ref:text)
 (ert-deftest test-org-export/table-row-group ()
   "Test `org-export-table-row-group' specifications."
   ;; 1. A rule creates a new group.
-  (org-test-with-parsed-data "
+  (should
+   (equal '(1 rule 2)
+	  (org-test-with-parsed-data "
 | a | b |
 |---+---|
 | 1 | 2 |"
-    (should
-     (equal
-      '(1 nil 2)
-      (mapcar (lambda (row) (org-export-table-row-group row info))
-	      (org-element-map tree 'table-row 'identity)))))
+	    (org-element-map tree 'table-row
+	      (lambda (row)
+		(if (eq (org-element-property :type row) 'rule) 'rule
+		  (org-export-table-row-group row info)))))))
   ;; 2. Special rows are ignored in count.
-  (org-test-with-parsed-data "
+  (should
+   (equal
+    '(rule 1)
+    (org-test-with-parsed-data "
 | / | < | > |
 |---|---+---|
 |   | 1 | 2 |"
-    (should
-     (equal
-      '(nil nil 1)
-      (mapcar (lambda (row) (org-export-table-row-group row info))
-	      (org-element-map tree 'table-row 'identity)))))
+      (org-element-map tree 'table-row
+	(lambda (row)
+	  (if (eq (org-element-property :type row) 'rule) 'rule
+	    (org-export-table-row-group row info)))
+	info))))
   ;; 3. Double rules also are ignored in count.
-  (org-test-with-parsed-data "
+  (should
+   (equal '(1 rule rule 2)
+	  (org-test-with-parsed-data "
 | a | b |
 |---+---|
 |---+---|
 | 1 | 2 |"
-    (should
-     (equal
-      '(1 nil nil 2)
-      (mapcar (lambda (row) (org-export-table-row-group row info))
-	      (org-element-map tree 'table-row 'identity))))))
+	    (org-element-map tree 'table-row
+	      (lambda (row)
+		(if (eq (org-element-property :type row) 'rule) 'rule
+		  (org-export-table-row-group row info))))))))
+
+(ert-deftest test-org-export/table-row-number ()
+  "Test `org-export-table-row-number' specifications."
+  ;; Standard test.  Number is 0-indexed.
+  (should
+   (equal '(0 1)
+	  (org-test-with-parsed-data "| a | b | c |\n| d | e | f |"
+	    (org-element-map tree 'table-row
+	      (lambda (row) (org-export-table-row-number row info)) info))))
+  ;; Number ignores separators.
+  (should
+   (equal '(0 1)
+	  (org-test-with-parsed-data "
+| a | b | c |
+|---+---+---|
+| d | e | f |"
+	    (org-element-map tree 'table-row
+	      (lambda (row) (org-export-table-row-number row info)) info))))
+  ;; Number ignores special rows.
+  (should
+   (equal '(0 1)
+	  (org-test-with-parsed-data "
+| / | <   | >   |
+|   | b   | c   |
+|---+-----+-----|
+|   | <c> | <c> |
+|   | e   | f   |"
+	    (org-element-map tree 'table-row
+	      (lambda (row) (org-export-table-row-number row info)) info)))))
 
 (ert-deftest test-org-export/table-cell-width ()
   "Test `org-export-table-cell-width' specifications."
@@ -1865,10 +2364,9 @@ Another text. (ref:text)
   (org-test-with-parsed-data "| a | b |"
     (should
      (equal '((0 . 0) (0 . 1))
-	    (org-element-map
-	     tree 'table-cell
-	     (lambda (cell) (org-export-table-cell-address cell info))
-	     info))))
+	    (org-element-map tree 'table-cell
+	      (lambda (cell) (org-export-table-cell-address cell info))
+	      info))))
   ;; 2. Special column isn't counted, nor are special rows.
   (org-test-with-parsed-data "
 | / | <> |
@@ -1950,11 +2448,10 @@ Another text. (ref:text)
     (should
      (equal
       '(yes no yes)
-      (org-element-map
-       tree 'table-cell
-       (lambda (cell)
-	 (if (org-export-table-cell-starts-colgroup-p cell info) 'yes 'no))
-       info)))))
+      (org-element-map tree 'table-cell
+	(lambda (cell)
+	  (if (org-export-table-cell-starts-colgroup-p cell info) 'yes 'no))
+	info)))))
 
 (ert-deftest test-org-export/table-cell-ends-colgroup-p ()
   "Test `org-export-table-cell-ends-colgroup-p' specifications."
@@ -1980,11 +2477,10 @@ Another text. (ref:text)
     (should
      (equal
       '(yes no yes)
-      (org-element-map
-       tree 'table-cell
-       (lambda (cell)
-	 (if (org-export-table-cell-ends-colgroup-p cell info) 'yes 'no))
-       info)))))
+      (org-element-map tree 'table-cell
+	(lambda (cell)
+	  (if (org-export-table-cell-ends-colgroup-p cell info) 'yes 'no))
+	info)))))
 
 (ert-deftest test-org-export/table-row-starts-rowgroup-p ()
   "Test `org-export-table-row-starts-rowgroup-p' specifications."
@@ -1997,11 +2493,10 @@ Another text. (ref:text)
     (should
      (equal
       '(yes no yes)
-      (org-element-map
-       tree 'table-row
-       (lambda (row)
-	 (if (org-export-table-row-starts-rowgroup-p row info) 'yes 'no))
-       info))))
+      (org-element-map tree 'table-row
+	(lambda (row)
+	  (if (org-export-table-row-starts-rowgroup-p row info) 'yes 'no))
+	info))))
   ;; 2. Special rows should be ignored when determining the beginning
   ;;    of the row.
   (org-test-with-parsed-data "
@@ -2013,11 +2508,10 @@ Another text. (ref:text)
     (should
      (equal
       '(yes no yes)
-      (org-element-map
-       tree 'table-row
-       (lambda (row)
-	 (if (org-export-table-row-starts-rowgroup-p row info) 'yes 'no))
-       info)))))
+      (org-element-map tree 'table-row
+	(lambda (row)
+	  (if (org-export-table-row-starts-rowgroup-p row info) 'yes 'no))
+	info)))))
 
 (ert-deftest test-org-export/table-row-ends-rowgroup-p ()
   "Test `org-export-table-row-ends-rowgroup-p' specifications."
@@ -2030,11 +2524,10 @@ Another text. (ref:text)
     (should
      (equal
       '(yes no yes)
-      (org-element-map
-       tree 'table-row
-       (lambda (row)
-	 (if (org-export-table-row-ends-rowgroup-p row info) 'yes 'no))
-       info))))
+      (org-element-map tree 'table-row
+	(lambda (row)
+	  (if (org-export-table-row-ends-rowgroup-p row info) 'yes 'no))
+	info))))
   ;; 2. Special rows should be ignored when determining the beginning
   ;;    of the row.
   (org-test-with-parsed-data "
@@ -2046,11 +2539,10 @@ Another text. (ref:text)
     (should
      (equal
       '(yes no yes)
-      (org-element-map
-       tree 'table-row
-       (lambda (row)
-	 (if (org-export-table-row-ends-rowgroup-p row info) 'yes 'no))
-       info)))))
+      (org-element-map tree 'table-row
+	(lambda (row)
+	  (if (org-export-table-row-ends-rowgroup-p row info) 'yes 'no))
+	info)))))
 
 (ert-deftest test-org-export/table-row-starts-header-p ()
   "Test `org-export-table-row-starts-header-p' specifications."
@@ -2064,11 +2556,10 @@ Another text. (ref:text)
     (should
      (equal
       '(yes no no no)
-      (org-element-map
-       tree 'table-row
-       (lambda (row)
-	 (if (org-export-table-row-starts-header-p row info) 'yes 'no))
-       info))))
+      (org-element-map tree 'table-row
+	(lambda (row)
+	  (if (org-export-table-row-starts-header-p row info) 'yes 'no))
+	info))))
   ;; 2. A row cannot start an header if there's no header in the
   ;;    table.
   (org-test-with-parsed-data "
@@ -2091,11 +2582,10 @@ Another text. (ref:text)
     (should
      (equal
       '(no yes no no)
-      (org-element-map
-       tree 'table-row
-       (lambda (row)
-	 (if (org-export-table-row-ends-header-p row info) 'yes 'no))
-       info))))
+      (org-element-map tree 'table-row
+	(lambda (row)
+	  (if (org-export-table-row-ends-header-p row info) 'yes 'no))
+	info))))
   ;; 2. A row cannot start an header if there's no header in the
   ;;    table.
   (org-test-with-parsed-data "
@@ -2114,41 +2604,40 @@ Another text. (ref:text)
   "Test `inner-template' translator specifications."
   (should
    (equal "Success!"
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test
-	      ((inner-template . (lambda (contents info) "Success!"))
-	       (headline . (lambda (h c i) "Headline"))))
-	    (org-test-with-temp-text "* Headline"
-	      (org-export-as 'test)))))
+	  (org-test-with-temp-text "* Headline"
+	    (org-export-as
+	     (org-export-create-backend
+	      :transcoders
+	      '((inner-template . (lambda (contents info) "Success!"))
+		(headline . (lambda (h c i) "Headline"))))))))
   ;; Inner template is applied even in a "body-only" export.
   (should
    (equal "Success!"
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test
-	      ((inner-template . (lambda (contents info) "Success!"))
-	       (headline . (lambda (h c i) "Headline"))))
-	    (org-test-with-temp-text "* Headline"
-	      (org-export-as 'test nil nil 'body-only))))))
+	  (org-test-with-temp-text "* Headline"
+	    (org-export-as
+	     (org-export-create-backend
+	      :transcoders '((inner-template . (lambda (c i) "Success!"))
+			     (headline . (lambda (h c i) "Headline"))))
+	     nil nil 'body-only)))))
 
 (ert-deftest test-org-export/template ()
   "Test `template' translator specifications."
   (should
    (equal "Success!"
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test
-	      ((template . (lambda (contents info) "Success!"))
-	       (headline . (lambda (h c i) "Headline"))))
-	    (org-test-with-temp-text "* Headline"
-	      (org-export-as 'test)))))
+	  (org-test-with-temp-text "* Headline"
+	    (org-export-as
+	     (org-export-create-backend
+	      :transcoders '((template . (lambda (contents info) "Success!"))
+			     (headline . (lambda (h c i) "Headline"))))))))
   ;; Template is not applied in a "body-only" export.
   (should-not
    (equal "Success!"
-	  (let (org-export-registered-backends)
-	    (org-export-define-backend test
-	      ((template . (lambda (contents info) "Success!"))
-	       (headline . (lambda (h c i) "Headline"))))
-	    (org-test-with-temp-text "* Headline"
-	      (org-export-as 'test nil nil 'body-only))))))
+	  (org-test-with-temp-text "* Headline"
+	    (org-export-as
+	     (org-export-create-backend
+	      :transcoders '((template . (lambda (contents info) "Success!"))
+			     (headline . (lambda (h c i) "Headline"))))
+	     nil nil 'body-only)))))
 
 
 
@@ -2187,7 +2676,7 @@ Another text. (ref:text)
 	 (org-element-type
 	  (org-export-get-next-element
 	   (org-element-map
-	    (plist-get info :title) 'plain-text 'identity info t) info)))))
+	       (plist-get info :title) 'plain-text 'identity info t) info)))))
   ;; Find next element in parsed affiliated keywords.
   (should
    (eq 'verbatim
@@ -2247,7 +2736,7 @@ Another text. (ref:text)
 	 (org-element-type
 	  (org-export-get-previous-element
 	   (org-element-map
-	    (plist-get info :title) 'plain-text 'identity info t) info)))))
+	       (plist-get info :title) 'plain-text 'identity info t) info)))))
   ;; Find previous element in parsed affiliated keywords.
   (should
    (eq 'verbatim
@@ -2258,7 +2747,7 @@ Another text. (ref:text)
   ;; With optional argument N, return a list containing up to
   ;; N previous elements.
   (should
-   (equal '(bold italic underline)
+   (equal '(underline italic bold)
 	  (org-test-with-parsed-data "_a_ /b/ *c* ~d~"
 	    (mapcar 'car
 		    (org-export-get-previous-element
@@ -2266,7 +2755,7 @@ Another text. (ref:text)
   ;; When N is a positive integer, return a list containing up to
   ;; N previous elements.
   (should
-   (equal '(bold italic)
+   (equal '(italic bold)
 	  (org-test-with-parsed-data "_a_ /b/ *c* ~d~"
 	    (mapcar 'car
 		    (org-export-get-previous-element

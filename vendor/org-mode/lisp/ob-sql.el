@@ -103,10 +103,10 @@ This function is called by `org-babel-execute-src-block'."
                        (org-babel-temp-file "sql-out-")))
 	 (header-delim "")
          (command (case (intern engine)
-                    ('dbi (format "dbish --batch '%s' < %s | sed '%s' > %s"
+                    ('dbi (format "dbish --batch %s < %s | sed '%s' > %s"
 				  (or cmdline "")
 				  (org-babel-process-file-name in-file)
-				  "/^+/d;s/^\|//;$d"
+				  "/^+/d;s/^\|//;s/(NULL)/ /g;$d"
 				  (org-babel-process-file-name out-file)))
                     ('monetdb (format "mclient -f tab %s < %s > %s"
                                       (or cmdline "")
@@ -140,9 +140,11 @@ This function is called by `org-babel-execute-src-block'."
       (with-temp-buffer
 	  (progn (insert-file-contents-literally out-file) (buffer-string)))
       (with-temp-buffer
-	(case (intern engine)
-	  ('mysql
-	   ;; add header row delimiter after column-names header in first line
+	(cond
+	  ((or (eq (intern engine) 'mysql)
+	       (eq (intern engine) 'dbi)
+	       (eq (intern engine) 'postgresql))
+	   ;; Add header row delimiter after column-names header in first line
 	   (cond
 	    (colnames-p
 	     (with-temp-buffer
@@ -151,10 +153,9 @@ This function is called by `org-babel-execute-src-block'."
 	       (forward-line 1)
 	       (insert "-\n")
 	       (setq header-delim "-")
-	       (write-file out-file)
-	       ))))
+	       (write-file out-file)))))
 	  (t
-	   ;; need to figure out what the delimiter is for the header row
+	   ;; Need to figure out the delimiter for the header row
 	   (with-temp-buffer
 	     (insert-file-contents out-file)
 	     (goto-char (point-min))
@@ -166,8 +167,7 @@ This function is called by `org-babel-execute-src-block'."
 	       (delete-char 1)
 	       (goto-char (point-max))
 	       (forward-char -1))
-	     (write-file out-file)))
-	  )
+	     (write-file out-file))))
 	(org-table-import out-file '(16))
 	(org-babel-reassemble-table
 	 (mapcar (lambda (x)
