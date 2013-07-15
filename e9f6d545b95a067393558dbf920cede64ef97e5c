@@ -1,0 +1,13 @@
+---
+:vendorificator_version: 0.4.0
+:current_branch: master
+:current_sha: 475b95e279ccb00710990ae638b8f6c6b9112b1e
+:git_describe: vendor/htmlize.el/stub-150-g475b95e
+:module_version: 9893a3897512ccf5455c3c44d2abcba89bfdc7b8
+:module_category:
+:module_name: ruby-mode
+:unparsed_args:
+  :repository: git://github.com/ruby/ruby.git
+:parsed_args:
+  :repository: git://github.com/ruby/ruby.git
+:git_revision: 9893a3897512ccf5455c3c44d2abcba89bfdc7b8
