@@ -6,6 +6,8 @@
 ;; Keywords: hypermedia, extensions
 ;; Version: 1.43
 
+;; This file is not part of GNU Emacs.
+
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2, or (at your option)
@@ -599,10 +601,12 @@ list."
                      (htmlize-attr-escape (file-relative-name file))
                      alt-attr)))
           ((plist-get imgprops :data)
-           (format "<img src=\"data:image/%s;base64,%s\"%s />"
-                   (or (plist-get imgprops :type) "")
-                   (base64-encode-string (plist-get imgprops :data))
-                   alt-attr)))))
+	   (if (equalp (plist-get imgprops :type) 'svg)
+	       (plist-get imgprops :data)
+	     (format "<img src=\"data:image/%s;base64,%s\"%s />"
+		     (or (plist-get imgprops :type) "")
+		     (base64-encode-string (plist-get imgprops :data))
+		     alt-attr))))))
 
 (defconst htmlize-ellipsis "...")
 (put-text-property 0 (length htmlize-ellipsis) 'htmlize-ellipsis t htmlize-ellipsis)

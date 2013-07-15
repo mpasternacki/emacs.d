@@ -5,7 +5,7 @@
 ;; Maintainer: Carsten Dominik <carsten DOT dominik AT gmail DOT com>
 ;; Keywords: hypermedia, outlines, wp
 
-;; This file is not part of GNU Emacs.
+;; This file is part of GNU Emacs.
 ;;
 ;; GNU Emacs is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -74,19 +74,18 @@ CDR of each element is in one of the following forms:
 2. A meta-project definition, specifying of a list of
    sub-projects:
 
-     \(:components \(\"project-1\" \"project-2\" ...))
+     \(:components (\"project-1\" \"project-2\" ...))
 
 When the CDR of an element of org-publish-project-alist is in
 this second form, the elements of the list after `:components'
 are taken to be components of the project, which group together
 files requiring different publishing options.  When you publish
-such a project with \\[org-publish], the components all
-publish.
+such a project with \\[org-publish], the components all publish.
 
-When a property is given a value in
-`org-publish-project-alist', its setting overrides the value of
-the corresponding user variable \(if any) during publishing.
-However, options set within a file override everything.
+When a property is given a value in `org-publish-project-alist',
+its setting overrides the value of the corresponding user
+variable (if any) during publishing.  However, options set within
+a file override everything.
 
 Most properties are optional, but some should always be set:
 
@@ -96,13 +95,13 @@ Most properties are optional, but some should always be set:
 
   `:base-extension'
 
-    Extension \(without the dot!) of source files.  This can be
+    Extension (without the dot!) of source files.  This can be
     a regular expression.  If not given, \"org\" will be used as
     default extension.
 
   `:publishing-directory'
 
-    Directory \(possibly remote) where output files will be
+    Directory (possibly remote) where output files will be
     published.
 
 The `:exclude' property may be used to prevent certain files from
@@ -110,7 +109,7 @@ being published.  Its value may be a string or regexp matching
 file names you don't want to be published.
 
 The `:include' property may be used to include extra files.  Its
-value may be a list of filenames to include. The filenames are
+value may be a list of filenames to include.  The filenames are
 considered relative to the base directory.
 
 When both `:include' and `:exclude' properties are given values,
@@ -125,8 +124,8 @@ set of output formats.
 
     Function to publish file.  Each back-end may define its
     own (i.e. `org-latex-publish-to-pdf',
-    `org-html-publish-to-html').  May be a list of functions,
-    in which case each function in the list is invoked in turn.
+    `org-html-publish-to-html').  May be a list of functions, in
+    which case each function in the list is invoked in turn.
 
 Another property allows you to insert code that prepares
 a project for publishing.  For example, you could call GNU Make
@@ -180,6 +179,7 @@ included.  See the back-end documentation for more information.
   :with-tags                `org-export-with-tags'
   :with-tasks               `org-export-with-tasks'
   :with-timestamps          `org-export-with-timestamps'
+  :with-planning            `org-export-with-planning'
   :with-todo-keywords       `org-export-with-todo-keywords'
 
 The following properties may be used to control publishing of
@@ -200,21 +200,21 @@ a site-map of files or summary page for a given project.
 
   `:sitemap-function'
 
-    Plugin function to use for generation of site-map.  Defaults to
-    `org-publish-org-sitemap', which generates a plain list of
+    Plugin function to use for generation of site-map.  Defaults
+    to `org-publish-org-sitemap', which generates a plain list of
     links to all files in the project.
 
   `:sitemap-style'
 
-    Can be `list' \(site-map is just an itemized list of the
-    titles of the files involved) or `tree' \(the directory
+    Can be `list' (site-map is just an itemized list of the
+    titles of the files involved) or `tree' (the directory
     structure of the source files is reflected in the site-map).
     Defaults to `tree'.
 
   `:sitemap-sans-extension'
 
     Remove extension from site-map's file-names.  Useful to have
-    cool URIs \(see http://www.w3.org/Provider/Style/URI).
+    cool URIs (see http://www.w3.org/Provider/Style/URI).
     Defaults to nil.
 
 If you create a site-map file, adjust the sorting like this:
@@ -222,9 +222,8 @@ If you create a site-map file, adjust the sorting like this:
   `:sitemap-sort-folders'
 
     Where folders should appear in the site-map.  Set this to
-    `first' \(default) or `last' to display folders first or
-    last, respectively.  Any other value will mix files and
-    folders.
+    `first' (default) or `last' to display folders first or last,
+    respectively.  Any other value will mix files and folders.
 
   `:sitemap-sort-files'
 
@@ -236,11 +235,15 @@ If you create a site-map file, adjust the sorting like this:
 
     Should sorting be case-sensitive?  Default nil.
 
-The following properties control the creation of a concept index.
+The following property control the creation of a concept index.
 
   `:makeindex'
 
-    Create a concept index.
+    Create a concept index.  The file containing the index has to
+    be called \"theindex.org\".  If it doesn't exist in the
+    project, it will be generated.  Contents of the index are
+    stored in the file \"theindex.inc\", which can be included in
+    \"theindex.org\".
 
 Other properties affecting publication.
 
@@ -303,8 +306,8 @@ You can overwrite this default per project in your
   :type 'boolean)
 
 (defcustom org-publish-sitemap-date-format "%Y-%m-%d"
-  "Format for `format-time-string' which is used to print a date
-in the sitemap."
+  "Format for printing a date in the sitemap.
+See `format-time-string' for allowed formatters."
   :group 'org-export-publish
   :type 'string)
 
@@ -446,10 +449,16 @@ matching the regexp SKIP-DIR when recursing through BASE-DIR."
 			  (not (string-match match fnd)))
 
 		(pushnew f org-publish-temp-files)))))
-	(if org-sitemap-requested
-	    (sort (directory-files base-dir t (unless recurse match))
-		  'org-publish-compare-directory-files)
-	  (directory-files base-dir t (unless recurse match)))))
+	(let ((all-files (if (not recurse) (directory-files base-dir t match)
+			   ;; If RECURSE is non-nil, we want all files
+			   ;; matching MATCH and sub-directories.
+			   (org-remove-if-not
+			    (lambda (file)
+			      (or (file-directory-p file)
+				  (and match (string-match match file))))
+			    (directory-files base-dir t)))))
+	  (if (not org-sitemap-requested) all-files
+	    (sort all-files 'org-publish-compare-directory-files)))))
 
 (defun org-publish-get-base-files (project &optional exclude-regexp)
   "Return a list of all files in PROJECT.
@@ -556,7 +565,8 @@ directory.
 Return output file name."
   (unless (or (not pub-dir) (file-exists-p pub-dir)) (make-directory pub-dir t))
   ;; Check if a buffer visiting FILENAME is already open.
-  (let* ((visitingp (find-buffer-visiting filename))
+  (let* ((org-inhibit-startup t)
+	 (visitingp (find-buffer-visiting filename))
 	 (work-buffer (or visitingp (find-file-noselect filename))))
     (prog1 (with-current-buffer work-buffer
 	     (let ((output-file
@@ -564,13 +574,17 @@ Return output file name."
 		   (body-p (plist-get plist :body-only)))
 	       (org-export-to-file
 		backend output-file nil nil body-p
-		;; Install `org-publish-collect-index' in parse tree
-		;; filters.  It isn't dependent on `:makeindex', since
-		;; we want to keep it up-to-date in cache anyway.
+		;; Add `org-publish-collect-numbering' and
+		;; `org-publish-collect-index' to final output
+		;; filters.  The latter isn't dependent on
+		;; `:makeindex', since we want to keep it up-to-date
+		;; in cache anyway.
 		(org-combine-plists
-		 plist `(:filter-parse-tree
-			 (org-publish-collect-index
-			  ,@(plist-get plist :filter-parse-tree)))))))
+		 plist
+		 `(:filter-final-output
+		   ,(cons 'org-publish-collect-numbering
+			  (cons 'org-publish-collect-index
+				(plist-get plist :filter-final-output))))))))
       ;; Remove opened buffer in the process.
       (unless visitingp (kill-buffer work-buffer)))))
 
@@ -673,17 +687,24 @@ If `:auto-sitemap' is set, publish the sitemap too.  If
 	    (preparation-function
 	     (plist-get project-plist :preparation-function))
 	    (completion-function (plist-get project-plist :completion-function))
-	    (files (org-publish-get-base-files project exclude-regexp)) file)
+	    (files (org-publish-get-base-files project exclude-regexp))
+	    (theindex
+	     (expand-file-name "theindex.org"
+			       (plist-get project-plist :base-directory))))
        (when preparation-function (run-hooks 'preparation-function))
        (if sitemap-p (funcall sitemap-function project sitemap-filename))
-       (dolist (file files) (org-publish-file file project t))
+       ;; Publish all files from PROJECT excepted "theindex.org".  Its
+       ;; publishing will be deferred until "theindex.inc" is
+       ;; populated.
+       (dolist (file files)
+	 (unless (equal file theindex)
+	   (org-publish-file file project t)))
+       ;; Populate "theindex.inc", if needed, and publish
+       ;; "theindex.org".
        (when (plist-get project-plist :makeindex)
 	 (org-publish-index-generate-theindex
 	  project (plist-get project-plist :base-directory))
-	 (org-publish-file
-	  (expand-file-name
-	   "theindex.org" (plist-get project-plist :base-directory))
-	  project t))
+	 (org-publish-file theindex project t))
        (when completion-function (run-hooks 'completion-function))
        (org-publish-write-cache-file)))
    (org-publish-expand-projects projects)))
@@ -710,8 +731,10 @@ Default for SITEMAP-FILENAME is 'sitemap.org'."
 	 (visiting (find-buffer-visiting sitemap-filename))
 	 (ifn (file-name-nondirectory sitemap-filename))
 	 file sitemap-buffer)
-    (with-current-buffer (setq sitemap-buffer
-			       (or visiting (find-file sitemap-filename)))
+    (with-current-buffer
+	(let ((org-inhibit-startup t))
+	  (setq sitemap-buffer
+		(or visiting (find-file sitemap-filename))))
       (erase-buffer)
       (insert (concat "#+TITLE: " sitemap-title "\n\n"))
       (while (setq file (pop files))
@@ -778,7 +801,8 @@ Default for SITEMAP-FILENAME is 'sitemap.org'."
   "Find the title of FILE in project."
   (or
    (and (not reset) (org-publish-cache-get-file-property file :title nil t))
-   (let* ((visiting (find-buffer-visiting file))
+   (let* ((org-inhibit-startup t)
+	  (visiting (find-buffer-visiting file))
 	  (buffer (or visiting (find-file-noselect file)))
 	  title)
      (with-current-buffer buffer
@@ -793,21 +817,32 @@ Default for SITEMAP-FILENAME is 'sitemap.org'."
 
 (defun org-publish-find-date (file)
   "Find the date of FILE in project.
-If FILE provides a #+date keyword use it else use the file
-system's modification time.
-
-It returns time in `current-time' format."
-  (let* ((visiting (find-buffer-visiting file))
-	 (file-buf (or visiting (find-file-noselect file nil)))
-	 (date (plist-get
-		(with-current-buffer file-buf
-		  (org-mode)
-		  (org-export--get-inbuffer-options))
-		:date)))
-    (unless visiting (kill-buffer file-buf))
-    (if date (org-time-string-to-time date)
-      (when (file-exists-p file)
-	(nth 5 (file-attributes file))))))
+This function assumes FILE is either a directory or an Org file.
+If FILE is an Org file and provides a DATE keyword use it.  In
+any other case use the file system's modification time.  Return
+time in `current-time' format."
+  (if (file-directory-p file) (nth 5 (file-attributes file))
+    (let* ((visiting (find-buffer-visiting file))
+	   (file-buf (or visiting (find-file-noselect file nil)))
+	   (date (plist-get
+		  (with-current-buffer file-buf
+		    (let ((org-inhibit-startup t)) (org-mode))
+		    (org-export-get-environment))
+		  :date)))
+      (unless visiting (kill-buffer file-buf))
+      ;; DATE is either a timestamp object or a secondary string.  If it
+      ;; is a timestamp or if the secondary string contains a timestamp,
+      ;; convert it to internal format.  Otherwise, use FILE
+      ;; modification time.
+      (cond ((eq (org-element-type date) 'timestamp)
+	     (org-time-string-to-time (org-element-interpret-data date)))
+	    ((let ((ts (and (consp date) (assq 'timestamp date))))
+	       (and ts
+		    (let ((value (org-element-interpret-data ts)))
+		      (and (org-string-nw-p value)
+			   (org-time-string-to-time value))))))
+	    ((file-exists-p file) (nth 5 (file-attributes file)))
+	    (t (error "No such file: \"%s\"" file))))))
 
 
 
@@ -904,11 +939,12 @@ the project."
 
 ;;; Index generation
 
-(defun org-publish-collect-index (tree backend info)
-  "Update index for a file with TREE in cache.
+(defun org-publish-collect-index (output backend info)
+  "Update index for a file in cache.
 
-BACKEND is the back-end being used for transcoding.  INFO is
-a plist containing publishing options.
+OUTPUT is the output from transcoding current file.  BACKEND is
+the back-end that was used for transcoding.  INFO is a plist
+containing publishing and export options.
 
 The index relative to current file is stored as an alist.  An
 association has the following shape: (TERM FILE-NAME PARENT),
@@ -922,23 +958,26 @@ its CDR is a string."
     (org-publish-cache-set-file-property
      file :index
      (delete-dups
-      (org-element-map tree 'keyword
+      (org-element-map (plist-get info :parse-tree) 'keyword
 	(lambda (k)
-	  (when (equal (upcase (org-element-property :key k)) "INDEX")
+	  (when (equal (org-element-property :key k) "INDEX")
 	    (let ((parent (org-export-get-parent-headline k)))
 	      (list (org-element-property :value k)
 		    file
 		    (cond
 		     ((not parent) nil)
-		     ((let ((id (org-element-property :id parent)))
+		     ((let ((id (org-element-property :ID parent)))
 			(and id (cons 'id id))))
-		     ((let ((id (org-element-property :custom-id parent)))
+		     ((let ((id (org-element-property :CUSTOM_ID parent)))
 			(and id (cons 'custom-id id))))
 		     (t (cons 'name
-			      (org-element-property :raw-value parent))))))))
+			      ;; Remove statistics cookie.
+			      (replace-regexp-in-string
+			       "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
+			       (org-element-property :raw-value parent)))))))))
 	info))))
-  ;; Return parse-tree to avoid altering output.
-  tree)
+  ;; Return output unchanged.
+  output)
 
 (defun org-publish-index-generate-theindex (project directory)
   "Retrieve full index from cache and build \"theindex.org\".
@@ -947,20 +986,17 @@ publishing directory."
   (let ((all-files (org-publish-get-base-files
 		    project (plist-get (cdr project) :exclude)))
 	full-index)
-    ;; Compile full index.
-    (mapc
-     (lambda (file)
-       (let ((index (org-publish-cache-get-file-property file :index)))
-	 (dolist (term index)
-	   (unless (member term full-index) (push term full-index)))))
-     all-files)
-    ;; Sort it alphabetically.
-    (setq full-index
-	  (sort full-index (lambda (a b) (string< (downcase (car a))
-					     (downcase (car b))))))
-    ;; Fill "theindex.org".
-    (with-temp-buffer
-      (insert "#+TITLE: Index\n#+OPTIONS: num:nil author:nil\n")
+    ;; Compile full index and sort it alphabetically.
+    (dolist (file all-files
+		  (setq full-index
+			(sort (nreverse full-index)
+			      (lambda (a b) (string< (downcase (car a))
+						(downcase (car b)))))))
+      (let ((index (org-publish-cache-get-file-property file :index)))
+	(dolist (term index)
+	  (unless (member term full-index) (push term full-index)))))
+    ;; Write "theindex.inc" in DIRECTORY.
+    (with-temp-file (expand-file-name "theindex.inc" directory)
       (let ((current-letter nil) (last-entry nil))
 	(dolist (idx full-index)
 	  (let* ((entry (org-split-string (car idx) "!"))
@@ -976,9 +1012,10 @@ publishing directory."
 	    ;; Compute the first difference between last entry and
 	    ;; current one: it tells the level at which new items
 	    ;; should be added.
-	    (let* ((rank (loop for n from 0 to (length entry)
-			       unless (equal (nth n entry) (nth n last-entry))
-			       return n))
+	    (let* ((rank (if (equal entry last-entry) (1- (length entry))
+			   (loop for n from 0 to (length entry)
+				 unless (equal (nth n entry) (nth n last-entry))
+				 return n)))
 		   (len (length (nthcdr rank entry))))
 	      ;; For each term after the first difference, create
 	      ;; a new sub-list with the term as body.  Moreover,
@@ -1002,8 +1039,45 @@ publishing directory."
 		       (car (last entry)))))
 		  "\n"))))
 	    (setq current-letter letter last-entry entry))))
-      ;; Write index.
-      (write-file (expand-file-name "theindex.org" directory)))))
+      ;; Create "theindex.org", if it doesn't exist yet, and provide
+      ;; a default index file.
+      (let ((index.org (expand-file-name "theindex.org" directory)))
+	(unless (file-exists-p index.org)
+	  (with-temp-file index.org
+	    (insert "#+TITLE: Index\n\n#+INCLUDE: \"theindex.inc\"\n\n")))))))
+
+
+
+;;; External Fuzzy Links Resolution
+;;
+;; This part implements tools to resolve [[file.org::*Some headline]]
+;; links, where "file.org" belongs to the current project.
+
+(defun org-publish-collect-numbering (output backend info)
+  (org-publish-cache-set-file-property
+   (plist-get info :input-file) :numbering
+   (mapcar (lambda (entry)
+	     (cons (org-split-string
+		    (replace-regexp-in-string
+		     "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
+		     (org-element-property :raw-value (car entry))))
+		   (cdr entry)))
+	   (plist-get info :headline-numbering)))
+  ;; Return output unchanged.
+  output)
+
+(defun org-publish-resolve-external-fuzzy-link (file fuzzy)
+  "Return numbering for headline matching FUZZY search in FILE.
+
+Return value is a list of numbers, or nil.  This function allows
+to resolve external fuzzy links like:
+
+  [[file.org::*fuzzy][description]"
+  (when org-publish-cache
+    (cdr (assoc (org-split-string
+		 (if (eq (aref fuzzy 0) ?*) (substring fuzzy 1) fuzzy))
+		(org-publish-cache-get-file-property
+		 (expand-file-name file) :numbering nil t)))))
 
 
 
@@ -1070,8 +1144,8 @@ If FREE-CACHE, empty the cache."
 (defun org-publish-cache-file-needs-publishing
   (filename &optional pub-dir pub-func base-dir)
   "Check the timestamp of the last publishing of FILENAME.
-Non-nil if the file needs publishing.  The function also checks
-if any included files have been more recently published, so that
+Return non-nil if the file needs publishing.  Also check if
+any included files have been more recently published, so that
 the file including them will be republished as well."
   (unless org-publish-cache
     (error
@@ -1079,6 +1153,7 @@ the file including them will be republished as well."
   (let* ((case-fold-search t)
 	 (key (org-publish-timestamp-filename filename pub-dir pub-func))
 	 (pstamp (org-publish-cache-get key))
+	 (org-inhibit-startup t)
 	 (visiting (find-buffer-visiting filename))
 	 included-files-ctime buf)
 

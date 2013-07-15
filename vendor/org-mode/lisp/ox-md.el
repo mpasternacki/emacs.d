@@ -3,20 +3,20 @@
 ;; Copyright (C) 2012, 2013  Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou@gmail.com>
-;; Keywords: org, wp, tex
+;; Keywords: org, wp, markdown
 
-;; This program is free software; you can redistribute it and/or modify
+;; GNU Emacs is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
 
-;; This program is distributed in the hope that it will be useful,
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -40,7 +40,8 @@
   "Options specific to Markdown export back-end."
   :tag "Org Markdown"
   :group 'org-export
-  :version "24.2")
+  :version "24.4"
+  :package-version '(Org . "8.0"))
 
 (defcustom org-md-headline-style 'atx
   "Style used to format headlines.
@@ -54,40 +55,42 @@ This variable can be set to either `atx' or `setext'."
 
 ;;; Define Back-End
 
-(org-export-define-derived-backend md html
-  :export-block ("MD" "MARKDOWN")
-  :filters-alist ((:filter-parse-tree . org-md-separate-elements))
+(org-export-define-derived-backend 'md 'html
+  :export-block '("MD" "MARKDOWN")
+  :filters-alist '((:filter-parse-tree . org-md-separate-elements))
   :menu-entry
-  (?m "Export to Markdown"
-      ((?M "To temporary buffer"
-	   (lambda (a s v b) (org-md-export-as-markdown a s v)))
-       (?m "To file" (lambda (a s v b) (org-md-export-to-markdown a s v)))
-       (?o "To file and open"
-	   (lambda (a s v b)
-	     (if a (org-md-export-to-markdown t s v)
-	       (org-open-file (org-md-export-to-markdown nil s v)))))))
-  :translate-alist ((bold . org-md-bold)
-		    (code . org-md-verbatim)
-		    (example-block . org-md-example-block)
-		    (fixed-width . org-md-example-block)
-		    (footnote-definition . ignore)
-		    (footnote-reference . ignore)
-		    (headline . org-md-headline)
-		    (horizontal-rule . org-md-horizontal-rule)
-		    (inline-src-block . org-md-verbatim)
-		    (italic . org-md-italic)
-		    (item . org-md-item)
-		    (line-break . org-md-line-break)
-		    (link . org-md-link)
-		    (paragraph . org-md-paragraph)
-		    (plain-list . org-md-plain-list)
-		    (plain-text . org-md-plain-text)
-		    (quote-block . org-md-quote-block)
-		    (quote-section . org-md-example-block)
-		    (section . org-md-section)
-		    (src-block . org-md-example-block)
-		    (template . org-md-template)
-		    (verbatim . org-md-verbatim)))
+  '(?m "Export to Markdown"
+       ((?M "To temporary buffer"
+	    (lambda (a s v b) (org-md-export-as-markdown a s v)))
+	(?m "To file" (lambda (a s v b) (org-md-export-to-markdown a s v)))
+	(?o "To file and open"
+	    (lambda (a s v b)
+	      (if a (org-md-export-to-markdown t s v)
+		(org-open-file (org-md-export-to-markdown nil s v)))))))
+  :translate-alist '((bold . org-md-bold)
+		     (code . org-md-verbatim)
+		     (comment . (lambda (&rest args) ""))
+		     (comment-block . (lambda (&rest args) ""))
+		     (example-block . org-md-example-block)
+		     (fixed-width . org-md-example-block)
+		     (footnote-definition . ignore)
+		     (footnote-reference . ignore)
+		     (headline . org-md-headline)
+		     (horizontal-rule . org-md-horizontal-rule)
+		     (inline-src-block . org-md-verbatim)
+		     (italic . org-md-italic)
+		     (item . org-md-item)
+		     (line-break . org-md-line-break)
+		     (link . org-md-link)
+		     (paragraph . org-md-paragraph)
+		     (plain-list . org-md-plain-list)
+		     (plain-text . org-md-plain-text)
+		     (quote-block . org-md-quote-block)
+		     (quote-section . org-md-example-block)
+		     (section . org-md-section)
+		     (src-block . org-md-example-block)
+		     (template . org-md-template)
+		     (verbatim . org-md-verbatim)))
 
 
 
@@ -175,7 +178,7 @@ a communication channel."
 	   ;; Headline text without tags.
 	   (heading (concat todo priority title)))
       (cond
-       ;; Cannot create an headline.  Fall-back to a list.
+       ;; Cannot create a headline.  Fall-back to a list.
        ((or (org-export-low-level-p headline info)
 	    (not (memq org-md-headline-style '(atx setext)))
 	    (and (eq org-md-headline-style 'atx) (> level 6))
@@ -306,14 +309,12 @@ a communication channel."
 	     (org-export-data (org-element-contents destination) info)))
 	  ((equal type "fuzzy")
 	   (let ((destination (org-export-resolve-fuzzy-link link info)))
-	     ;; Ignore invisible "#+TARGET: path".
-	     (unless (eq (org-element-type destination) 'keyword)
-	       (if (org-string-nw-p contents) contents
-		 (when destination
-		   (let ((number (org-export-get-ordinal destination info)))
-		     (when number
-		       (if (atom number) (number-to-string number)
-			 (mapconcat 'number-to-string number ".")))))))))
+	     (if (org-string-nw-p contents) contents
+	       (when destination
+		 (let ((number (org-export-get-ordinal destination info)))
+		   (when number
+		     (if (atom number) (number-to-string number)
+		       (mapconcat 'number-to-string number "."))))))))
 	  (t (let* ((raw-path (org-element-property :path link))
 		    (path (cond
 			   ((member type '("http" "https" "ftp"))
@@ -415,7 +416,7 @@ as a communication channel."
 
 ;;;###autoload
 (defun org-md-export-as-markdown (&optional async subtreep visible-only)
-  "Export current buffer to a text buffer.
+  "Export current buffer to a Markdown buffer.
 
 If narrowing is active in the current buffer, only export its
 narrowed part.
@@ -452,6 +453,15 @@ non-nil."
       (with-current-buffer outbuf (text-mode))
       (when org-export-show-temporary-export-buffer
 	(switch-to-buffer-other-window outbuf)))))
+
+;;;###autoload
+(defun org-md-convert-region-to-md ()
+  "Assume the current region has org-mode syntax, and convert it to Markdown.
+This can be used in any buffer.  For example, you can write an
+itemized list in org-mode syntax in a Markdown buffer and use
+this command to convert it."
+  (interactive)
+  (org-export-replace-region-by 'md))
 
 
 ;;;###autoload

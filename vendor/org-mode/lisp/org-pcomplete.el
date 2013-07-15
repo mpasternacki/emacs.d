@@ -145,6 +145,7 @@ When completing for #+STARTUP, for example, this function returns
 (declare-function org-get-export-keywords "org" ())
 (defun pcomplete/org-mode/file-option ()
   "Complete against all valid file options."
+  (require 'org-element)
   (pcomplete-here
    (org-pcomplete-case-double
     (append (mapcar (lambda (keyword) (concat keyword " "))
@@ -154,8 +155,9 @@ When completing for #+STARTUP, for example, this function returns
 	    (let (block-names)
 	      (mapc (lambda (block-name)
 		      (let ((name (car block-name)))
-			(push (format "END_%s: " name) block-names)
-			(push (format "BEGIN_%s: " name) block-names)))
+			(push (format "END_%s " name) block-names)
+			(push (format "BEGIN_%s " name) block-names)
+			(push (format "ATTR_%s: " name) block-names)))
 		    org-element-block-name-alist)
 	      block-names)
 	    (mapcar (lambda (keyword) (concat keyword ": "))
@@ -237,6 +239,7 @@ When completing for #+STARTUP, for example, this function returns
 		 (cond
 		  ((eq :startgroup (car x)) "{")
 		  ((eq :endgroup (car x)) "}")
+		  ((eq :grouptags (car x)) ":")
 		  ((eq :newline (car x)) "\\n")
 		  ((cdr x) (format "%s(%c)" (car x) (cdr x)))
 		  (t (car x))))
@@ -251,6 +254,8 @@ When completing for #+STARTUP, for example, this function returns
 		     (file-name-nondirectory visited-file)))
 	       (buffer-name (buffer-base-buffer)))))))
 
+
+(declare-function org-export-backend-options "org-export" (cl-x))
 (defun pcomplete/org-mode/file-option/options ()
   "Complete arguments for the #+OPTIONS file option."
   (while (pcomplete-here
@@ -263,9 +268,9 @@ When completing for #+STARTUP, for example, this function returns
 	      "|:" "tags:" "tasks:" "<:" "todo:")
 	    ;; OPTION items from registered back-ends.
 	    (let (items)
-	      (dolist (back-end (org-bound-and-true-p
-				 org-export-registered-backends))
-		(dolist (option (plist-get (cdr back-end) :options-alist))
+	      (dolist (backend (org-bound-and-true-p
+				org-export--registered-backends))
+		(dolist (option (org-export-backend-options backend))
 		  (let ((item (nth 2 option)))
 		    (when item (push (concat item ":") items)))))
 	      items))))))
@@ -275,7 +280,7 @@ When completing for #+STARTUP, for example, this function returns
   (while (pcomplete-here
 	  (pcomplete-uniqify-list
 	   (mapcar (lambda (item) (format "%s:" (car item)))
-		   (org-bound-and-true-p org-infojs-opts-table))))))
+		   (org-bound-and-true-p org-html-infojs-opts-table))))))
 
 (defun pcomplete/org-mode/file-option/bind ()
   "Complete arguments for the #+BIND file option, which are variable names."
@@ -388,16 +393,16 @@ Complete a language in the first field, the header arguments and switches."
 	  '("-n" "-r" "-l"
 	    ":cache" ":colnames" ":comments" ":dir" ":eval" ":exports"
 	    ":file" ":hlines" ":no-expand" ":noweb" ":results" ":rownames"
-	    ":session" ":shebang" ":tangle" ":var"))))
+	    ":session" ":shebang" ":tangle" ":tangle-mode" ":var"))))
 
 (defun pcomplete/org-mode/block-option/clocktable ()
   "Complete keywords in a clocktable line."
-  (while (pcomplete-here '(":maxlevel" ":scope"
+  (while (pcomplete-here '(":maxlevel" ":scope" ":lang"
 			   ":tstart" ":tend" ":block" ":step"
 			   ":stepskip0" ":fileskip0"
 			   ":emphasize" ":link" ":narrow" ":indent"
 			   ":tcolumns" ":level" ":compact" ":timestamp"
-			   ":formula" ":formatter"))))
+			   ":formula" ":formatter" ":wstart" ":mstart"))))
 
 (defun org-pcomplete-case-double (list)
   "Return list with both upcase and downcase version of all strings in LIST."

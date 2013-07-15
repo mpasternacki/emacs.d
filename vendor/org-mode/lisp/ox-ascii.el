@@ -5,18 +5,18 @@
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 ;; Keywords: outlines, hypermedia, calendar, wp
 
-;; This program is free software; you can redistribute it and/or modify
+;; GNU Emacs is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
 
-;; This program is distributed in the hope that it will be useful,
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -54,80 +54,82 @@
 ;; We also install a filter for headlines and sections, in order to
 ;; control blank lines separating them in output string.
 
-(org-export-define-backend ascii
-  ((bold . org-ascii-bold)
-   (center-block . org-ascii-center-block)
-   (clock . org-ascii-clock)
-   (code . org-ascii-code)
-   (drawer . org-ascii-drawer)
-   (dynamic-block . org-ascii-dynamic-block)
-   (entity . org-ascii-entity)
-   (example-block . org-ascii-example-block)
-   (export-block . org-ascii-export-block)
-   (export-snippet . org-ascii-export-snippet)
-   (fixed-width . org-ascii-fixed-width)
-   (footnote-definition . org-ascii-footnote-definition)
-   (footnote-reference . org-ascii-footnote-reference)
-   (headline . org-ascii-headline)
-   (horizontal-rule . org-ascii-horizontal-rule)
-   (inline-src-block . org-ascii-inline-src-block)
-   (inlinetask . org-ascii-inlinetask)
-   (inner-template . org-ascii-inner-template)
-   (italic . org-ascii-italic)
-   (item . org-ascii-item)
-   (keyword . org-ascii-keyword)
-   (latex-environment . org-ascii-latex-environment)
-   (latex-fragment . org-ascii-latex-fragment)
-   (line-break . org-ascii-line-break)
-   (link . org-ascii-link)
-   (paragraph . org-ascii-paragraph)
-   (plain-list . org-ascii-plain-list)
-   (plain-text . org-ascii-plain-text)
-   (planning . org-ascii-planning)
-   (quote-block . org-ascii-quote-block)
-   (quote-section . org-ascii-quote-section)
-   (radio-target . org-ascii-radio-target)
-   (section . org-ascii-section)
-   (special-block . org-ascii-special-block)
-   (src-block . org-ascii-src-block)
-   (statistics-cookie . org-ascii-statistics-cookie)
-   (strike-through . org-ascii-strike-through)
-   (subscript . org-ascii-subscript)
-   (superscript . org-ascii-superscript)
-   (table . org-ascii-table)
-   (table-cell . org-ascii-table-cell)
-   (table-row . org-ascii-table-row)
-   (target . org-ascii-target)
-   (template . org-ascii-template)
-   (timestamp . org-ascii-timestamp)
-   (underline . org-ascii-underline)
-   (verbatim . org-ascii-verbatim)
-   (verse-block . org-ascii-verse-block))
+(org-export-define-backend 'ascii
+  '((bold . org-ascii-bold)
+    (center-block . org-ascii-center-block)
+    (clock . org-ascii-clock)
+    (code . org-ascii-code)
+    (comment . (lambda (&rest args) ""))
+    (comment-block . (lambda (&rest args) ""))
+    (drawer . org-ascii-drawer)
+    (dynamic-block . org-ascii-dynamic-block)
+    (entity . org-ascii-entity)
+    (example-block . org-ascii-example-block)
+    (export-block . org-ascii-export-block)
+    (export-snippet . org-ascii-export-snippet)
+    (fixed-width . org-ascii-fixed-width)
+    (footnote-reference . org-ascii-footnote-reference)
+    (headline . org-ascii-headline)
+    (horizontal-rule . org-ascii-horizontal-rule)
+    (inline-src-block . org-ascii-inline-src-block)
+    (inlinetask . org-ascii-inlinetask)
+    (inner-template . org-ascii-inner-template)
+    (italic . org-ascii-italic)
+    (item . org-ascii-item)
+    (keyword . org-ascii-keyword)
+    (latex-environment . org-ascii-latex-environment)
+    (latex-fragment . org-ascii-latex-fragment)
+    (line-break . org-ascii-line-break)
+    (link . org-ascii-link)
+    (paragraph . org-ascii-paragraph)
+    (plain-list . org-ascii-plain-list)
+    (plain-text . org-ascii-plain-text)
+    (planning . org-ascii-planning)
+    (quote-block . org-ascii-quote-block)
+    (quote-section . org-ascii-quote-section)
+    (radio-target . org-ascii-radio-target)
+    (section . org-ascii-section)
+    (special-block . org-ascii-special-block)
+    (src-block . org-ascii-src-block)
+    (statistics-cookie . org-ascii-statistics-cookie)
+    (strike-through . org-ascii-strike-through)
+    (subscript . org-ascii-subscript)
+    (superscript . org-ascii-superscript)
+    (table . org-ascii-table)
+    (table-cell . org-ascii-table-cell)
+    (table-row . org-ascii-table-row)
+    (target . org-ascii-target)
+    (template . org-ascii-template)
+    (timestamp . org-ascii-timestamp)
+    (underline . org-ascii-underline)
+    (verbatim . org-ascii-verbatim)
+    (verse-block . org-ascii-verse-block))
   :export-block "ASCII"
   :menu-entry
-  (?t "Export to Plain Text"
-      ((?A "As ASCII buffer"
-	   (lambda (a s v b)
-	     (org-ascii-export-as-ascii a s v b '(:ascii-charset ascii))))
-       (?a "As ASCII file"
-	   (lambda (a s v b)
-	     (org-ascii-export-to-ascii a s v b '(:ascii-charset ascii))))
-       (?L "As Latin1 buffer"
-	   (lambda (a s v b)
-	     (org-ascii-export-as-ascii a s v b '(:ascii-charset latin1))))
-       (?l "As Latin1 file"
-	   (lambda (a s v b)
-	     (org-ascii-export-to-ascii a s v b '(:ascii-charset latin1))))
-       (?U "As UTF-8 buffer"
-	   (lambda (a s v b)
-	     (org-ascii-export-as-ascii a s v b '(:ascii-charset utf-8))))
-       (?u "As UTF-8 file"
-	   (lambda (a s v b)
-	     (org-ascii-export-to-ascii a s v b '(:ascii-charset utf-8))))))
-  :filters-alist ((:filter-headline . org-ascii-filter-headline-blank-lines)
-		  (:filter-parse-tree . org-ascii-filter-paragraph-spacing)
-		  (:filter-section . org-ascii-filter-headline-blank-lines))
-  :options-alist ((:ascii-charset nil nil org-ascii-charset)))
+  '(?t "Export to Plain Text"
+       ((?A "As ASCII buffer"
+	    (lambda (a s v b)
+	      (org-ascii-export-as-ascii a s v b '(:ascii-charset ascii))))
+	(?a "As ASCII file"
+	    (lambda (a s v b)
+	      (org-ascii-export-to-ascii a s v b '(:ascii-charset ascii))))
+	(?L "As Latin1 buffer"
+	    (lambda (a s v b)
+	      (org-ascii-export-as-ascii a s v b '(:ascii-charset latin1))))
+	(?l "As Latin1 file"
+	    (lambda (a s v b)
+	      (org-ascii-export-to-ascii a s v b '(:ascii-charset latin1))))
+	(?U "As UTF-8 buffer"
+	    (lambda (a s v b)
+	      (org-ascii-export-as-ascii a s v b '(:ascii-charset utf-8))))
+	(?u "As UTF-8 file"
+	    (lambda (a s v b)
+	      (org-ascii-export-to-ascii a s v b '(:ascii-charset utf-8))))))
+  :filters-alist '((:filter-headline . org-ascii-filter-headline-blank-lines)
+		   (:filter-parse-tree org-ascii-filter-paragraph-spacing
+				       org-ascii-filter-comment-spacing)
+		   (:filter-section . org-ascii-filter-headline-blank-lines))
+  :options-alist '((:ascii-charset nil nil org-ascii-charset)))
 
 
 
@@ -143,29 +145,39 @@
 This number includes margin size, as set in
 `org-ascii-global-margin'."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'integer)
 
 (defcustom org-ascii-global-margin 0
   "Width of the left margin, in number of characters."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'integer)
 
 (defcustom org-ascii-inner-margin 2
   "Width of the inner margin, in number of characters.
 Inner margin is applied between each headline."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'integer)
 
 (defcustom org-ascii-quote-margin 6
   "Width of margin used for quoting text, in characters.
 This margin is applied on both sides of the text."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'integer)
 
 (defcustom org-ascii-inlinetask-width 30
   "Width of inline tasks, in number of characters.
 This number ignores any margin."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'integer)
 
 (defcustom org-ascii-headline-spacing '(1 . 2)
@@ -179,6 +191,8 @@ contents.
 A nil value replicates the number of blank lines found in the
 original Org buffer at the same place."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(choice
 	  (const :tag "Replicate original spacing" nil)
 	  (cons :tag "Set an uniform spacing"
@@ -191,6 +205,8 @@ If the value is an integer, indent the first line of each
 paragraph by this number.  If it is the symbol `auto' preserve
 indentation from original document."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(choice
 	  (integer :tag "Number of white spaces characters")
 	  (const :tag "Preserve original width" auto)))
@@ -201,6 +217,8 @@ If the value is an integer, add this number of blank lines
 between contiguous paragraphs.  If is it the symbol `auto', keep
 the same number of blank lines as in the original document."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(choice
 	  (integer :tag "Number of blank lines")
 	  (const :tag "Preserve original spacing" auto)))
@@ -212,14 +230,16 @@ Possible values are:
 `latin1'   Include Latin-1 characters
 `utf-8'    Use all UTF-8 characters"
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(choice
 	  (const :tag "ASCII" ascii)
 	  (const :tag "Latin-1" latin1)
 	  (const :tag "UTF-8" utf-8)))
 
 (defcustom org-ascii-underline '((ascii ?= ?~ ?-)
-				   (latin1 ?= ?~ ?-)
-				   (utf-8 ?═ ?─ ?╌ ?┄ ?┈))
+				 (latin1 ?= ?~ ?-)
+				 (utf-8 ?═ ?─ ?╌ ?┄ ?┈))
   "Characters for underlining headings in ASCII export.
 
 Alist whose key is a symbol among `ascii', `latin1' and `utf-8'
@@ -230,6 +250,8 @@ of underline characters.  In a sequence, the characters will be
 used in order for headlines level 1, 2, ...  If no character is
 available for a given level, the headline won't be underlined."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(list
 	  (cons :tag "Underline characters sequence"
 		(const :tag "ASCII charset" ascii)
@@ -256,6 +278,8 @@ here, the list will be repeated.
 Note that this variable doesn't affect plain lists
 representation."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(list
 	  (cons :tag "Bullet characters for low level headlines"
 		(const :tag "ASCII charset" ascii)
@@ -272,6 +296,8 @@ representation."
 When nil, the link will be exported in place.  If the line
 becomes long in this way, it will be wrapped."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'boolean)
 
 (defcustom org-ascii-table-keep-all-vertical-lines nil
@@ -279,6 +305,8 @@ becomes long in this way, it will be wrapped."
 When nil, vertical lines will be removed except for those needed
 for column grouping."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'boolean)
 
 (defcustom org-ascii-table-widen-columns t
@@ -286,6 +314,8 @@ for column grouping."
 When nil, narrowed columns will look in ASCII export just like in
 Org mode, i.e. with \"=>\" as ellipsis."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'boolean)
 
 (defcustom org-ascii-table-use-ascii-art nil
@@ -295,17 +325,25 @@ It only makes sense when export charset is `utf-8'.  It is nil by
 default since it requires ascii-art-to-unicode.el package.  You
 can download it here:
 
-  http://gnuvola.org/software/j/aa2u/ascii-art-to-unicode.el.")
+  http://gnuvola.org/software/j/aa2u/ascii-art-to-unicode.el."
+  :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
+  :type 'boolean)
 
 (defcustom org-ascii-caption-above nil
   "When non-nil, place caption string before the element.
 Otherwise, place it right after it."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'boolean)
 
 (defcustom org-ascii-verbatim-format "`%s'"
   "Format string used for verbatim text and inline code."
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'string)
 
 (defcustom org-ascii-format-drawer-function nil
@@ -326,6 +364,8 @@ in order to mimic default behaviour:
   \"Format a drawer element for ASCII export.\"
   contents)"
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'function)
 
 (defcustom org-ascii-format-inlinetask-function nil
@@ -372,6 +412,8 @@ in order to mimic default behaviour:
         \(plist-get info :ascii-inner-margin\)
         \(org-ascii--current-text-width inlinetask info\)\)"
   :group 'org-export-ascii
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'function)
 
 
@@ -534,7 +576,7 @@ INFO is a plist used as a communication channel."
 			   (org-list-get-bullet beg-item struct)))))))))))))
 
 (defun org-ascii--build-title
-  (element info text-width &optional underline notags)
+  (element info text-width &optional underline notags toc)
   "Format ELEMENT title and return it.
 
 ELEMENT is either an `headline' or `inlinetask' element.  INFO is
@@ -545,8 +587,11 @@ When optional argument UNDERLINE is non-nil, underline title,
 without the tags, according to `org-ascii-underline'
 specifications.
 
-if optional argument NOTAGS is nil, no tags will be added to the
-title."
+If optional argument NOTAGS is non-nil, no tags will be added to
+the title.
+
+When optional argument TOC is non-nil, use optional title if
+possible.  It doesn't apply to `inlinetask' elements."
   (let* ((headlinep (eq (org-element-type element) 'headline))
 	 (numbers
 	  ;; Numbering is specific to headlines.
@@ -557,8 +602,12 @@ title."
 		 'number-to-string
 		 (org-export-get-headline-number element info) ".")
 		" ")))
-	 (text (org-trim
-		(org-export-data (org-element-property :title element) info)))
+	 (text
+	  (org-trim
+	   (org-export-data
+	    (if (and toc headlinep) (org-export-get-alt-title element info)
+	      (org-element-property :title element))
+	    info)))
 	 (todo
 	  (and (plist-get info :with-todo-keywords)
 	       (let ((todo (org-element-property :todo-keyword element)))
@@ -616,11 +665,13 @@ caption keyword."
 	      element info nil 'org-ascii--has-caption-p))
 	    (title-fmt (org-ascii--translate
 			(case (org-element-type element)
-			  (table "Table %d: %s")
-			  (src-block "Listing %d: %s"))
+			  (table "Table %d:")
+			  (src-block "Listing %d:"))
 			info)))
 	(org-ascii--fill-string
-	 (format title-fmt reference (org-export-data caption info))
+	 (concat (format title-fmt reference)
+		 " "
+		 (org-export-data caption info))
 	 (org-ascii--current-text-width element info) info)))))
 
 (defun org-ascii--build-toc (info &optional n keyword)
@@ -650,7 +701,9 @@ which the table of contents generation has been initiated."
 	     (unless (zerop indent) (concat (make-string (1- indent) ?.) " "))
 	     (org-ascii--build-title
 	      headline info (- text-width indent) nil
-	      (eq (plist-get info :with-tags) 'not-in-toc)))))
+	      (or (not (plist-get info :with-tags))
+		  (eq (plist-get info :with-tags) 'not-in-toc))
+	      'toc))))
 	(org-export-collect-headlines info n) "\n")))))
 
 (defun org-ascii--list-listings (keyword info)
@@ -692,9 +745,9 @@ generation.  INFO is a plist used as a communication channel."
 	(org-export-collect-listings info) "\n")))))
 
 (defun org-ascii--list-tables (keyword info)
-  "Return a list of listings.
+  "Return a list of tables.
 
-KEYWORD is the keyword that initiated the list of listings
+KEYWORD is the keyword that initiated the list of tables
 generation.  INFO is a plist used as a communication channel."
   (let ((title (org-ascii--translate "List of Tables" info)))
     (concat
@@ -732,7 +785,7 @@ generation.  INFO is a plist used as a communication channel."
 (defun org-ascii--unique-links (element info)
   "Return a list of unique link references in ELEMENT.
 
-ELEMENT is either an headline element or a section element.  INFO
+ELEMENT is either a headline element or a section element.  INFO
 is a plist used as a communication channel."
   (let* (seen
 	 (unique-link-p
@@ -828,7 +881,7 @@ INFO is a plist used as a communication channel."
 	 (email (and (plist-get info :with-email)
 		     (org-export-data (plist-get info :email) info)))
 	 (date (and (plist-get info :with-date)
-		    (org-export-data (plist-get info :date) info))))
+		    (org-export-data (org-export-get-date info) info))))
     ;; There are two types of title blocks depending on the presence
     ;; of a title to display.
     (if (string= title "")
@@ -1095,7 +1148,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
 ;;;; Footnote Definition
 
 ;; Footnote Definitions are ignored.  They are compiled at the end of
-;; the document, by `org-ascii-template'.
+;; the document, by `org-ascii-inner-template'.
 
 
 ;;;; Footnote Reference
@@ -1109,7 +1162,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
 ;;;; Headline
 
 (defun org-ascii-headline (headline contents info)
-  "Transcode an HEADLINE element from Org to ASCII.
+  "Transcode a HEADLINE element from Org to ASCII.
 CONTENTS holds the contents of the headline.  INFO is a plist
 holding contextual information."
   ;; Don't export footnote section, which will be handled at the end
@@ -1166,7 +1219,9 @@ information."
 	(spec-width
 	 (org-export-read-attribute :attr_ascii horizontal-rule :width)))
     (org-ascii--justify-string
-     (make-string (if (wholenump spec-width) spec-width text-width)
+     (make-string (if (and spec-width (string-match "^[0-9]+$" spec-width))
+		      (string-to-number spec-width)
+		    text-width)
 		  (if (eq (plist-get info :ascii-charset) 'utf-8) ?― ?-))
      text-width 'center)))
 
@@ -1370,16 +1425,14 @@ INFO is a plist holding contextual information."
      ;; targets.
      ((string= type "fuzzy")
       (let ((destination (org-export-resolve-fuzzy-link link info)))
-	;; Ignore invisible "#+TARGET: path".
-	(unless (eq (org-element-type destination) 'keyword)
-	  (if (org-string-nw-p desc) desc
-	    (when destination
-	      (let ((number
-		     (org-export-get-ordinal
-		      destination info nil 'org-ascii--has-caption-p)))
-		(when number
-		  (if (atom number) (number-to-string number)
-		    (mapconcat 'number-to-string number ".")))))))))
+	(if (org-string-nw-p desc) desc
+	  (when destination
+	    (let ((number
+		   (org-export-get-ordinal
+		    destination info nil 'org-ascii--has-caption-p)))
+	      (when number
+		(if (atom number) (number-to-string number)
+		  (mapconcat 'number-to-string number "."))))))))
      (t
       (if (not (org-string-nw-p desc)) (format "[%s]" raw-link)
 	(concat
@@ -1462,11 +1515,7 @@ channel."
   "Transcode a QUOTE-BLOCK element from Org to ASCII.
 CONTENTS holds the contents of the block.  INFO is a plist
 holding contextual information."
-  (let ((width (org-ascii--current-text-width quote-block info)))
-    (org-ascii--indent-string
-     (org-remove-indentation
-      (org-ascii--fill-string contents width info))
-     org-ascii-quote-margin)))
+  (org-ascii--indent-string contents org-ascii-quote-margin))
 
 
 ;;;; Quote Section
@@ -1534,13 +1583,14 @@ holding contextual information."
   "Transcode a SRC-BLOCK element from Org to ASCII.
 CONTENTS holds the contents of the item.  INFO is a plist holding
 contextual information."
-  (let ((caption (org-ascii--build-caption src-block info)))
-    (concat
-     (when (and caption org-ascii-caption-above) (concat caption "\n"))
-     (org-ascii--box-string
-      (org-export-format-code-default src-block info) info)
-     (when (and caption (not org-ascii-caption-above))
-       (concat "\n" caption)))))
+  (let ((caption (org-ascii--build-caption src-block info))
+	(code (org-export-format-code-default src-block info)))
+    (if (equal code "") ""
+      (concat
+       (when (and caption org-ascii-caption-above) (concat caption "\n"))
+       (org-ascii--box-string code info)
+       (when (and caption (not org-ascii-caption-above))
+	 (concat "\n" caption))))))
 
 
 ;;;; Statistics Cookie
@@ -1624,25 +1674,35 @@ column.
 
 When `org-ascii-table-widen-columns' is non-nil, width cookies
 are ignored."
-  (or (and (not org-ascii-table-widen-columns)
-	   (org-export-table-cell-width table-cell info))
-      (let* ((max-width 0)
-	     (table (org-export-get-parent-table table-cell))
-	     (specialp (org-export-table-has-special-column-p table))
-	     (col (cdr (org-export-table-cell-address table-cell info))))
-	(org-element-map table 'table-row
-	  (lambda (row)
-	    (setq max-width
-		  (max (length
-			(org-export-data
-			 (org-element-contents
-			  (elt (if specialp (cdr (org-element-contents row))
-				 (org-element-contents row))
-			       col))
-			 info))
-		       max-width)))
-	  info)
-	max-width)))
+  (let* ((row (org-export-get-parent table-cell))
+	 (table (org-export-get-parent row))
+	 (col (let ((cells (org-element-contents row)))
+		(- (length cells) (length (memq table-cell cells)))))
+	 (cache
+	  (or (plist-get info :ascii-table-cell-width-cache)
+	      (plist-get (setq info
+			       (plist-put info :ascii-table-cell-width-cache
+					  (make-hash-table :test 'equal)))
+			 :ascii-table-cell-width-cache)))
+	 (key (cons table col)))
+    (or (gethash key cache)
+	(puthash
+	 key
+	 (or (and (not org-ascii-table-widen-columns)
+		  (org-export-table-cell-width table-cell info))
+	     (let* ((max-width 0))
+	       (org-element-map table 'table-row
+		 (lambda (row)
+		   (setq max-width
+			 (max (length
+			       (org-export-data
+				(org-element-contents
+				 (elt (org-element-contents row) col))
+				info))
+			      max-width)))
+		 info)
+	       max-width))
+	 cache))))
 
 (defun org-ascii-table-cell (table-cell contents info)
   "Transcode a TABLE-CELL object from Org to ASCII.
@@ -1765,7 +1825,7 @@ contextual information."
 ;;; Filters
 
 (defun org-ascii-filter-headline-blank-lines (headline back-end info)
-  "Filter controlling number of blank lines after an headline.
+  "Filter controlling number of blank lines after a headline.
 
 HEADLINE is a string representing a transcoded headline.
 BACK-END is symbol specifying back-end used for export.  INFO is
@@ -1784,8 +1844,7 @@ TREE is the parse tree.  BACK-END is the symbol specifying
 back-end used for export.  INFO is a plist used as
 a communication channel.
 
-This function only applies to `e-ascii' back-end.  See
-`org-ascii-paragraph-spacing' for information."
+See `org-ascii-paragraph-spacing' for information."
   (when (wholenump org-ascii-paragraph-spacing)
     (org-element-map tree 'paragraph
       (lambda (p)
@@ -1793,6 +1852,18 @@ This function only applies to `e-ascii' back-end.  See
 		  'paragraph)
 	  (org-element-put-property
 	   p :post-blank org-ascii-paragraph-spacing)))))
+  tree)
+
+(defun org-ascii-filter-comment-spacing (tree backend info)
+  "Filter removing blank lines between comments.
+TREE is the parse tree.  BACK-END is the symbol specifying
+back-end used for export.  INFO is a plist used as
+a communication channel."
+  (org-element-map tree '(comment comment-block)
+    (lambda (c)
+      (when (memq (org-element-type (org-export-get-next-element c info))
+		  '(comment comment-block))
+	(org-element-put-property c :post-blank 0))))
   tree)
 
 
@@ -1833,15 +1904,15 @@ is non-nil."
   (interactive)
   (if async
       (org-export-async-start
-	  (lambda (output)
-	    (with-current-buffer (get-buffer-create "*Org ASCII Export*")
-	      (erase-buffer)
-	      (insert output)
-	      (goto-char (point-min))
-	      (text-mode)
-	      (org-export-add-to-stack (current-buffer) 'ascii)))
-	`(org-export-as 'ascii ,subtreep ,visible-only ,body-only
-			',ext-plist))
+       (lambda (output)
+	 (with-current-buffer (get-buffer-create "*Org ASCII Export*")
+	   (erase-buffer)
+	   (insert output)
+	   (goto-char (point-min))
+	   (text-mode)
+	   (org-export-add-to-stack (current-buffer) 'ascii)))
+       `(org-export-as 'ascii ,subtreep ,visible-only ,body-only
+		       ',ext-plist))
     (let ((outbuf (org-export-to-buffer
 		   'ascii "*Org ASCII Export*"
 		   subtreep visible-only body-only ext-plist)))
@@ -1882,10 +1953,10 @@ Return output file's name."
   (let ((outfile (org-export-output-file-name ".txt" subtreep)))
     (if async
 	(org-export-async-start
-	    (lambda (f) (org-export-add-to-stack f 'ascii))
-	  `(expand-file-name
-	    (org-export-to-file
-	     'ascii ,outfile ,subtreep ,visible-only ,body-only ',ext-plist)))
+	 (lambda (f) (org-export-add-to-stack f 'ascii))
+	 `(expand-file-name
+	   (org-export-to-file
+	    'ascii ,outfile ,subtreep ,visible-only ,body-only ',ext-plist)))
       (org-export-to-file
        'ascii outfile subtreep visible-only body-only ext-plist))))
 
@@ -1930,6 +2001,7 @@ Return output file name."
 
 ;; Local variables:
 ;; generated-autoload-file: "org-loaddefs.el"
+;; coding: utf-8-emacs
 ;; End:
 
 ;;; ox-ascii.el ends here

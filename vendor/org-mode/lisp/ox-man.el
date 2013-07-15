@@ -3,22 +3,23 @@
 ;; Copyright (C) 2011-2013  Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
-;; Author: Luis R Anaya <papoanaya aroba hot mail punto com>
+;;      Luis R Anaya <papoanaya aroba hot mail punto com>
 ;; Keywords: outlines, hypermedia, calendar, wp
-;;
 
-;; This program is free software; you can redistribute it and/or modify
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
 
-;; This program is distributed in the hope that it will be useful,
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -48,70 +49,70 @@
 
 ;;; Define Back-End
 
-(org-export-define-backend man
-  ((babel-call . org-man-babel-call)
-   (bold . org-man-bold)
-   (center-block . org-man-center-block)
-   (clock . org-man-clock)
-   (code . org-man-code)
-   (comment . org-man-comment)
-   (comment-block . org-man-comment-block)
-   (drawer . org-man-drawer)
-   (dynamic-block . org-man-dynamic-block)
-   (entity . org-man-entity)
-   (example-block . org-man-example-block)
-   (export-block . org-man-export-block)
-   (export-snippet . org-man-export-snippet)
-   (fixed-width . org-man-fixed-width)
-   (footnote-definition . org-man-footnote-definition)
-   (footnote-reference . org-man-footnote-reference)
-   (headline . org-man-headline)
-   (horizontal-rule . org-man-horizontal-rule)
-   (inline-babel-call . org-man-inline-babel-call)
-   (inline-src-block . org-man-inline-src-block)
-   (inlinetask . org-man-inlinetask)
-   (italic . org-man-italic)
-   (item . org-man-item)
-   (keyword . org-man-keyword)
-   (line-break . org-man-line-break)
-   (link . org-man-link)
-   (paragraph . org-man-paragraph)
-   (plain-list . org-man-plain-list)
-   (plain-text . org-man-plain-text)
-   (planning . org-man-planning)
-   (property-drawer . org-man-property-drawer)
-   (quote-block . org-man-quote-block)
-   (quote-section . org-man-quote-section)
-   (radio-target . org-man-radio-target)
-   (section . org-man-section)
-   (special-block . org-man-special-block)
-   (src-block . org-man-src-block)
-   (statistics-cookie . org-man-statistics-cookie)
-   (strike-through . org-man-strike-through)
-   (subscript . org-man-subscript)
-   (superscript . org-man-superscript)
-   (table . org-man-table)
-   (table-cell . org-man-table-cell)
-   (table-row . org-man-table-row)
-   (target . org-man-target)
-   (template . org-man-template)
-   (timestamp . org-man-timestamp)
-   (underline . org-man-underline)
-   (verbatim . org-man-verbatim)
-   (verse-block . org-man-verse-block))
+(org-export-define-backend 'man
+  '((babel-call . org-man-babel-call)
+    (bold . org-man-bold)
+    (center-block . org-man-center-block)
+    (clock . org-man-clock)
+    (code . org-man-code)
+    (comment . (lambda (&rest args) ""))
+    (comment-block . (lambda (&rest args) ""))
+    (drawer . org-man-drawer)
+    (dynamic-block . org-man-dynamic-block)
+    (entity . org-man-entity)
+    (example-block . org-man-example-block)
+    (export-block . org-man-export-block)
+    (export-snippet . org-man-export-snippet)
+    (fixed-width . org-man-fixed-width)
+    (footnote-definition . org-man-footnote-definition)
+    (footnote-reference . org-man-footnote-reference)
+    (headline . org-man-headline)
+    (horizontal-rule . org-man-horizontal-rule)
+    (inline-babel-call . org-man-inline-babel-call)
+    (inline-src-block . org-man-inline-src-block)
+    (inlinetask . org-man-inlinetask)
+    (italic . org-man-italic)
+    (item . org-man-item)
+    (keyword . org-man-keyword)
+    (line-break . org-man-line-break)
+    (link . org-man-link)
+    (paragraph . org-man-paragraph)
+    (plain-list . org-man-plain-list)
+    (plain-text . org-man-plain-text)
+    (planning . org-man-planning)
+    (property-drawer . (lambda (&rest args) ""))
+    (quote-block . org-man-quote-block)
+    (quote-section . org-man-quote-section)
+    (radio-target . org-man-radio-target)
+    (section . org-man-section)
+    (special-block . org-man-special-block)
+    (src-block . org-man-src-block)
+    (statistics-cookie . org-man-statistics-cookie)
+    (strike-through . org-man-strike-through)
+    (subscript . org-man-subscript)
+    (superscript . org-man-superscript)
+    (table . org-man-table)
+    (table-cell . org-man-table-cell)
+    (table-row . org-man-table-row)
+    (target . org-man-target)
+    (template . org-man-template)
+    (timestamp . org-man-timestamp)
+    (underline . org-man-underline)
+    (verbatim . org-man-verbatim)
+    (verse-block . org-man-verse-block))
   :export-block "MAN"
   :menu-entry
-  (?m "Export to MAN"
-      ((?m "As MAN file" org-man-export-to-man)
-       (?p "As PDF file" org-man-export-to-pdf)
-       (?o "As PDF file and open"
-	   (lambda (a s v b)
-	     (if a (org-man-export-to-pdf t s v b)
-	       (org-open-file (org-man-export-to-pdf nil s v b)))))))
+  '(?m "Export to MAN"
+       ((?m "As MAN file" org-man-export-to-man)
+	(?p "As PDF file" org-man-export-to-pdf)
+	(?o "As PDF file and open"
+	    (lambda (a s v b)
+	      (if a (org-man-export-to-pdf t s v b)
+		(org-open-file (org-man-export-to-pdf nil s v b)))))))
   :options-alist
-  ((:man-class "MAN_CLASS" nil nil t)
-   (:man-class-options "MAN_CLASS_OPTIONS" nil nil t)
-   (:man-header-extra "MAN_HEADER" nil nil newline)))
+  '((:man-class "MAN_CLASS" nil nil t)
+    (:man-class-options "MAN_CLASS_OPTIONS" nil nil t)
+    (:man-header-extra "MAN_HEADER" nil nil newline)))
 
 
 
@@ -127,11 +128,15 @@
 (defcustom org-man-tables-centered t
   "When non-nil, tables are exported in a center environment."
   :group 'org-export-man
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'boolean)
 
 (defcustom org-man-tables-verbatim nil
   "When non-nil, tables are exported verbatim."
   :group 'org-export-man
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'boolean)
 
 
@@ -142,6 +147,8 @@ The format should have \"%s\" twice, for mantissa and exponent
 
 When nil, no transformation is made."
   :group 'org-export-man
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(choice
           (string :tag "Format string")
           (const :tag "No formatting")))
@@ -153,6 +160,8 @@ When nil, no transformation is made."
 (defcustom org-man-source-highlight nil
   "Use GNU source highlight to embellish source blocks "
   :group 'org-export-man
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'boolean)
 
 
@@ -182,6 +191,8 @@ parameter for the listings package.  If the mode name and the
 listings name are the same, the language does not need an entry
 in this list - but it does not hurt if it is present."
   :group 'org-export-man
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(repeat
           (list
            (symbol :tag "Major mode       ")
@@ -223,6 +234,9 @@ Alternatively, this may be a Lisp function that does the
 processing.  This function should accept the file name as
 its single argument."
   :group 'org-export-pdf
+  :group 'org-export-man
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(choice
           (repeat :tag "Shell command sequence"
                   (string :tag "Shell command"))
@@ -239,12 +253,16 @@ its single argument."
   '("log" "out" "toc")
   "The list of file extensions to consider as Man logfiles."
   :group 'org-export-man
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type '(repeat (string :tag "Extension")))
 
 (defcustom org-man-remove-logfiles t
   "Non-nil means remove the logfiles produced by PDF production.
 These are the .aux, .log, .out, and .toc files."
   :group 'org-export-man
+  :version "24.4"
+  :package-version '(Org . "8.0")
   :type 'boolean)
 
 
@@ -450,7 +468,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
 ;;; Headline
 
 (defun org-man-headline (headline contents info)
-  "Transcode an HEADLINE element from Org to Man.
+  "Transcode a HEADLINE element from Org to Man.
 CONTENTS holds the contents of the headline.  INFO is a plist
 holding contextual information."
   (let* ((level (org-export-get-relative-level headline info))
@@ -600,8 +618,6 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
     (cond
      ((string= key "MAN") value)
      ((string= key "INDEX") nil)
-     ;; Invisible targets.
-     ((string= key "TARGET") nil)
      ((string= key "TOC"   ) nil))))
 
 
@@ -927,28 +943,14 @@ This function assumes TABLE has `org' as its `:type' attribute."
          (lines (org-split-string contents "\n"))
 
          (attr-list
-          (let ((result-list '()))
-            (dolist (attr-item
-                     (list
-                      (if (plist-get attr :expand)
-                          "expand" nil)
-
-                      (case (plist-get attr :placement)
-                        ('center "center")
-                        ('left nil)
-                        (t (if org-man-tables-centered "center" "")))
-
-                      (case (plist-get attr :boxtype)
-                        ('box "box")
-                        ('doublebox "doublebox")
-                        ('allbox "allbox")
-                        ('none nil)
-                        (t "box"))))
-
-              (if attr-item
-                  (add-to-list 'result-list attr-item)))
-            result-list ))
-
+	  (delq nil
+		(list
+		 (and (plist-get attr :expand) "expand")
+		 (let ((placement (plist-get attr :placement)))
+		   (cond ((string= placement 'center) "center")
+			 ((string= placement 'left) nil)
+			 (t (if org-man-tables-centered "center" ""))))
+		 (or (plist-get attr :boxtype) "box"))))
 
          (title-line  (plist-get attr :title-line))
          (long-cells (plist-get attr :long-cells))
@@ -1202,11 +1204,12 @@ Return PDF file name or an error if it couldn't be produced."
   (let* ((base-name (file-name-sans-extension (file-name-nondirectory file)))
 	 (full-name (file-truename file))
 	 (out-dir (file-name-directory file))
-	 ;; Make sure `default-directory' is set to FILE directory,
-	 ;; not to whatever value the current buffer may have.
-	 (default-directory (file-name-directory full-name))
+	 ;; Properly set working directory for compilation.
+	 (default-directory (if (file-name-absolute-p file)
+				(file-name-directory full-name)
+			      default-directory))
          errors)
-    (message (format "Processing Groff file %s ..." file))
+    (message (format "Processing Groff file %s..." file))
     (save-window-excursion
       (cond
        ;; A function is provided: Apply it.
