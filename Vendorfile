@@ -1,4 +1,5 @@
 # -*- ruby -*-
+MiniGit.debug = true
 
 git 'git://github.com/drothlis/pretty-symbols.git'
 git 'git://orgmode.org/org-mode.git'

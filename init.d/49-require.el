@@ -14,6 +14,7 @@
 (require 'markdown-mode)
 (require 'magit)
 (require 'paredit)
+(require 'coffee-mode)
 (load "auctex")
 (load "preview-latex")
 (load "darcsum/darcsum")

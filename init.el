@@ -9,11 +9,12 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(coffee-tab-width 4)
+ '(coffee-tab-width 2)
  '(cperl-indent-parens-as-block t)
  '(css-electric-brace-behavior t)
  '(css-electric-semi-behavior t)
  '(css-tab-mode (quote auto))
+ '(epg-gpg-program "/usr/local/bin/gpg")
  '(graphviz-dot-auto-indent-on-newline nil)
  '(graphviz-dot-auto-indent-on-semi nil)
  '(graphviz-dot-indent-width 4)
@@ -30,6 +31,7 @@
  '(ps-default-bg 1.0)
  '(ps-default-fg 0.0)
  '(ps-print-color-p nil)
+ '(ruby-deep-indent-paren (quote (91 93 t)))
  '(safe-local-variable-values (quote ((encoding . utf-8) (word-wrap . t) (Base . 10) (Syntax . ANSI-COMMON-LISP) (Package MEMOIZE) (Mode . LaTeX) (coding-system . iso-8859-2) (Syntax . COMMON-LISP))))
  '(tildify-pattern-alist (quote ((t "\\([,:;(][ 	]*[a]\\|\\<[AIKOSUVZUWikosuvzuw]\\)\\([ 	]+\\|[ 	]*
 [ 	]*\\)\\(\\w\\|[([{\\]\\|<[a-zA-Z]\\)" 2))))
