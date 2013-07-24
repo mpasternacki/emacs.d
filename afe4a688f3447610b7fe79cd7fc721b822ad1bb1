@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.4.0
+:current_branch: master
+:current_sha: 418eb434ed4ec2b620d573dbf120d0f2df819d12
+:git_describe: vendor/htmlize.el/stub-163-g418eb43
+:module_version: 94af467fe690f71343c16b31c1fed0f95943a44e
+:module_category:
+:module_name: https://github.com/antonj/scss-mode.git
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/antonj/scss-mode.git
+:git_revision: 94af467fe690f71343c16b31c1fed0f95943a44e
