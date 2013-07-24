@@ -14,6 +14,7 @@ git 'https://github.com/yoshiki/yaml-mode.git'
 git 'https://github.com/defunkt/coffee-mode.git'
 git 'https://github.com/emacs-ess/ESS.git'
 git 'https://github.com/bmaland/yasnippet-ruby-mode.git'
+git 'https://github.com/antonj/scss-mode.git'
 
 git 'ruby-mode', :repository => 'https://github.com/ruby/ruby.git' do
   # Remove all of Ruby except ruby-mode
