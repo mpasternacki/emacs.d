@@ -27,13 +27,25 @@
  '(longlines-show-effect "¶
 ")
  '(longlines-show-hard-newlines t)
+ '(org-agenda-files nil)
  '(pr-gv-command "open")
  '(ps-default-bg 1.0)
  '(ps-default-fg 0.0)
  '(ps-print-color-p nil)
  '(ruby-deep-indent-paren (quote (91 93 t)))
- '(safe-local-variable-values (quote ((encoding . utf-8) (word-wrap . t) (Base . 10) (Syntax . ANSI-COMMON-LISP) (Package MEMOIZE) (Mode . LaTeX) (coding-system . iso-8859-2) (Syntax . COMMON-LISP))))
- '(tildify-pattern-alist (quote ((t "\\([,:;(][ 	]*[a]\\|\\<[AIKOSUVZUWikosuvzuw]\\)\\([ 	]+\\|[ 	]*
+ '(safe-local-variable-values
+   (quote
+    ((encoding . utf-8)
+     (word-wrap . t)
+     (Base . 10)
+     (Syntax . ANSI-COMMON-LISP)
+     (Package MEMOIZE)
+     (Mode . LaTeX)
+     (coding-system . iso-8859-2)
+     (Syntax . COMMON-LISP))))
+ '(tildify-pattern-alist
+   (quote
+    ((t "\\([,:;(][ 	]*[a]\\|\\<[AIKOSUVZUWikosuvzuw]\\)\\([ 	]+\\|[ 	]*
 [ 	]*\\)\\(\\w\\|[([{\\]\\|<[a-zA-Z]\\)" 2))))
  '(tramp-default-method "ssh")
  '(vc-rcs-diff-switches "-u")

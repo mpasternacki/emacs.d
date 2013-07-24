@@ -39,19 +39,21 @@
 (define-key global-map [(control meta ?r)] 'remember)
 
 (setq
- org-agenda-files '("~/todo.org" "~/org/ug.org")
- org-default-notes-file "~/notes.org"
+ org-agenda-files '("~/EVERYTHING.org")
+ org-agenda-include-diary t
  org-agenda-ndays 7
- org-deadline-warning-days 14
  org-agenda-show-all-dates t
  org-agenda-skip-deadline-if-done t
  org-agenda-skip-scheduled-if-done t
  org-agenda-start-on-weekday nil
- org-reverse-note-order t
+ org-deadline-warning-days 14
+ org-default-notes-file "~/EVERYTHING.org"
+ org-export-with-LaTeX-fragments t
  org-fast-tag-selection-single-key (quote expert)
  org-log-done t
- org-agenda-include-diary t
- org-export-with-LaTeX-fragments t
+ org-remember-store-without-prompt t
+ org-reverse-note-order t
+ org-todo-keywords '((sequence "TODO" "DOING" "VERIFY" "|" "DONE" "DELEGATED"))
 
  org-agenda-custom-commands
  '(("d" todo "DELEGATED" nil)
@@ -70,12 +72,6 @@
         (org-agenda-skip-entry-if (quote scheduled) (quote deadline)
                                   (quote regexp) "<[^>\n]+>")))
      (org-agenda-overriding-header "Unscheduled TODO entries: ")))) 
-
- org-remember-store-without-prompt t
-
- org-remember-templates
- '((116 "* TODO %?\n  %u" "~/todo.org" "Tasks")
-   (110 "* %u %?" "~/notes.org" "Notes"))
 
  remember-annotation-functions (quote (org-remember-annotation))
  remember-handler-functions (quote (org-remember-handler)))

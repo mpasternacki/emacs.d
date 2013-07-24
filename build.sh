@@ -19,3 +19,6 @@ make install
 cd ../../gnuplot-mode
 ./configure
 make
+
+cd ../org-mode
+make autoloads

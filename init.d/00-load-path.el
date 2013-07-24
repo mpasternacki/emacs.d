@@ -7,6 +7,7 @@
                 "color-theme"
                 "gnuplot-mode"
                 "org-mode/lisp"
+                "org-mode/contrib/lisp"
                 "ess/lisp"
                 "yasnippet"
                 "clojure-mode"
