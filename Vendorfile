@@ -23,13 +23,13 @@ git 'ruby-mode', :repository => 'https://github.com/ruby/ruby.git' do
   FileUtils::rmdir 'misc'
 end
 
-vendor 'python-mode', :version => '0.20130302.1' do
+vendor 'python-mode', :version => '0.20140208.1' do
   FileUtils::rm_rf Dir.entries('.') - %w|. ..|
   system 'bzr branch --use-existing-dir lp:python-mode .'
   FileUtils::rm_rf '.bzr'
 end
 
-vendor 'darcsum', :version => '0.20130214.2' do
+vendor 'darcsum', :version => '0.20140208.1' do
   system 'rm -rf * && darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/ && mv -v darcsum/* . && rm -rf _darcs && rmdir darcsum'
 end
 
