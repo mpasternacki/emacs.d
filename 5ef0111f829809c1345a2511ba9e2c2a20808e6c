@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: 4471c32e0c11a98be4d274175a4489f2666a7963
+:git_describe: vendor/scss-mode/94af467fe690f71343c16b31c1fed0f95943a44e-4-g4471c32
+:module_name: yasnippet
+:module_version: 0f8c2ab4381449298d8bc8b8ee63524aaa8ba1ac
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/capitaomorte/yasnippet.git
+:git_revision: 0f8c2ab4381449298d8bc8b8ee63524aaa8ba1ac
