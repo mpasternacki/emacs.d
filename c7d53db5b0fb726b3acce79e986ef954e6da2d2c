@@ -1,0 +1,13 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: 99f55a31760838bcc512f336bf118fbb9715e044
+:git_describe: vendor/yasnippet/0f8c2ab4381449298d8bc8b8ee63524aaa8ba1ac-181-g99f55a3
+:module_name: ruby-mode
+:module_version: 8ca2f8565dace585513b92300fefc5935667e924
+:module_group:
+:unparsed_args:
+  :repository: https://github.com/ruby/ruby.git
+:parsed_args:
+  :repository: https://github.com/ruby/ruby.git
+:git_revision: 8ca2f8565dace585513b92300fefc5935667e924
