@@ -1,4 +1,4 @@
-;;; python-mode-shell-install.el --- Installing python, python3, ipython and other python shells
+;;; python-mode-utils.el - generating parts of python-mode.el
 
 ;; Copyright (C) 2011  Andreas Roehler
 
@@ -23,6 +23,10 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Some of this forms to generate parts of
+;; python-mode.el are just drafts, others outdated.
+;; Kept for inspiration.
 
 ;;; Code:
 
@@ -57,7 +61,7 @@
 
 (defvar docstring-styles (list "django" "onetwo" "pep-257" "pep-257-nn" "symmetric"))
 
-(setq py-options (list "" "switch" "noswitch" "dedicated" "dedicated-switch"))
+(setq py-options (list "" "switch" "no-switch" "dedicated" "dedicated-switch"))
 
 (defvar py-shells
   (list "python" "ipython" "python3" "python2" "python2.7" "jython" "python3.2" "python3.3" "bpython")
@@ -68,23 +72,37 @@
 (setq py-test-shells
       (list "python" "ipython" "python3" "python2" "python2.7"))
 
-(setq py-shift-forms (list "paragraph" "block" "clause" "block-or-clause" "def" "class" "def-or-class" "line" "statement" "comment"))
+(setq py-shift-forms (list "paragraph" "block" "minor-block" "clause" "block-or-clause" "def" "class" "def-or-class" "line" "statement" "comment" "top-level"))
+
+(setq py-positions-forms (list "paragraph" "block" "minor-block" "clause" "block-or-clause" "def" "class" "def-or-class" "line" "statement" "comment" "top-level" "partial-expression" "expression"))
 
 (setq py-core-command-name '("statement" "block" "def" "class" "region" "file"))
 
-(defvar py-bounds-command-names (list "statement" "block" "clause" "block-or-clause" "def" "class" "region" "buffer" "expression" "partial-expression" "line"))
-(setq  py-bounds-command-names (list "statement" "block" "clause" "block-or-clause" "def" "class" "region" "buffer" "expression" "partial-expression" "line"))
+(defvar py-bounds-command-names (list "statement" "block" "clause" "block-or-clause" "def" "class" "region" "buffer" "expression" "partial-expression" "line" "top-level"))
+(setq  py-bounds-command-names (list "statement" "block" "clause" "block-or-clause" "def" "class" "region" "buffer" "expression" "partial-expression" "line" "top-level"))
 
 (setq py-checker-command-names '("clear-flymake-allowed-file-name-masks" "pylint-flymake-mode" "pyflakes-flymake-mode" "pychecker-flymake-mode" "pep8-flymake-mode" "pyflakespep8-flymake-mode" "py-pylint-doku" "py-pyflakes-run" "py-pyflakespep8-run" "py-pyflakespep8-help"))
 
-(setq py-execute-forms-names (list "statement" "block" "block-or-clause" "def" "class" "def-or-class" "expression" "partial-expression"))
+(setq py-execute-forms-names (list "statement" "block" "block-or-clause" "def" "class" "def-or-class" "expression" "partial-expression" "top-level" "clause"))
+
+(setq py-delete-forms (list "statement" "top-level" "block" "block-or-clause" "def" "class" "def-or-class" "expression" "partial-expression" "minor-block" "clause"))
+
+(setq py-copy-forms (list "statement" "top-level" "block" "clause" "block-or-clause" "def" "class" "def-or-class" "expression" "partial-expression" "minor-block"))
 
 (defvar py-re-forms-names '("block" "clause" "block-or-clause" "def" "class" "def-or-class" "if-block" "try-block" "minor-block")
   "Forms whose start is described by a regexp in python-mode." )
 
+(setq py-re-forms-names '("block" "clause" "block-or-clause" "def" "class" "def-or-class" "if-block" "try-block" "minor-block"))
+
+
+;; (setq py-re-forms-names '("block" "clause" "block-or-clause" "def" "class" "def-or-class")
+
+
 ;; (defvar py-down-forms (list "block" "minor-block" "clause" "block-or-clause" "def" "class" "def-or-class" "statement"))
 ;;
-(defvar py-down-forms (list "block" "minor-block" "clause" "block-or-clause" "def" "class" "def-or-class"))
+(defvar py-down-forms (list "block" "minor-block" "clause" "block-or-clause" "def" "class" "def-or-class" "statement" "top-level"))
+
+(setq py-down-forms (list "block" "minor-block" "clause" "block-or-clause" "def" "class" "def-or-class" "statement" "top-level"))
 
 (setq py-comment-forms (list "block" "clause" "block-or-clause" "def" "class" "def-or-class" "statement"))
 
@@ -102,24 +120,17 @@
     (insert arkopf)
     (insert ";;; Execute forms at point\n\n")
     (dolist (ele py-bounds-command-names)
-      (insert (concat "(defun py-execute-" ele " (&optional shell dedicated switch)"))
+      (insert (concat "(defun py-execute-" ele " ()"))
       (insert (concat "
-  \"Send " ele " at point to a Python interpreter.\n\n"))
-      (insert "When called with \\\\[universal-argument], execution through `default-value' of `py-shell-name' is forced.
-See also `py-force-py-shell-name-p'.
-
-When called with \\\\[universal-argument] followed by a number different from 4 and 1, user is prompted to specify a shell. This might be the name of a system-wide shell or include the path to a virtual environment.
-
-When called from a programm, it accepts a string specifying a shell which will be forced upon execute as argument.
-
-Optional arguments DEDICATED (boolean) and SWITCH (symbols 'noswitch/'switch)\"\n")
-      (insert (concat "  (interactive \"P\")
-  (save-excursion
-    (let ((beg (prog1
-                   (or (py-beginning-of-" ele "-p)
-                       (py-beginning-of-" ele "))))
-          (end (py-end-of-" ele")))
-      (py-execute-region beg end shell dedicated switch))))\n\n"))))
+  \"Send " ele " at point to a Python interpreter. \"\n"))
+      (insert (concat "  (interactive)
+  (let ((beg (prog1
+		 (or (py-beginning-of-" ele "-p)
+		     (save-excursion
+		       (py-beginning-of-" ele ")))))
+	(end (save-excursion
+	       (py-end-of-" ele"))))
+    (py-execute-region beg end)))\n\n"))))
   (insert "(provide 'python-components-exec-forms)
 ;;; python-components-exec-forms.el ends here\n ")
   (emacs-lisp-mode))
@@ -127,7 +138,7 @@ Optional arguments DEDICATED (boolean) and SWITCH (symbols 'noswitch/'switch)\"\
 (defun write-options-dokumentation-subform (pyo)
   (cond ((string-match "dedicated" pyo)
          (insert "\n\nUses a dedicated shell.")))
-  (cond ((string-match "noswitch" pyo)
+  (cond ((string-match "no-switch" pyo)
          (insert "\nIgnores default of `py-switch-buffers-on-execute-p', uses it with value \\\"nil\\\""))
         ((string-match "switch" pyo)
          (insert "\nIgnores default of `py-switch-buffers-on-execute-p', uses it with value \\\"non-nil\\\""))))
@@ -211,16 +222,16 @@ Optional arguments DEDICATED (boolean) and SWITCH (symbols 'noswitch/'switch)\"\
       (write-options-dokumentation-subform pyo)
       (insert (concat "\"
   (interactive \"fFile: \")
-  (py-execute-file filename \"" ele "\""))
+  (py-execute-prepare filename \"" ele "\""))
       (cond ((string-match "dedicated" pyo)
              (insert " 'dedicated"))
             (t (insert " nil")))
-      (cond ((string-match "noswitch" pyo)
-             (insert " 'noswitch"))
+      (cond ((string-match "no-switch" pyo)
+             (insert " 'no-switch"))
             ((string-match "switch" pyo)
              (insert " 'switch"))
             (t (insert " nil")))
-      (insert "))\n")))
+      (insert " nil nil t))\n")))
   (insert "\n(provide 'python-components-execute-file)
 ;;; 'python-components-execute-file.el ends here\n ")
   (emacs-lisp-mode))
@@ -276,6 +287,24 @@ Optional arguments DEDICATED (boolean) and SWITCH (symbols 'noswitch/'switch)\"\
   (emacs-lisp-mode)
   (switch-to-buffer (current-buffer)))
 
+(defun write-extended-execute-forms-endings ()
+  "Internally used by write-extended-execute-forms"
+
+  (if (string-match "dedicated" pyo)
+      (insert " t")
+    (insert " nil"))
+  (cond ((or (string= "switch" pyo)
+             (string= "dedicated-switch" pyo))
+         (insert " 'switch"))
+        ((string= "no-switch" pyo)
+         (insert " 'no-switch"))
+        (t (insert " nil")))
+  (cond ((string= "region" ele)
+         (insert " beg end"))
+        ((string= "buffer" ele)
+         (insert " (point-min) (point-max)))")))
+  (insert "))\n\n"))
+
 (defun write-extended-execute-forms (&optional path-to-shell command option)
   "Write `py-execute-block...' etc. "
   (interactive)
@@ -298,16 +327,41 @@ Optional arguments DEDICATED (boolean) and SWITCH (symbols 'noswitch/'switch)\"\
 
     (insert "
 ;; created by `write-extended-execute-forms'
-\(defun py-execute-prepare (form &optional shell dedicated switch)
+\(defun py-masterfile ()
+  \"Internal use. Set master-file, if given. \"
+  (and (or py-master-file (py-fetch-py-master-file))
+       (let\* ((filename (expand-file-name py-master-file))
+              (buffer (or (get-file-buffer filename)
+                          (find-file-noselect filename))))
+         (set-buffer buffer))))
+
+
+\(defun py-execute-prepare (form &optional shell dedicated switch beg end file)
   \"Used by python-extended-executes .\"
   (save-excursion
-    (let ((beg (prog1
-                   (or (funcall (intern-soft (concat \"py-beginning-of-\" form \"-p\")))
+    (let ((beg (unless file
+                 (prog1
+                     (or beg (funcall (intern-soft (concat \"py-beginning-of-\" form \"-p\")))
 
-                       (funcall (intern-soft (concat \"py-beginning-of-\" form)))
-                       (push-mark))))
-          (end (funcall (intern-soft (concat \"py-end-of-\" form)))))
-      (py-execute-base beg end shell dedicated switch))))\n\n")
+                         (funcall (intern-soft (concat \"py-beginning-of-\" form)))
+                         (push-mark)))))
+          (end (unless file
+                 (or end (funcall (intern-soft (concat \"py-end-of-\" form))))))
+          (py-shell-name shell)
+          (py-dedicated-process-p dedicated)
+          (py-switch-buffers-on-execute-p (cond ((eq 'switch switch)
+                                                 t)
+                                                ((eq 'no-switch switch)
+                                                 nil)
+                                                (t py-switch-buffers-on-execute-p)))
+          filename)
+      (if file
+          (progn
+            (setq filename (expand-file-name form))
+            (if (file-readable-p filename)
+                (setq erg (py-execute-file-base nil filename nil nil (or (and (boundp 'py-orig-buffer-or-file) py-orig-buffer-or-file) filename)))
+              (message \"%s not readable. %s\" file \"Do you have write permissions?\")))
+        (py-execute-base beg end)))))\\n\n")
     ;; see also `py-checker-command-names'
     (dolist (ele py-bounds-command-names)
       (dolist (elt py-shells)
@@ -333,12 +387,15 @@ Optional arguments DEDICATED (boolean) and SWITCH (symbols 'noswitch/'switch)\"\
                 (t (insert " interpreter. ")))
           (cond ((string= pyo "switch")
                  (insert "\n\nSwitch to output buffer. Ignores `py-switch-buffers-on-execute-p'. "))
-                ((string= pyo "noswitch")
+                ((string= pyo "no-switch")
                  (insert "\n\nKeep current buffer. Ignores `py-switch-buffers-on-execute-p' ")))
           (insert "\"\n")
           (cond ((string= "region" ele)
                  (insert (concat "  (interactive \"r\")
-  (py-execute-base beg end \"" elt "\"")))
+    (py-execute-prepare \"" ele "\" \"" elt "\""))
+                 (write-extended-execute-forms-endings)
+
+                 )
                 ((string= "buffer" ele)
                  (insert "  (interactive)
   \(save-excursion
@@ -350,28 +407,36 @@ Optional arguments DEDICATED (boolean) and SWITCH (symbols 'noswitch/'switch)\"\
                (buffer (or (get-file-buffer filename)
                            (find-file-noselect filename))))
           (set-buffer buffer)))
-      (setq beg (point-min))
-      (setq end (point-max))
-      (py-execute-region beg end \"" elt "\""))
-                (t (insert (concat "  (interactive)
-  (py-execute-prepare \"" ele "\" \"" elt "\""))))
+      (py-execute-prepare \"" ele "\" \"" elt "\"")
+                 (write-extended-execute-forms-endings)
 
-          (if (string-match "dedicated" pyo)
-              (insert " t")
-            (insert " nil"))
-          (cond ((or (string= "switch" pyo)
-                     (string= "dedicated-switch" pyo))
-                 (insert " 'switch"))
-                ((string= "noswitch" pyo)
-                 (insert " 'noswitch"))
-                (t (insert " nil")))
-          (if (string= "buffer" ele)
-              (insert "))))\n\n")
-            (insert "))\n\n"))))))
+                 )
+                (t (insert (concat "  (interactive)
+  (py-execute-prepare \"" ele "\" \"" elt "\""))
+    (write-extended-execute-forms-endings)
+                   )
+                )
+
+          ;; (unless (string= "buffer" ele)
+          ;;   (if (string-match "dedicated" pyo)
+          ;;       (insert " t")
+          ;;     (insert " nil"))
+          ;;   (cond ((or (string= "switch" pyo)
+          ;;              (string= "dedicated-switch" pyo))
+          ;;          (insert " 'switch"))
+          ;;         ((string= "no-switch" pyo)
+          ;;          (insert " 'no-switch"))
+          ;;         (t (insert " nil")))
+          ;;   (cond ((string= "region" ele)
+          ;;          (insert ")))\n\n"))
+          ;;         ((string= "buffer" ele)
+          ;;          (insert "))))\n\n"))
+          ;;         (t (insert "))\n\n"))))
+          ))))
   (if path-to-shell
       (insert (concat "(provide '" path-to-shell) ")
 ;;; " path-to-shell ".el ends here\n")
-    (insert "(provide 'python-extend8ed-executes)
+    (insert "(provide 'python-extended-executes)
 ;;; python-extended-executes.el ends here\n "))
   (emacs-lisp-mode))
 
@@ -873,7 +938,7 @@ Switch to output buffer; ignores `py-switch-buffers-on-execute-p'. \"]\n")))
     (insert ";;; Python named shells")
     (newline)
     (dolist (ele py-shells)
-      (insert (concat "(defun " ele " (&optional argprompt dedicated switch)
+      (insert (concat "(defun " ele " (&optional argprompt)
   \"Start an "))
       (if (string= "ipython" ele)
           (insert "IPython")
@@ -884,10 +949,9 @@ Optional \\\\[universal-argument] prompts for options to pass to the "))
       (if (string= "ipython" ele)
           (insert "IPython")
         (insert (capitalize ele)))
-      (insert (concat " interpreter. See `py-python-command-args'.
-   Optional DEDICATED SWITCH are provided for use from programs. \"
+      (insert (concat " interpreter. See `py-python-command-args'. \"
   (interactive \"P\")
-  (py-shell argprompt dedicated \"" ele "\" switch))\n\n")))
+  (py-shell argprompt nil \"" ele "\"))\n\n")))
     (insert ";; dedicated\n")
     (dolist (ele py-shells)
       (insert (concat "(defun " ele "-dedicated (&optional argprompt switch)
@@ -902,12 +966,12 @@ Optional \\\\[universal-argument] prompts for options to pass to the "))
           (insert "IPython")
         (insert (capitalize ele)))
       (insert (concat " interpreter. See `py-python-command-args'.\"
-  (interactive \"P\")
-  (py-set-shell-completion-environment)
-  (py-shell argprompt t \"" ele "\" switch))\n\n")))
+  (interactive \"P\")"))
+      (insert "\n  (let ((py-dedicated-process-p t))\n")
+      (insert (concat "    (py-shell argprompt t \"" ele "\")))\n\n")))
     (insert ";; switch\n")
     (dolist (ele py-shells)
-      (insert (concat "(defun " ele "-switch (&optional argprompt dedicated)
+      (insert (concat "(defun " ele "-switch (&optional argprompt)
   \"Switch to "))
       (if (string= "ipython" ele)
           (insert "IPython")
@@ -919,12 +983,12 @@ Optional \\\\[universal-argument] prompts for options to pass to the "))
           (insert "IPython")
         (insert (capitalize ele)))
       (insert (concat " interpreter. See `py-python-command-args'.\"
-  (interactive \"P\")
-  (py-set-shell-completion-environment)
-  (py-shell argprompt dedicated \"" ele "\" 'switch))\n\n")))
-    ;; noswitch
+  (interactive \"P\")"))
+      (insert "\n  (let ((py-switch-buffers-on-execute-p t))\n")
+      (insert (concat "    (py-shell argprompt nil \"" ele "\")))\n\n")))
+    (insert ";; no-switch\n")
     (dolist (ele py-shells)
-      (insert (concat "(defun " ele "-no-switch (&optional argprompt dedicated)
+      (insert (concat "(defun " ele "-no-switch (&optional argprompt)
   \"Open an "))
       (if (string= "ipython" ele)
           (insert "IPython")
@@ -936,10 +1000,10 @@ Optional \\\\[universal-argument] prompts for options to pass to the "))
           (insert "IPython")
         (insert (capitalize ele)))
       (insert (concat " interpreter. See `py-python-command-args'.\"
-  (interactive \"P\")
-  (py-set-shell-completion-environment)
-  (py-shell argprompt dedicated \"" ele "\" 'noswitch))\n\n")))
-    ;; dedicated switch
+  (interactive \"P\")"))
+      (insert "\n  (let (py-switch-buffers-on-execute-p)\n")
+      (insert (concat "    (py-shell argprompt nil \"" ele "\")))\n\n")))
+    (insert ";; dedicated switch\n")
     (dolist (ele py-shells)
       (insert (concat "(defalias '" ele "-dedicated-switch '" ele "-switch-dedicated)\n"))
       (insert (concat "(defun " ele "-switch-dedicated (&optional argprompt)
@@ -953,10 +1017,11 @@ Optional \\\\[universal-argument] prompts for options to pass to the "))
       (if (string= "ipython" ele)
           (insert "IPython")
         (insert (capitalize ele)))
-      (insert (concat " interpreter. See `py-python-command-args'.\"
-  (interactive \"P\")
-  (py-set-shell-completion-environment)
-  (py-shell argprompt t \"" ele "\" 'switch))\n\n"))))
+      (insert " interpreter. See `py-python-command-args'.\"
+  \(interactive \"P\")")
+  (insert "\n  (let ((py-dedicated-process-p t)
+        (py-switch-buffers-on-execute-p t))\n")
+  (insert (concat "    (py-shell argprompt t \"" ele "\")))\n\n"))))
   (emacs-lisp-mode)
   (switch-to-buffer (current-buffer)))
 
@@ -1125,26 +1190,31 @@ http://docs.python.org/reference/compound_stmts.html\"\n")
   (set-buffer (get-buffer-create "Positions"))
   (erase-buffer)
   (insert ";;; Positions")
-  (dolist (ele py-shift-forms)
+  (dolist (ele py-positions-forms)
     (insert (concat "
 \(defun py-beginning-of-" ele "-position ()
   \"Returns beginning of " ele " position. \"
   (interactive)
   (save-excursion
     (let ((erg (py-beginning-of-" ele ")))
-      (when (interactive-p) (message \"%s\" erg))
+      (when (and py-verbose-p (interactive-p)) (message \"%s\" erg))
       erg)))
 
 \(defun py-end-of-" ele "-position ()
   \"Returns end of " ele " position. \"
   (interactive)
   (save-excursion
-    (let ((erg (py-end-of-" ele ")))
-      (when (interactive-p) (message \"%s\" erg))
+    (let ((erg (progn
+                 (when (looking-at \"[ \\\\t\\\\r\\\\n\\\\f]\*\$\")
+                   (skip-chars-backward \" \\t\\r\\n\\f\")
+                   (forward-char -1))
+                 (py-end-of-" ele "))))
+      (when (and py-verbose-p (interactive-p)) (message \"%s\" erg))
       erg)))
 "))
     (switch-to-buffer (current-buffer))
     (emacs-lisp-mode)))
+
 
 (defun py-write-end-position-forms ()
   (interactive)
@@ -1389,19 +1459,19 @@ A complementary command travelling right, whilst `py-beginning-of-" ele "' stops
   (erase-buffer)
   (dolist (ele py-shells)
     (insert (concat "
-\(defun py-execute-region-" ele " (start end &optional async)
+\(defun py-execute-region-" ele " (start end)
   \"Send the region to a common shell calling the " ele " interpreter. \"
   (interactive \"r\\nP\")
-  (py-execute-base start end async \"" ele "\"))
+  (py-execute-base start end \"" ele "\"))
 
-\(defun py-execute-region-" ele "-switch (start end &optional async)
+\(defun py-execute-region-" ele "-switch (start end)
   \"Send the region to a common shell calling the " ele " interpreter.
   Ignores setting of `py-switch-buffers-on-execute-p', output-buffer will being switched to. \"
   (interactive \"r\\nP\")
   (let ((py-switch-buffers-on-execute-p t))
     (py-execute-base start end async \"" ele "\")))
 
-\(defun py-execute-region-" ele "-no-switch (start end &optional async)
+\(defun py-execute-region-" ele "-no-switch (start end)
   \"Send the region to a common shell calling the " ele " interpreter.
   Ignores setting of `py-switch-buffers-on-execute-p', output-buffer will not being switched to.\"
   (interactive \"r\\nP\")
@@ -1588,7 +1658,12 @@ A complementary command travelling right, whilst `py-beginning-of-" ele "' stops
                    (car kill-ring)
                  py-toggle-form-vars))
         done buffer-out first menu-buffer)
-    (dolist (ele liste)
+    (if (listp liste)
+        (dolist (ele liste)
+          (write-toggle-forms-intern ele))
+      (write-toggle-forms-intern liste))))
+
+(defun write-toggle-forms-intern (ele)
       (if done
           (set-buffer buffer-out)
         (setq buffer-out (capitalize ele))
@@ -1641,8 +1716,7 @@ Returns value of `" ele "'. \"
       (switch-emen ele)
       ;; (set-buffer buffer-out)
       ;; (switch-to-buffer (current-buffer))
-      )))
-
+      )
 
 
 
@@ -1845,7 +1919,8 @@ http://repo.or.cz/w/elbb.git/blob/HEAD:/code/Go-to-Emacs-Lisp-Definition.el
       (setq ele (replace-regexp-in-string  "/+" "-" (replace-regexp-in-string  "^[/~]+" "" ele)))
       (insert (concat "\(defun " ele "-shell-complete-test ()
   (interactive)
-  (let (py-switch-buffers-on-execute-p
+  (let ((py-completion-delay 0)
+        py-switch-buffers-on-execute-p
         py-split-windows-on-execute-p)
     (set-buffer (py-shell nil t \"" elt "\" nil \"" sepchar "\"))
     (sit-for 0.2 t)
@@ -1875,7 +1950,7 @@ Var `python-mode-el-dir' needs to be set.  "
                       (concat (py-normalize-directory (expand-file-name python-mode-el-dir)) "python-mode.el"))))
         (name (ar-symbol-name-atpt))
         (keyword (progn (re-search-backward "^([^ ]+" nil (quote move) 1)(match-string-no-properties 0))))
-    (read-only-mode -1)
+    (toggle-read-only -1)
     (save-restriction
       (push-mark)
       (narrow-to-region (point) (1+ (forward-list)))
@@ -2078,6 +2153,170 @@ Don't store data in kill ring. \"
   (switch-to-buffer (current-buffer))
   (emacs-lisp-mode))
 
+(defun py-write-forms ()
+  (interactive)
+    (set-buffer (get-buffer-create "form-menu.el"))
+    (erase-buffer)
+    (dolist (ele py-down-forms)
+      (insert (concat "(\" " (capitalize ele) "  ... \"
+             [\"Beginning of " ele " \" py-beginning-of-" ele "
+              :help \"`py-beginning-of-" ele "'
+Go to beginning of line at beginning of " ele ".
+
+Returns position reached, if successful, nil otherwise. \"]\n"))
+
+  (insert (concat "
+             [\"End of " ele " \" py-end-of-" ele "
+              :help \"`py-end-of-" ele "'
+Go to beginning of line following end of " ele ".
+
+Returns position reached, if successful, nil otherwise. \"]
+
+             [\"Up " ele " \" py-up-" ele "
+              :help \"`py-up-" ele "'
+Go to next " ele " upwards in buffer if any. Go to beginning of line.
+
+Returns position reached, if successful, nil otherwise. \"]
+
+             [\"Down " ele " \" py-down-" ele "
+              :help \"`py-down-" ele "'
+Go to next " ele " downwards in buffer if any. Go to beginning of line.
+
+Returns position reached, if successful, nil otherwise. \"]
+
+             [\"Mark " ele " \" py-mark-" ele "
+              :help \"`py-mark-" ele "'
+Mark " ele " at point. \"]
+
+             [\"Copy " ele " \" py-copy-" ele "
+              :help \"`py-copy-" ele "'
+Copy " ele " at point. \"]
+
+             [\"Kill " ele " \" py-kill-" ele "
+              :help \"`py-kill-" ele "'
+Kill " ele " at point. \"]
+
+             [\"Delete " ele " \" py-delete-" ele "
+              :help \"`py-delete-" ele "'
+Delete " ele " at point. \"]\n)\n")))
+
+  (set-buffer (get-buffer-create "python-components-forms.el"))
+  (erase-buffer)
+  (insert ";;; python-components-forms.el -- Forms start/end at beginning of line\n")
+  (insert arkopf)
+  (insert ";;; Beginning of line forms
+\(defun py-mark-base (form &optional py-mark-decorators)
+  (let\* ((begform (intern-soft (concat \"py-beginning-of-\" form)))
+         (endform (intern-soft (concat \"py-end-of-\" form)))
+         (begcheckform (intern-soft (concat \"py-beginning-of-\" form \"-p\")))
+         (orig (point))
+         beg end erg)
+    (setq beg (if
+                  (setq beg (funcall begcheckform))
+                  beg
+                (funcall begform)))
+    (when py-mark-decorators
+      (save-excursion
+        (when (setq erg (py-beginning-of-decorator))
+          (setq beg erg))))
+    (setq end (funcall endform))
+    (push-mark beg t t)
+    (unless end (when (< beg (point))
+                  (setq end (point))))
+    (when (interactive-p) (message \"%s %s\" beg end))
+    (cons beg end)))\n")
+  (dolist (ele py-down-forms)
+;; beg-end check forms
+    (insert (concat "
+\(defun py-beginning-of-" ele "-p ()
+  \"Returns position, if cursor is at the beginning of a " ele ", nil otherwise. \"
+  (when (and (looking-at py-" ele "-re)
+             (not (py-in-string-or-comment-p)))
+    (point)))
+
+\(defalias 'py-beginning-of-" ele "-lc 'py-beginning-of-" ele ")
+\(defun py-beginning-of-" ele " (&optional indent)
+  \"Goto beginning of line where " ele " starts.
+  Returns position reached, if successful, nil otherwise.\"
+  (interactive)
+  (let ((indent (and (looking-at py-" ele "-re)
+                     (current-indentation))))
+    (py-beginning-of-form-intern py-" ele "-re (interactive-p) indent)))
+
+\(defalias 'py-down-" ele "-lc 'py-end-of-" ele ")
+\(defun py-end-of-" ele " (&optional indent)
+  \"Go to end of " ele ".
+
+Returns end of " ele " if successful, nil otherwise
+
+Referring python program structures see for example:
+http://docs.python.org/reference/compound_stmts.html\"
+  (interactive \"P\")
+  (let\* ((orig (point))
+         (erg (py-end-base 'py-" ele "-re orig)))
+    (when (and py-verbose-p (interactive-p)) (message \"%s\" erg))
+    erg))
+
+\(defalias 'py-down-" ele "-lc 'py-end-of-" ele "-lc)
+\(defun py-end-of-" ele "-lc ()
+  \"Goto beginning of line following end of " ele ".
+  Returns position reached, if successful, nil otherwise.
+
+See also `py-down-" ele "': down from current definition to next beginning of " ele " below. \"
+  (interactive)
+  (let ((erg (py-end-of-" ele ")))
+    (when erg
+      (unless (eobp)
+        (forward-line 1)
+        (beginning-of-line)
+        (setq erg (point))))
+  (when (interactive-p) (message \"%s\" erg))
+  erg))
+"))
+
+    ;; Mark
+    (if (string-match "def\\|class" ele)
+        (insert (concat "
+\(defun py-mark-" ele " ()
+  \"Mark " ele " at point.
+
+Returns beginning and end positions of marked area, a cons. \"
+  (interactive)
+  (let (erg)
+    (setq erg (py-mark-base \"" ele "\"))
+    (exchange-point-and-mark)
+    (when (and py-verbose-p (interactive-p)) (message \"%s\" erg))
+    erg))
+
+\(defun py-copy-" ele " ()
+  \"Mark " ele " at point.
+
+Returns beginning and end positions of marked area, a cons. \"
+  (interactive)
+  (let ((erg (py-mark-base \"" ele "\")))
+    (kill-new (buffer-substring-no-properties (car erg) (cdr erg)))))
+
+\(defun py-kill-" ele " ()
+  \"Delete " ele "  at point.
+
+Stores data in kill ring. Might be yanked back using `C-y'. \"
+  (interactive \"\*\")
+  (let ((erg (py-mark-base \"ele\")))
+    (kill-region (car erg) (cdr erg))))
+
+\(defun py-delete-" ele " ()
+  \"Delete " ele "  at point.
+
+Don't store data in kill ring. \"
+  (interactive \"\*\")
+  (let ((erg (py-mark-base \"ele\")))
+    (delete-region (car erg) (cdr erg))))
+"))))
+  (insert "\n;; python-components-forms.el ends here
+\(provide 'python-components-forms)")
+  (switch-to-buffer (current-buffer))
+  (emacs-lisp-mode))
+
 (defun py-write-up-down-forms ()
   (interactive)
   (set-buffer (get-buffer-create "python-components-up-down.el"))
@@ -2276,7 +2515,7 @@ Return position if " ele " found, nil otherwise \"
     (capitalize-word 1)))
 
 (defun temen (&optional symbol)
-  "Provide menu for toggle-commans using checkbox. "
+  "Provide menu for toggle-commands using checkbox. "
   (interactive "*")
   (let* ((erg (or symbol (car kill-ring)))
          (name (intern-soft erg))
@@ -2380,3 +2619,191 @@ the default\"
   (insert "      ))")
   (emacs-lisp-mode)
   (switch-to-buffer (current-buffer)))
+
+;;;
+
+
+
+
+(defun py-write-mark-bol ()
+  (interactive)
+    (set-buffer (get-buffer-create "mark-bol.el"))
+    (erase-buffer)
+    (dolist (ele py-re-forms-names)
+      (insert (concat "
+\(defun py-mark-" ele "-bol ()
+  \"Mark " ele ", take beginning of line positions.
+
+Returns beginning and end positions of region, a cons. \"
+  (interactive)
+  (let (erg)
+    (setq erg (py-mark-base-bol \"" ele "\"))
+    (exchange-point-and-mark)
+    (when (and py-verbose-p (interactive-p)) (message \"%s\" erg))
+    erg))
+")))
+    (switch-to-buffer (current-buffer))
+    (emacs-lisp-mode))
+
+(defun py-write-mark-bol-menu ()
+  (interactive)
+    (set-buffer (get-buffer-create "mark-bol-menu.el"))
+    (erase-buffer)
+    (dolist (ele py-re-forms-names)
+      (insert (concat "
+             [\"Mark " ele " bol\" py-mark-" ele "-bol
+              :help \"`py-mark-" ele "-bol'
+Mark " ele " at point reaching beginning-of-line. \"]
+")))
+  (switch-to-buffer (current-buffer))
+  (emacs-lisp-mode))
+
+
+
+;; (defun py-beginning-of-block (&optional indent)
+;;   "Goto beginning of statement where block starts.
+;;   Returns position reached, if successful, nil otherwise."
+;;   (interactive)
+;;   (py-beginning-of-prepare indent 'py-block-re 'py-clause-re (interactive-p)))
+
+(defun py-write-beginning-forms ()
+  (interactive)
+  (set-buffer (get-buffer-create "python-components-beginning-forms.el"))
+  (erase-buffer)
+  (switch-to-buffer (current-buffer))
+  (insert ";;; python-components-beginning-forms.el --- Forms start described by a regular-expression \n")
+  (insert arkopf)
+  (dolist (ele py-re-forms-names)
+    (insert (concat "
+\(defun py-beginning-of-" ele " (&optional indent)"
+"\n \"Go to beginning " ele ", skip whitespace at BOL.
+
+Returns beginning of " ele " if successful, nil otherwise\n
+"))
+    (when (string-match "def\\|class" ele)
+      (insert "When `py-mark-decorators' is non-nil, decorators are considered too.\n\n"))
+    (insert "Referring python program structures see for example:
+http://docs.python.org/reference/compound_stmts.html\"\n")
+    (insert "  (interactive)")
+    (cond ((string-match "def\\|class" ele)
+           (insert (concat "
+  (py-beginning-of-prepare indent 'py-" ele "-re 'py-extended-block-or-clause-re (interactive-p)))\n")))
+          ((string-match "clause" ele)
+           (insert (concat "
+  (py-beginning-of-prepare indent 'py-extended-block-or-clause-re 'py-extended-block-or-clause-re (interactive-p)))\n")))
+          (t (insert (concat "
+  (py-beginning-of-prepare indent 'py-" ele "-re 'py-clause-re (interactive-p)))\n")))))
+  ;; lc forms
+  (dolist (ele py-re-forms-names)
+    (insert (concat "
+\(defalias 'py-beginning-of-" ele "-bol 'py-beginning-of-" ele"-lc)
+\(defun py-beginning-of-" ele "-lc (&optional indent)"
+"\n \"Go to beginning " ele ", go to BOL.
+
+Returns beginning of " ele " if successful, nil otherwise\n
+"))
+    (when (string-match "def\\|class" ele)
+      (insert "When `py-mark-decorators' is non-nil, decorators are considered too.\n\n"))
+    (insert "Referring python program structures see for example:
+http://docs.python.org/reference/compound_stmts.html\"\n")
+    (insert "  (interactive)")
+    (cond ((string-match "def\\|class" ele)
+           (insert (concat "
+  (py-beginning-of-prepare indent 'py-" ele "-re 'py-extended-block-or-clause-re (interactive-p) t))\n")))
+          ((string-match "clause" ele)
+           (insert (concat "
+  (py-beginning-of-prepare indent 'py-extended-block-or-clause-re 'py-extended-block-or-clause-re (interactive-p) t))\n")))
+          (t (insert (concat "
+  (py-beginning-of-prepare indent 'py-" ele "-re 'py-clause-re (interactive-p) t))\n")))))
+  (insert "\n(provide 'python-components-beginning-forms)
+;; python-components-beginning-forms.el ends here\n")
+
+  (switch-to-buffer (current-buffer))
+  (emacs-lisp-mode))
+
+(defun py-write-delete-forms ()
+  (interactive)
+  (set-buffer (get-buffer-create "python-components-delete.el"))
+  (erase-buffer)
+  (switch-to-buffer (current-buffer))
+  (insert ";;; python-components-delete.el --- Delete \n")
+  (insert arkopf)
+  (dolist (ele py-delete-forms)
+    (insert (concat "
+\(defun py-delete-" ele " ()
+  \"Delete " (upcase ele) " at point.
+
+Don't store data in kill ring. \"
+  (interactive \"\*\")
+  (let ((erg (py-mark-base \"" ele "\")))
+    (delete-region (car erg) (cdr erg))))
+")))
+  (insert "\n;; python-components-delete ends here
+\(provide 'python-components-delete)")
+  
+  (switch-to-buffer (current-buffer))
+  (emacs-lisp-mode))
+
+(defun py-write-delete-menu ()
+  (interactive)
+    (set-buffer (get-buffer-create "Delete-menu.el"))
+    (erase-buffer)
+    (insert "         (\"Delete\"")
+    (dolist (ele py-delete-forms)
+      (insert (concat "
+             [\"Delete " ele " \" py-delete-" ele "
+              :help \"`py-delete-" ele "'
+Delete " (upcase ele) " at point, don't store in kill-ring. \"]
+")))
+    (insert "          )\n        \"-\"\n")
+  (switch-to-buffer (current-buffer))
+  (emacs-lisp-mode))
+
+(defun py-write-copy-forms ()
+  (interactive)
+  (set-buffer (get-buffer-create "python-components-copy.el"))
+  (erase-buffer)
+  (switch-to-buffer (current-buffer))
+  (insert ";;; python-components-copy.el --- Copy \n")
+  (insert arkopf)
+  (dolist (ele py-copy-forms)
+    (insert (concat "
+\(defun py-copy-" ele " ()
+  \"Copy " ele " at point.
+
+Store data in kill ring, so it might yanked back. \"
+  (interactive \"\*\")
+  (let ((erg (py-mark-base \"" ele "\")))
+    (copy-region-as-kill (car erg) (cdr erg))))
+")))
+  (insert "\n;; python-components-copy ends here
+\(provide 'python-components-copy)")
+  
+  (switch-to-buffer (current-buffer))
+  (emacs-lisp-mode))
+
+
+(defun py-write-forms-code ()
+  (interactive)
+  (set-buffer (get-buffer-create "python-components-forms-code.el"))
+  (erase-buffer)
+  (switch-to-buffer (current-buffer))
+  (insert ";;; python-components-forms-code.el --- Return Python forms' code \n")
+  (insert arkopf)
+  (dolist (ele py-copy-forms)
+    (insert (concat "
+\(defun py-" ele " ()
+  \"" (capitalize ele) " at point.
+
+Return code of `py-" ele "' at point, a string. \"
+  (interactive)
+  (let ((erg (py--base \"" ele "\")))
+    (buffer-substring-no-properties (car erg) (cdr erg))))
+")))
+  (insert "\n;; python-components-forms-code.el ends here
+\(provide 'python-components-forms-code)")
+  
+  (switch-to-buffer (current-buffer))
+  (emacs-lisp-mode))
+
+;;; Copying
