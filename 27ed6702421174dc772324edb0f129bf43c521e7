@@ -1,0 +1,24 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: d4654885bfcd797fadf371b622391abb690f0ea2
+:git_describe: vendor/go-mode/1.2-3-gd465488
+:module_name: cedet
+:module_version: '1.1'
+:module_group:
+:unparsed_args:
+  :version: '1.1'
+  :url: http://downloads.sourceforge.net/cedet/cedet-1.1.tar.gz
+:parsed_args:
+  :version: '1.1'
+  :url: http://downloads.sourceforge.net/cedet/cedet-1.1.tar.gz
+  :filename: cedet-1.1.tar.gz
+  :type: :targz
+  :unpack: tar -xzf
+  :basename: cedet-1.1
+  :extname: .tar.gz
+:archive_checksum: !binary |-
+  NDJjMDY1MGZhMWQwYzlhNDI4ZDE4NmI0MjFmMDA1NzI5NGJjZmFlYzA5Yzhi
+  N2JiNGEwMTI4Y2UyZmU1NGI1Yw==
+:archive_filesize: 2234539
+:archive_url: http://downloads.sourceforge.net/cedet/cedet-1.1.tar.gz
