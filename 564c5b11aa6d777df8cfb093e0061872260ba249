@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: 1ddad31636d20d9d2a27322103ec3980970c69ff
+:git_describe: vendor/cedet/1.1-3-g1ddad31
+:module_name: cedet
+:module_version: HEAD-20140208
+:module_group:
+:unparsed_args:
+  :version: HEAD-20140208
+:parsed_args:
+  :version: HEAD-20140208
