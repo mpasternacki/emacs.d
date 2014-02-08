@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: 4471c32e0c11a98be4d274175a4489f2666a7963
+:git_describe: vendor/scss-mode/94af467fe690f71343c16b31c1fed0f95943a44e-4-g4471c32
+:module_name: rvm.el
+:module_version: 994fd3ef4c73a9e666d295270166317a796f9796
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/senny/rvm.el.git
+:git_revision: 994fd3ef4c73a9e666d295270166317a796f9796
