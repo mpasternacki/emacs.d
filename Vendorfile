@@ -43,6 +43,7 @@ archive 'php-mode',     :version => '1.5.0',       :url => 'http://downloads.sou
 archive 'gnuplot-mode', :version => '0.6.0',       :url => 'http://feff.phys.washington.edu/~ravel/software/gnuplot-mode/gnuplot-mode.0.6.0.tar.gz'
 archive 'auctex',       :version => '11.86',       :url => 'http://ftp.gnu.org/pub/gnu/auctex/auctex-11.86.tar.gz'
 archive 'nxhtml',       :version => '2.08-100425', :url => 'http://ourcomments.org/Emacs/DL/elisp/nxhtml/zip/nxhtml-2.08-100425.zip'
+archive 'cedet',        :version => '1.1',         :url => 'http://downloads.sourceforge.net/cedet/cedet-1.1.tar.gz'
 
 download 'http://brian.mastenbrook.net/static/files/dotfiles/color-theme-pastelmac.el'
 download 'http://www.davep.org/emacs/boxquote.el'
