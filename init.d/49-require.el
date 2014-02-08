@@ -24,3 +24,4 @@
 (load "cucumber.el/feature-mode.el")
 (load "yaml-mode/yaml-mode")
 (load "haml-mode/haml-mode")
+(load "scss-mode/scss-mode")

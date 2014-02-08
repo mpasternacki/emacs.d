@@ -16,4 +16,18 @@
                 "coffee-mode"
                 "helm"
                 "ruby-mode"))
-             load-path))
+             load-path)
+
+      exec-path
+      (nconc (list (expand-file-name "~/.rvm/bin")
+                   "/usr/local/sbin"
+                   "/usr/local/bin")
+             exec-path))
+
+(require 'package)
+;; Add the original Emacs Lisp Package Archive
+(add-to-list 'package-archives
+             '("elpa" . "http://tromey.com/elpa/"))
+;; Add the user-contributed repository
+(add-to-list 'package-archives
+             '("marmalade" . "http://marmalade-repo.org/packages/"))

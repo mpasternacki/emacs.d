@@ -3,6 +3,8 @@
  bbdb-check-zip-codes-p nil
  bbdb-north-american-phone-numbers-p nil
  ; browse-url-browser-function 'w3m-browse-url
+ chef-use-bundler nil
+ chef-use-rvm nil
  compile-auto-highlight t
  confirm-kill-emacs 'yes-or-no-p
  default-cursor-type 'bar
