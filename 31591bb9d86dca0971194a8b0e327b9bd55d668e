@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: 3ca377999447444386ef82ada0dfda5217af844b
+:git_describe: vendor/ruby-mode/8ca2f8565dace585513b92300fefc5935667e924-184-g3ca3779
+:module_name: git-modes
+:module_version: 0cd113d7c14090e660807fea4be0116003925d2b
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/magit/git-modes.git
+:git_revision: 0cd113d7c14090e660807fea4be0116003925d2b
