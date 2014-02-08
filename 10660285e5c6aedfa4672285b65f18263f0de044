@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: 9825f776d888ec29ddc16dbb555b2856c22fc6d3
+:git_describe: vendor/rvm.el/994fd3ef4c73a9e666d295270166317a796f9796-174-g9825f77
+:module_name: pretty-symbols
+:module_version: 99871da4ca6be0ebb347856c800e21bdacee3b49
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/drothlis/pretty-symbols.git
+:git_revision: 99871da4ca6be0ebb347856c800e21bdacee3b49
