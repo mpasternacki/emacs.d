@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: cf6a21b2059bd1cd1052a39074b414a28cfd7b8f
+:git_describe: vendor/pretty-symbols/99871da4ca6be0ebb347856c800e21bdacee3b49-176-gcf6a21b
+:module_name: python-mode
+:module_version: 0.20140208.1
+:module_group:
+:unparsed_args:
+  :version: 0.20140208.1
+:parsed_args:
+  :version: 0.20140208.1
