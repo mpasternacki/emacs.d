@@ -60,6 +60,11 @@
   :group 'rvm
   :type 'string)
 
+(defcustom rvm-verbose t
+  "If true, RVM will print messages for various tasks."
+  :group 'rvm
+  :type 'boolean)
+
 (defvar rvm-configuration-ruby-version-file-name
   ".ruby-version"
   "Ruby version configuration file name")
@@ -83,6 +88,12 @@
   "The function which is used by rvm.el to interactivly open files"
   :group 'rvm
   :type 'function)
+
+(defvar rvm--current-ruby nil
+  "Current active Ruby version.")
+
+(defvar rvm--current-gemset nil
+  "Current active gemset.")
 
 (defvar rvm--gemset-default "global"
   "the default gemset per ruby interpreter")
@@ -136,6 +147,11 @@ when no gemset is set, the second group is nil")
   (let ((s (if (symbolp str) (symbol-name str) str)))
     (replace-regexp-in-string "\\(^[[:space:]\n]*\\|[[:space:]\n]*$\\)" "" s)))
 
+(defun rvm--message (format-string &rest objects)
+  "Like `message', but will only print if `rvm-verbose' is true."
+  (when rvm-verbose
+    (apply 'message (cons format-string objects))))
+
 ;; Application Code
 
 ;;;###autoload
@@ -159,15 +175,15 @@ If no .rvmrc file is found, the default ruby is used insted."
       (if rvmrc-info (rvm-use (first rvmrc-info) (second rvmrc-info))
         (rvm-use-default)))))
 
-(defun rvm--load-info-rvmrc ()
-  (let ((config-file-path (rvm--locate-file rvm-configuration-file-name)))
+(defun rvm--load-info-rvmrc (&optional path)
+  (let ((config-file-path (rvm--locate-file rvm-configuration-file-name path)))
     (if config-file-path
         (rvm--rvmrc-read-version config-file-path)
       nil)))
 
-(defun rvm--load-info-ruby-version ()
-  (let ((config-file-path (rvm--locate-file rvm-configuration-ruby-version-file-name))
-        (gemset-file-path (rvm--locate-file rvm-configuration-ruby-gemset-file-name)))
+(defun rvm--load-info-ruby-version (&optional path)
+  (let ((config-file-path (rvm--locate-file rvm-configuration-ruby-version-file-name path))
+        (gemset-file-path (rvm--locate-file rvm-configuration-ruby-gemset-file-name path)))
     (if config-file-path
         (list (chomp (rvm--get-string-from-file config-file-path))
               (if gemset-file-path
@@ -175,8 +191,8 @@ If no .rvmrc file is found, the default ruby is used insted."
                 rvm--gemset-default))
       nil)))
 
-(defun rvm--load-info-gemfile ()
-  (let ((config-file-path (rvm--locate-file rvm-configuration-gemfile-file-name)))
+(defun rvm--load-info-gemfile (&optional path)
+  (let ((config-file-path (rvm--locate-file rvm-configuration-gemfile-file-name path)))
         (if config-file-path
             (rvm--gemfile-read-version config-file-path)
           nil)))
@@ -196,9 +212,11 @@ If no .rvmrc file is found, the default ruby is used insted."
           (new-ruby-binary (cdr (assoc "ruby" ruby-info)))
           (new-ruby-gemhome (cdr (assoc "GEM_HOME" ruby-info)))
           (new-ruby-gempath (cdr (assoc "GEM_PATH" ruby-info))))
+     (setq rvm--current-ruby new-ruby)
+     (setq rvm--current-gemset new-gemset)
      (rvm--set-ruby (file-name-directory new-ruby-binary))
      (rvm--set-gemhome new-ruby-gemhome new-ruby-gempath new-gemset))
-   (message (concat "Ruby: " new-ruby " Gemset: " new-gemset))))
+   (rvm--message (concat "Ruby: " new-ruby " Gemset: " new-gemset))))
 
 ;;;###autoload
 (defun rvm-open-gem (gemhome)
@@ -213,28 +231,37 @@ If no .rvmrc file is found, the default ruby is used insted."
           (persp-switch gem-name)))
       (rvm--find-file gem-dir))))
 
-(defun rvm-run-tests ()
-  "run the complete test suite for rvm.el"
-  (interactive)
-  (let* ((test-directory (concat (file-name-directory
-                                  (symbol-file 'rvm-run-tests)) "tests/"))
-         (current-dir default-directory))
-    (dolist (f (directory-files (file-name-directory test-directory) t))
-      (when (string-match-p "-tests.el$" f) (load f)))
-    (ert-run-tests-interactively "rvm-.*")))
+(defun rvm-activate-ruby-for (path &optional callback)
+  "Activate Ruby for PATH.
+
+If CALLBACK is specified, active Ruby for PATH only in that
+function."
+  (let* ((path (directory-file-name path))
+         (prev-ruby rvm--current-ruby)
+         (prev-gemset rvm--current-gemset)
+         (rvmrc-info
+          (or
+           (rvm--load-info-rvmrc path)
+           (rvm--load-info-ruby-version path)
+           (rvm--load-info-gemfile path))))
+    (apply 'rvm-use rvmrc-info)
+    (when callback
+      (unwind-protect
+          (funcall callback)
+        (rvm-use prev-ruby prev-gemset)))))
 
 ;;;; TODO: take buffer switching into account
 (defun rvm-autodetect-ruby ()
   (interactive)
   (when (rvm-working-p)
     (add-hook 'ruby-mode-hook 'rvm-activate-corresponding-ruby)
-    (message "rvm.el is now autodetecting the ruby version")))
+    (rvm--message "rvm.el is now autodetecting the ruby version")))
 
 (defun rvm-autodetect-ruby-stop ()
   (interactive)
   (when (rvm-working-p)
     (remove-hook 'ruby-mode-hook 'rvm-activate-corresponding-ruby)
-    (message "stopped rvm.el from autodetecting ruby versions")))
+    (rvm--message "stopped rvm.el from autodetecting ruby versions")))
 
 (defun rvm/list (&optional default-ruby)
   (let ((rubies (rvm--call-process "list" (when default-ruby "default")))
@@ -327,10 +354,10 @@ If no .rvmrc file is found, the default ruby is used insted."
 (defun rvm--set-ruby (ruby-binary)
   (rvm--change-path 'rvm--current-ruby-binary-path (list ruby-binary)))
 
-(defun rvm--locate-file (file-name)
+(defun rvm--locate-file (file-name &optional path)
   "searches the directory tree for an given file. Returns nil if the file was not found."
-  (let ((directory (locate-dominating-file (expand-file-name (or buffer-file-name "")) file-name)))
-    (when directory (concat directory "/" file-name))))
+  (let ((directory (locate-dominating-file (or path (expand-file-name (or buffer-file-name ""))) file-name)))
+    (when directory (expand-file-name file-name directory))))
 
 (defun rvm--get-string-from-file (file-path)
   (with-temp-buffer
@@ -390,7 +417,7 @@ If no .rvmrc file is found, the default ruby is used insted."
                     (point-min) (point-max))))
       (if (= 0 success)
           output
-        (message output)))))
+        (rvm--message output)))))
 
 (defun rvm-gem-install (gem)
   "Install GEM into the currently active RVM Gemset."
