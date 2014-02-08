@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: a255f50b9683f276eaf37009b7f19d2ec5c2833c
+:git_describe: vendor/yasnippet/0f8c2ab4381449298d8bc8b8ee63524aaa8ba1ac-179-ga255f50
+:module_name: coffee-mode
+:module_version: aa9c7a293146688813be161c3b70382d30be9eab
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/defunkt/coffee-mode.git
+:git_revision: aa9c7a293146688813be161c3b70382d30be9eab
