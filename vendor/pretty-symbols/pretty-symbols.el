@@ -67,7 +67,7 @@ changes the line length and can thus lead to surprises with
 respect to alignment and layout.
 
 To enable, add to the hooks of the major modes you want pretty
-symbols in: (add-hook 'emacs-lisp-mode 'pretty-symbols-mode)."
+symbols in: (add-hook 'emacs-lisp-mode-hook 'pretty-symbols-mode)."
   nil " λ" nil
   (if pretty-symbols-mode
       (font-lock-add-keywords nil (pretty-symbol-keywords) t)
@@ -89,10 +89,11 @@ symbols in: (add-hook 'emacs-lisp-mode 'pretty-symbols-mode)."
   (let ((lisps '(emacs-lisp-mode inferior-lisp-mode lisp-mode
                  scheme-mode))
         (c-like '(c-mode c++-mode go-mode java-mode js-mode
-                  perl-mode cperl-mode python-mode ruby-mode)))
+                  perl-mode cperl-mode ruby-mode
+                  python-mode inferior-python-mode)))
     `(
       ;; Basic symbols, enabled by default
-      (?λ lambda "\\<lambda\\>" (,@lisps python-mode))
+      (?λ lambda "\\<lambda\\>" (,@lisps python-mode inferior-python-mode))
       (?ƒ lambda "\\<function\\>" (js-mode))
       ;; Relational operators --
       ;; enable by adding 'relational to `pretty-symbol-categories'
@@ -123,7 +124,13 @@ The replacement will only happen if CATEGORY is present in
 
 Note that a major mode's presence in this list doesn't turn on
 pretty-symbols-mode; you have to do so in the major mode's hook."
-  :group 'pretty-symbols)
+  :group 'pretty-symbols
+  :type '(repeat
+          (list (character :tag "Pretty character")
+                (symbol :tag "Category")
+                (regexp :tag "Pattern to replace")
+                (repeat :tag "Enable in major modes"
+                        (symbol :tag "Mode")))))
 
 ;;;###autoload
 (defcustom pretty-symbol-categories (list 'lambda)
@@ -146,7 +153,8 @@ To set this list from your init file:
 \(setq pretty-symbol-categories '(lambda relational logical))
 "
   :group 'pretty-symbols
-  :type '(list symbol))
+  :type '(repeat :tag "Enabled categories"
+                 (symbol :tag "Category")))
 
 
 ;; Internal functions
@@ -156,14 +164,15 @@ To set this list from your init file:
   (delq nil (mapcar (lambda (x) (apply 'pretty-symbol-pattern-to-keyword x))
                     pretty-symbol-patterns)))
 
-(defun pretty-symbol-pattern-to-keyword (char category pattern modes)
+(defun pretty-symbol-pattern-to-keyword (char category pattern modes &optional idx)
   "For a single entry in `pretty-symbol-patterns' return a list
 suitable as a single entry in `font-lock-keywords'."
-  (if (and (memq category pretty-symbol-categories)
-           (apply 'derived-mode-p modes))
-      `(,pattern (0 (progn (compose-region (match-beginning 0) (match-end 0)
-                                           ,char 'decompose-region)
-                           nil)))))
+  (let ((idx (or idx 0)))
+    (if (and (memq category pretty-symbol-categories)
+             (apply 'derived-mode-p modes))
+        `(,pattern (,idx (progn (compose-region (match-beginning ,idx) (match-end ,idx)
+                                                ,char 'decompose-region)
+                                nil))))))
 
 
 (provide 'pretty-symbols)
