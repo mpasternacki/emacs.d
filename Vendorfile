@@ -1,7 +1,7 @@
 # -*- ruby -*-
 #MiniGit.debug = true
 
-git 'https://github.com/drothlis/pretty-symbols.git'
+git 'https://github.com/drothlis/pretty-symbols.git' do FileUtils.rm 'README' end
 git 'https://orgmode.org/org-mode.git'
 git 'https://github.com/magit/magit.git'
 git 'https://github.com/capitaomorte/yasnippet.git'
