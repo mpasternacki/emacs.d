@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: 4471c32e0c11a98be4d274175a4489f2666a7963
+:git_describe: vendor/scss-mode/94af467fe690f71343c16b31c1fed0f95943a44e-4-g4471c32
+:module_name: magit
+:module_version: 3558925f6988a01962753849debfd6670d5395aa
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/magit/magit.git
+:git_revision: 3558925f6988a01962753849debfd6670d5395aa
