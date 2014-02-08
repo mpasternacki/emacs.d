@@ -34,7 +34,9 @@ vendor 'darcsum', :version => '0.20130214.2' do
   system 'rm -rf * && darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/ && mv -v darcsum/* . && rm -rf _darcs && rmdir darcsum'
 end
 
-archive 'go-mode', version: '1.2', url: 'https://go.googlecode.com/files/go1.2.src.tar.gz', subdir: 'misc/emacs'
+archive 'go-mode', version: '1.2',
+        url: 'https://go.googlecode.com/files/go1.2.src.tar.gz',
+        subdirectory: 'misc/emacs'
 
 archive 'color-theme',  :version => '6.6.0',       :url =>'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
 archive 'php-mode',     :version => '1.5.0',       :url => 'http://downloads.sourceforge.net/php-mode/php-mode-1.5.0.tar.gz'

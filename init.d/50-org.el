@@ -6,8 +6,8 @@
 
 (define-key mode-specific-map [?a] 'org-agenda)
 
-(require 'org-ascii)
-(require 'org-html)
+; (require 'org-ascii)
+; (require 'org-html)
 
 (eval-after-load "org"
   '(progn

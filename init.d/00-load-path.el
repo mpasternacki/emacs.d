@@ -15,7 +15,8 @@
                 "magit"
                 "coffee-mode"
                 "helm"
-                "ruby-mode"))
+                "ruby-mode"
+                "git-modes"))
              load-path)
 
       exec-path
@@ -25,9 +26,3 @@
              exec-path))
 
 (require 'package)
-;; Add the original Emacs Lisp Package Archive
-(add-to-list 'package-archives
-             '("elpa" . "http://tromey.com/elpa/"))
-;; Add the user-contributed repository
-(add-to-list 'package-archives
-             '("marmalade" . "http://marmalade-repo.org/packages/"))
