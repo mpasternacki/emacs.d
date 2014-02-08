@@ -1,0 +1,26 @@
+---
+:vendorificator_version: 0.5.1
+:current_branch: master
+:current_sha: 8f83dcfd51817e1b42f4597aa0361e72d97de382
+:git_describe: vendor/git-modes/0cd113d7c14090e660807fea4be0116003925d2b-5-g8f83dcf
+:module_name: go-mode
+:module_version: '1.2'
+:module_group:
+:unparsed_args:
+  :version: '1.2'
+  :url: https://go.googlecode.com/files/go1.2.src.tar.gz
+  :subdir: misc/emacs
+:parsed_args:
+  :version: '1.2'
+  :url: https://go.googlecode.com/files/go1.2.src.tar.gz
+  :subdir: misc/emacs
+  :filename: go1.2.src.tar.gz
+  :type: :targz
+  :unpack: tar -xzf
+  :basename: go1.2.src
+  :extname: .tar.gz
+:archive_checksum: !binary |-
+  OWFiODNmYjhlYWZlMzlmNDIwNGVmMGY4ZTg0ZTVmZjdlOGYxZDUzM2RkYjA1
+  ZjUxZTZkYzgxNTAzZThjMGFlNA==
+:archive_filesize: 9519109
+:archive_url: https://go.googlecode.com/files/go1.2.src.tar.gz
