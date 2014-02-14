@@ -3,3 +3,7 @@
 tramp
 /site-lisp
 elpa
+/semanticdb
+/ede-projects.el
+/srecode-map.el
+/helm-c-adaptive-history
