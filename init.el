@@ -17,6 +17,7 @@
  '(css-electric-semi-behavior t)
  '(css-tab-mode (quote auto))
  '(display-time-mode t)
+ '(ecb-options-version "2.40")
  '(epg-gpg-program "/usr/local/bin/gpg")
  '(graphviz-dot-auto-indent-on-newline nil)
  '(graphviz-dot-auto-indent-on-semi nil)

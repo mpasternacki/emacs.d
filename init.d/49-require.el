@@ -24,3 +24,4 @@
 (load "yaml-mode/yaml-mode")
 (load "haml-mode/haml-mode")
 (load "scss-mode/scss-mode")
+(load "go-mode/go-mode")
