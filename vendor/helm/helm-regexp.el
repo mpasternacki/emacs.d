@@ -1,6 +1,6 @@
-;;; helm-regexp.el --- In buffer regexp searching and replacement for helm.
+;;; helm-regexp.el --- In buffer regexp searching and replacement for helm. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012 Thierry Volpiatto <thierry.volpiatto@gmail.com>
+;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'helm)
 (require 'helm-utils)
 
@@ -26,49 +26,13 @@
   "Regexp related Applications and libraries for Helm."
   :group 'helm)
 
-(defcustom helm-c-browse-code-regexp-lisp
-  "^ *\(def\\(un\\|subst\\|macro\\|face\\|alias\\|advice\\|struct\\|\
-type\\|theme\\|var\\|group\\|custom\\|const\\|method\\|class\\)"
-  "Regexp used to parse lisp buffer when browsing code."
-  :type 'string
-  :group 'helm-regexp)
-
-(defcustom helm-c-browse-code-regexp-python
-  "\\<def\\>\\|\\<class\\>"
-  "Regexp used to parse python buffer when browsing code."
-  :type 'string
-  :group 'helm-regexp)
-
-(defcustom helm-c-browse-code-regexp-alist
-  `((lisp-interaction-mode . ,helm-c-browse-code-regexp-lisp)
-    (emacs-lisp-mode . ,helm-c-browse-code-regexp-lisp)
-    (lisp-mode . ,helm-c-browse-code-regexp-lisp)
-    (python-mode . ,helm-c-browse-code-regexp-python))
-  "Alist to store regexps for browsing code corresponding \
-to a specific `major-mode'."
-  :type '(alist :key-type symbol :value-type regexp)
-  :group 'helm-regexp)
-
-(defcustom helm-browse-code-fontify t
-  "Fontify `current-buffer' when `helm-browse-code' start.
-Slow on large buffers."
-  :type 'boolean
-  :group 'helm-regexp)
-
 (defcustom helm-moccur-always-search-in-current nil
   "Helm multi occur always search in current buffer when non--nil."
   :group 'helm-regexp
   :type 'boolean)
 
-(defcustom helm-m-occur-idle-delay helm-idle-delay
-  "Delay before updating display in `helm-c-source-moccur'.
-It is similar to `helm-idle-delay' but local to `helm-c-source-moccur'.
-This setting apply also to `helm-c-source-occur'."
-  :group 'helm-regexp
-  :type 'float)
-
 (defcustom helm-m-occur-use-ioccur-style-keys t
-  "Similar to `helm-c-grep-use-ioccur-style-keys' but for multi occur."
+  "Similar to `helm-grep-use-ioccur-style-keys' but for multi occur."
   :group 'helm-regexp
   :type 'boolean)
 
@@ -79,13 +43,16 @@ This setting apply also to `helm-c-source-occur'."
   :group 'helm-regexp)
 
 
-(defvar helm-c-moccur-map
+(defvar helm-moccur-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
-    (define-key map (kbd "M-<down>") 'helm-c-goto-next-file)
-    (define-key map (kbd "M-<up>")   'helm-c-goto-precedent-file)
+    (define-key map (kbd "M-<down>") 'helm-goto-next-file)
+    (define-key map (kbd "M-<up>")   'helm-goto-precedent-file)
     (define-key map (kbd "C-w")      'helm-yank-text-at-point)
     (define-key map (kbd "C-c ?")    'helm-moccur-help)
+    (define-key map (kbd "C-c o")    'helm-m-occur-run-goto-line-ow)
+    (define-key map (kbd "C-c C-o")  'helm-m-occur-run-goto-line-of)
+    (define-key map (kbd "C-x C-s")  'helm-grep-run-save-buffer)
     (when helm-m-occur-use-ioccur-style-keys
       (define-key map (kbd "<right>")  'helm-m-occur-run-persistent-action)
       (define-key map (kbd "<left>")   'helm-m-occur-run-default-action))
@@ -94,24 +61,24 @@ This setting apply also to `helm-c-source-occur'."
 
 
 (defvar helm-build-regexp-history nil)
-(defun helm-c-query-replace-regexp (candidate)
+(defun helm-query-replace-regexp (_candidate)
   "Query replace regexp from `helm-regexp'.
 With a prefix arg replace only matches surrounded by word boundaries,
 i.e Don't replace inside a word, regexp is surrounded with \\bregexp\\b."
   (let ((regexp (funcall (helm-attr 'regexp))))
     (apply 'query-replace-regexp
-           (helm-c-query-replace-args regexp))))
+           (helm-query-replace-args regexp))))
 
-(defun helm-c-kill-regexp-as-sexp (candidate)
+(defun helm-kill-regexp-as-sexp (_candidate)
   "Kill regexp in a format usable in lisp code."
-  (helm-c-regexp-kill-new
+  (helm-regexp-kill-new
    (prin1-to-string (funcall (helm-attr 'regexp)))))
 
-(defun helm-c-kill-regexp (candidate)
+(defun helm-kill-regexp (_candidate)
   "Kill regexp as it is in `helm-pattern'."
-  (helm-c-regexp-kill-new (funcall (helm-attr 'regexp))))
+  (helm-regexp-kill-new (funcall (helm-attr 'regexp))))
 
-(defun helm-c-query-replace-args (regexp)
+(defun helm-query-replace-args (regexp)
   "create arguments of `query-replace-regexp' action in `helm-regexp'."
   (let ((region-only (helm-region-active-p)))
     (list
@@ -125,7 +92,7 @@ i.e Don't replace inside a word, regexp is surrounded with \\bregexp\\b."
      (when region-only (region-beginning))
      (when region-only (region-end)))))
 
-(defvar helm-c-source-regexp
+(defvar helm-source-regexp
   '((name . "Regexp Builder")
     (init . (lambda ()
               (helm-init-candidates-in-buffer
@@ -133,38 +100,38 @@ i.e Don't replace inside a word, regexp is surrounded with \\bregexp\\b."
                          (insert-buffer-substring helm-current-buffer)
                          (buffer-string)))))
     (candidates-in-buffer)
-    (get-line . helm-c-regexp-get-line)
-    (persistent-action . helm-c-regexp-persistent-action)
+    (get-line . helm-regexp-get-line)
+    (persistent-action . helm-regexp-persistent-action)
     (persistent-help . "Show this line")
     (multiline)
-    (delayed)
+    (no-matchplugin)
     (requires-pattern . 2)
     (mode-line . "Press TAB to select action.")
     (regexp . (lambda () helm-input))
-    (action . (("Kill Regexp as sexp" . helm-c-kill-regexp-as-sexp)
+    (action . (("Kill Regexp as sexp" . helm-kill-regexp-as-sexp)
                ("Query Replace Regexp (C-u Not inside word.)"
-                . helm-c-query-replace-regexp)
-               ("Kill Regexp" . helm-c-kill-regexp)))))
+                . helm-query-replace-regexp)
+               ("Kill Regexp" . helm-kill-regexp)))))
 
-(defun helm-c-regexp-get-line (s e)
+(defun helm-regexp-get-line (s e)
   (let ((matches (match-data))
         (line    (buffer-substring s e)))
     (propertize
-     (loop with ln = (format "%5d: %s" (line-number-at-pos (1- s)) line)
-           for i from 0 to (1- (/ (length matches) 2))
-           concat (format "\n         %s'%s'" (format "Group %d: " i)
-                          (match-string i)) into ln1
-           finally return (concat ln ln1))
+     (cl-loop with ln = (format "%5d: %s" (line-number-at-pos (1- s)) line)
+              for i from 0 to (1- (/ (length matches) 2))
+              concat (format "\n         %s'%s'" (format "Group %d: " i)
+                             (match-string i)) into ln1
+                             finally return (concat ln ln1))
      ;; match beginning
      ;; KLUDGE: point of helm-candidate-buffer is +1 than that of helm-current-buffer.
      ;; It is implementation problem of candidates-in-buffer.
      'helm-real-value (1- s))))
 
-(defun helm-c-regexp-persistent-action (pt)
+(defun helm-regexp-persistent-action (pt)
   (helm-goto-char pt)
-  (helm-persistent-highlight-point))
+  (helm-highlight-current-line))
 
-(defun helm-c-regexp-kill-new (input)
+(defun helm-regexp-kill-new (input)
   (kill-new input)
   (message "Killed: %s" input))
 
@@ -176,10 +143,11 @@ i.e Don't replace inside a word, regexp is surrounded with \\bregexp\\b."
 ;;; Occur
 ;;
 ;;
-(defvar helm-c-source-occur nil)
+(defvar helm-source-occur nil)
 (defun helm-occur-init-source ()
-  (unless helm-c-source-occur
-    (setq helm-c-source-occur (copy-alist helm-c-source-moccur))))
+  (unless helm-source-occur
+    (setq helm-source-occur (copy-alist helm-source-moccur))
+    (helm-attrset 'name "Occur" helm-source-occur)))
 
 
 ;;; Multi occur
@@ -198,16 +166,16 @@ i.e Don't replace inside a word, regexp is surrounded with \\bregexp\\b."
            helm-multi-occur-buffer-list))
   (helm-init-candidates-in-buffer
    'global
-   (loop for buf in helm-multi-occur-buffer-list
-         for bufstr = (with-current-buffer buf (buffer-string))
-         do (add-text-properties
-             0 (length bufstr)
-             `(buffer-name ,(buffer-name (get-buffer buf)))
-             bufstr)
-         concat bufstr)))
+   (cl-loop for buf in helm-multi-occur-buffer-list
+            for bufstr = (with-current-buffer buf (buffer-string))
+            do (add-text-properties
+                0 (length bufstr)
+                `(buffer-name ,(buffer-name (get-buffer buf)))
+                bufstr)
+            concat bufstr)))
 
 (defun helm-m-occur-get-line (beg end)
-  "Format line for `helm-c-source-moccur'."
+  "Format line for `helm-source-moccur'."
   (format "%s:%d:%s"
           (get-text-property beg 'buffer-name)
           (save-restriction
@@ -218,32 +186,39 @@ i.e Don't replace inside a word, regexp is surrounded with \\bregexp\\b."
             (line-number-at-pos beg))
           (buffer-substring beg end)))
 
-(defun* helm-m-occur-action (candidate
-                             &optional (method (quote buffer)) mark)
+(cl-defun helm-m-occur-action (candidate
+                               &optional (method (quote buffer)) mark)
   "Jump to CANDIDATE with METHOD.
 arg METHOD can be one of buffer, buffer-other-window, buffer-other-frame."
   (require 'helm-grep)
-  (let* ((split (helm-c-grep-split-line candidate))
+  (let* ((split (helm-grep-split-line candidate))
          (buf (car split))
-         (lineno (string-to-number (nth 1 split))))
-    (case method
+         (lineno (string-to-number (nth 1 split)))
+         (split-pat (if helm-occur-match-plugin-mode
+                        (helm-mp-split-pattern helm-pattern)
+                        (list helm-pattern))))
+    (cl-case method
       (buffer              (switch-to-buffer buf))
       (buffer-other-window (switch-to-buffer-other-window buf))
       (buffer-other-frame  (switch-to-buffer-other-frame buf)))
     (helm-goto-line lineno)
-    (when (re-search-forward helm-pattern (point-at-eol) t)
-      (goto-char (match-beginning 0)))
+    ;; Move point to the nearest matching regexp from bol.
+    (cl-loop for reg in split-pat
+             when (save-excursion
+                    (re-search-forward reg (point-at-eol) t))
+             collect (match-beginning 0) into pos-ls
+             finally (goto-char (apply #'min pos-ls)))
     (when mark
       (set-marker (mark-marker) (point))
       (push-mark (point) 'nomsg))))
 
 (defun helm-m-occur-persistent-action (candidate)
   (helm-m-occur-goto-line candidate)
-  (helm-match-line-color-current-line))
+  (helm-highlight-current-line))
 
 (defun helm-m-occur-run-persistent-action ()
   (interactive)
-  (when helm-alive-p
+  (with-helm-alive-p
     (helm-execute-persistent-action)))
 
 (defun helm-m-occur-goto-line (candidate)
@@ -251,98 +226,106 @@ arg METHOD can be one of buffer, buffer-other-window, buffer-other-frame."
   (helm-m-occur-action
    candidate 'buffer (or current-prefix-arg         ; persistent.
                          helm-current-prefix-arg))) ; exit.
-                         
+
+(defun helm-m-occur-goto-line-ow (candidate)
+  "Go to CANDIDATE line in other window.
+Same as `helm-m-occur-goto-line' but go in other window."
+  (helm-m-occur-action
+   candidate 'buffer-other-window
+   (or current-prefix-arg         ; persistent.
+       helm-current-prefix-arg))) ; exit.
+
+(defun helm-m-occur-goto-line-of (candidate)
+  "Go to CANDIDATE line in new frame.
+Same as `helm-m-occur-goto-line' but go in new frame."
+  (helm-m-occur-action
+   candidate 'buffer-other-frame
+   (or current-prefix-arg         ; persistent.
+       helm-current-prefix-arg))) ; exit.
+
+(defun helm-m-occur-run-goto-line-ow ()
+  "Run goto line other window action from `helm-source-moccur'."
+  (interactive)
+  (with-helm-alive-p
+    (helm-quit-and-execute-action 'helm-m-occur-goto-line-ow)))
+
+(defun helm-m-occur-run-goto-line-of ()
+  "Run goto line new frame action from `helm-source-moccur'."
+  (interactive)
+  (with-helm-alive-p
+    (helm-quit-and-execute-action 'helm-m-occur-goto-line-of)))
 
 (defun helm-m-occur-run-default-action ()
   (interactive)
-  (helm-c-quit-and-execute-action 'helm-m-occur-goto-line))
+  (with-helm-alive-p
+    (helm-quit-and-execute-action 'helm-m-occur-goto-line)))
 
-(defvar helm-c-source-moccur
+;;;###autoload
+(define-minor-mode helm-occur-match-plugin-mode
+    "Turn On/Off `helm-match-plugin-mode' only for `helm-m/occur'."
+  :global t
+  :init-value t
+  (if helm-occur-match-plugin-mode
+      (setq helm-source-moccur
+            (remove (assoc 'no-matchplugin helm-source-moccur)
+                    helm-source-moccur)
+            helm-source-occur helm-source-moccur)
+      (helm-attrset 'no-matchplugin nil helm-source-moccur)
+      (setq helm-source-occur helm-source-moccur)))
+
+(defvar helm-source-moccur
   `((name . "Moccur")
     (init . (lambda ()
               (require 'helm-grep)
-              (helm-m-occur-init)
-              (helm-attrset 'delayed helm-m-occur-idle-delay)))
+              (helm-m-occur-init)))
     (candidates-in-buffer)
-    (filtered-candidate-transformer . helm-m-occur-transformer)
-    (nohighlight)
+    (filter-one-by-one . helm-m-occur-filter-one-by-one)
     (get-line . helm-m-occur-get-line)
+    (nohighlight)
     (migemo)
-    (action . (("Go to Line" . helm-m-occur-goto-line)))
+    (action . (("Go to Line" . helm-m-occur-goto-line)
+               ("Goto line other window" . helm-m-occur-goto-line-ow)
+               ("Goto line new frame" . helm-m-occur-goto-line-of)))
     (persistent-action . helm-m-occur-persistent-action)
     (persistent-help . "Go to line")
     (recenter)
     (candidate-number-limit . 9999)
     (mode-line . helm-moccur-mode-line)
-    (keymap . ,helm-c-moccur-map)
-    (history . ,'helm-c-grep-history)
-    (requires-pattern . 2)
-    (delayed . ,helm-m-occur-idle-delay))
+    (keymap . ,helm-moccur-map)
+    (history . ,'helm-grep-history)
+    (requires-pattern . 2))
   "Helm source for multi occur.")
 
-(defun helm-m-occur-transformer (candidates source)
-  "Transformer function for `helm-c-source-moccur'."
+(defun helm-m-occur-filter-one-by-one (candidate)
+  "`filter-one-by-one' function for `helm-source-moccur'."
   (require 'helm-grep)
-  (loop for i in candidates
-        for split = (helm-c-grep-split-line i)
-        for buf = (car split)
-        for lineno = (nth 1 split)
-        for str = (nth 2 split)
-        collect (cons (concat (propertize
-                               buf
-                               'face 'helm-moccur-buffer
-                               'help-echo (buffer-file-name
-                                           (get-buffer buf))
-                               'buffer-name buf)
-                              ":"
-                              (propertize lineno 'face 'helm-grep-lineno)
-                              ":"
-                              (helm-c-grep-highlight-match str))
-                      i)))
+  (let* ((split  (helm-grep-split-line candidate))
+         (buf    (car split))
+         (lineno (nth 1 split))
+         (str    (nth 2 split)))
+    (cons (concat (propertize
+                   buf
+                   'face 'helm-moccur-buffer
+                   'help-echo (buffer-file-name
+                               (get-buffer buf))
+                   'buffer-name buf)
+                  ":"
+                  (propertize lineno 'face 'helm-grep-lineno)
+                  ":"
+                  (helm-grep-highlight-match
+                   str helm-occur-match-plugin-mode))
+          candidate)))
 
 (defun helm-multi-occur-1 (buffers &optional input)
-  "Main function to call `helm-c-source-moccur' with BUFFERS list."
+  "Main function to call `helm-source-moccur' with BUFFERS list."
   (setq helm-multi-occur-buffer-list buffers)
-  (let ((helm-compile-source-functions
-         ;; rule out helm-match-plugin because the input is one regexp.
-         (delq 'helm-compile-source--match-plugin
-               (copy-sequence helm-compile-source-functions))))
-    (helm :sources 'helm-c-source-moccur
-          :buffer "*helm multi occur*"
-          :history 'helm-c-grep-history
-          :input input)))
+  (helm :sources 'helm-source-moccur
+        :buffer "*helm multi occur*"
+        :history 'helm-grep-history
+        :input input
+        :truncate-lines t))
 
-
-;;; Helm browse code.
-;;
-;;
-(defun helm-c-browse-code-get-line (beg end)
-  "Select line if it match the regexp corresponding to current `major-mode'.
-Line is parsed for BEG position to END position."
-  (let ((str-line (buffer-substring beg end))
-        (regexp   (with-helm-current-buffer
-                    (assoc-default major-mode helm-c-browse-code-regexp-alist)))
-        (num-line (if (string= helm-pattern "") beg (1- beg))))
-    (when (and regexp (string-match regexp str-line))
-      (format "%4d:%s" (line-number-at-pos num-line) str-line))))
-
-(defvar helm-c-source-browse-code
-  '((name . "Browse code")
-    (init . (lambda ()
-              (helm-init-candidates-in-buffer
-               'global (with-temp-buffer
-                         (insert-buffer-substring helm-current-buffer)
-                         (buffer-string)))
-              (when helm-browse-code-fontify
-                (with-helm-current-buffer
-                  (jit-lock-fontify-now)))))
-    (candidate-number-limit . 9999)
-    (candidates-in-buffer)
-    (get-line . helm-c-browse-code-get-line)
-    (type . line)
-    (recenter)))
-
-(defun helm-c-display-to-real-numbered-line (candidate)
+(defun helm-display-to-real-numbered-line (candidate)
   "This is used to display a line in occur style in helm sources.
 e.g \"    12:some_text\".
 It is used with type attribute 'line'."
@@ -351,12 +334,13 @@ It is used with type attribute 'line'."
             (match-string 2 candidate))
       (error "Line number not found")))
 
+
 ;;; Type attributes
 ;;
 ;;
 (define-helm-type-attribute 'line
-    '((display-to-real . helm-c-display-to-real-numbered-line)
-      (action ("Go to Line" . helm-c-action-line-goto)))
+    '((display-to-real . helm-display-to-real-numbered-line)
+      (action ("Go to Line" . helm-action-line-goto)))
   "LINENO:CONTENT string, eg. \"  16:foo\".
 
 Optional `target-file' attribute is a name of target file.
@@ -374,9 +358,9 @@ If `recenter' attribute is specified, the line is displayed at
 the center of window, otherwise at the top of window.")
 
 (define-helm-type-attribute 'file-line
-    `((filtered-candidate-transformer helm-c-filtered-candidate-transformer-file-line)
+    `((filtered-candidate-transformer helm-filtered-candidate-transformer-file-line)
       (multiline)
-      (action ("Go to" . helm-c-action-file-line-goto)))
+      (action ("Go to" . helm-action-file-line-goto)))
   "FILENAME:LINENO:CONTENT string, eg. \"~/.emacs:16:;; comment\".
 
 Optional `default-directory' attribute is a default-directory
@@ -400,59 +384,88 @@ the center of window, otherwise at the top of window.")
 `query-replace-regexp' can be run from there against found regexp."
   (interactive)
   (save-restriction
-    (let ((helm-compile-source-functions
-           ;; rule out helm-match-plugin because the input is one regexp.
-           (delq 'helm-compile-source--match-plugin
-                 (copy-sequence helm-compile-source-functions))))
-      (when (and (helm-region-active-p)
-                 ;; Don't narrow to region if buffer is already narrowed.
-                 (not (helm-current-buffer-narrowed-p (current-buffer))))
-        (narrow-to-region (region-beginning) (region-end)))
-      (helm :sources helm-c-source-regexp
-            :buffer "*helm regexp*"
-            :prompt "Regexp: "
-            :history 'helm-build-regexp-history))))
+    (when (and (helm-region-active-p)
+               ;; Don't narrow to region if buffer is already narrowed.
+               (not (helm-current-buffer-narrowed-p (current-buffer))))
+      (narrow-to-region (region-beginning) (region-end)))
+    (helm :sources helm-source-regexp
+          :buffer "*helm regexp*"
+          :prompt "Regexp: "
+          :history 'helm-build-regexp-history)))
 
 ;;;###autoload
 (defun helm-occur ()
   "Preconfigured helm for Occur."
   (interactive)
-  (let ((helm-compile-source-functions
-         ;; rule out helm-match-plugin because the input is one regexp.
-         (delq 'helm-compile-source--match-plugin
-               (copy-sequence helm-compile-source-functions))))
+  (setq helm-multi-occur-buffer-list (list (buffer-name (current-buffer))))
+  (helm-occur-init-source)
+  (helm :sources 'helm-source-occur
+        :buffer "*helm occur*"
+        :history 'helm-grep-history
+        :preselect (and (memq 'helm-source-occur helm-sources-using-default-as-input)
+                        (format "%s:%d:" (buffer-name) (line-number-at-pos (point))))
+        :truncate-lines t))
+
+;;;###autoload
+(defun helm-occur-from-isearch ()
+  "Invoke `helm-occur' from isearch."
+  (interactive)
+  (let ((input (if isearch-regexp
+                   isearch-string
+                   (regexp-quote isearch-string))))
+    (isearch-exit)
     (setq helm-multi-occur-buffer-list (list (buffer-name (current-buffer))))
     (helm-occur-init-source)
-    (helm-attrset 'name "Occur" helm-c-source-occur)
-    (helm :sources 'helm-c-source-occur
+    (helm :sources 'helm-source-occur
           :buffer "*helm occur*"
-          :history 'helm-c-grep-history)))
+          :history 'helm-grep-history
+          :input input
+          :truncate-lines t)))
 
 ;;;###autoload
 (defun helm-multi-occur (buffers)
   "Preconfigured helm for multi occur.
 
   BUFFERS is a list of buffers to search through.
-With a prefix arg, force searching in current buffer
-even if `helm-moccur-always-search-in-current' is nil.
+With a prefix arg, reverse the behavior of
+`helm-moccur-always-search-in-current'.
 The prefix arg can be set before calling `helm-multi-occur'
 or during the buffer selection."
   (interactive (list (helm-comp-read
-                      "Buffers: " (helm-c-buffer-list)
+                      "Buffers: " (helm-buffer-list)
                       :marked-candidates t)))
   (let ((helm-moccur-always-search-in-current
-         (or helm-moccur-always-search-in-current
-             (or current-prefix-arg
-                 helm-current-prefix-arg))))
+         (if (or current-prefix-arg
+                 helm-current-prefix-arg)
+             (not helm-moccur-always-search-in-current)
+             helm-moccur-always-search-in-current)))
     (helm-multi-occur-1 buffers)))
 
 ;;;###autoload
-(defun helm-browse-code ()
-  "Preconfigured helm to browse code."
-  (interactive)
-  (helm :sources 'helm-c-source-browse-code
-        :buffer "*helm browse code*"
-        :default (thing-at-point 'symbol)))
+(defun helm-multi-occur-from-isearch (&optional _arg)
+  "Invoke `helm-multi-occur' from isearch.
+
+With a prefix arg, reverse the behavior of
+`helm-moccur-always-search-in-current'.
+The prefix arg can be set before calling
+`helm-multi-occur-from-isearch' or during the buffer selection."
+  (interactive "p")
+  (let (buf-list
+        helm-moccur-always-search-in-current
+        (input (if isearch-regexp
+                   isearch-string
+                   (regexp-quote isearch-string))))
+    (isearch-exit)
+    (setq buf-list (helm-comp-read "Buffers: "
+                                   (helm-buffer-list)
+                                   :name "Occur in buffer(s)"
+                                   :marked-candidates t))
+    (setq helm-moccur-always-search-in-current
+          (if (or current-prefix-arg
+                 helm-current-prefix-arg)
+              (not helm-moccur-always-search-in-current)
+              helm-moccur-always-search-in-current))
+    (helm-multi-occur-1 buf-list input)))
 
 
 (provide 'helm-regexp)

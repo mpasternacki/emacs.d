@@ -18,6 +18,10 @@ and can be considered to be its successor.
 and provide a cleaner, leaner and more modular tool, that's not tied in
 the trap of backward compatibility. 
 
+## Requirements
+
+You need a recent Emacs to use latest helm, at least Emacs-24.3.
+
 ## Getting Started
 
 ### Quick install
@@ -28,7 +32,7 @@ the trap of backward compatibility.
     $ git clone https://github.com/emacs-helm/helm.git /path/to/helm/directory
     ```
   
-  2. Run make from this directory.
+  2. Run `make` from this directory.
   3. Add to `.emacs.el` (or equivalent):
 
     ```elisp
@@ -46,6 +50,11 @@ Note that this will not work on Windows systems.
 
 Helm is now available on Melpa at `http://melpa.milkbox.net/`
 You will find there instructions to install.
+
+_WARNING:_ For any upgrade after Version 1.5.6 using package.el, you will have to remove all your helm*.elc files
+and recompile from a clean Emacs, expect failures if you don't do that.
+Users that are installing from git will not have this problem
+by recompiling their helm copy with "make".
 
 **Note to Linux Distributions Maintainers**
 
