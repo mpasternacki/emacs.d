@@ -1,6 +1,6 @@
-;;; helm-bmkext.el --- Sources to filter bookmark-extensions bookmarks.
+;;; helm-bmkext.el --- Sources to filter bookmark-extensions bookmarks. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012 Thierry Volpiatto <thierry.volpiatto@gmail.com>
+;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -15,68 +15,109 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Code:
-(eval-when-compile (require 'cl))
-(require 'helm)
-(require 'helm-bookmark)
-(require 'helm-adaptative)
-
-(declare-function bookmark-get-filename "bookmark" (bookmark-name-or-record))
-
 ;; Dependency: https://github.com/thierryvolpiatto/emacs-bmk-ext
 ;; If you want to enable google-maps in addressbook you will need
 ;; Julien Danjou google-maps-el package available here:
 ;; http://julien.danjou.info/google-maps-el.html
 
-(defun helm-c-bmkext-filter-setup-alist (fn &rest args)
-  "Return a filtered `bookmark-alist' sorted alphabetically."
-  (loop
-        with alist = (if args
-                         (apply #'(lambda (x) (funcall fn x)) args)
-                         (funcall fn))
-        for i in alist
-        for b = (car i)
-        collect b into sa
-        finally return (sort sa 'string-lessp)))
+;;; Code:
+(require 'cl-lib)
+(require 'helm)
+(require 'helm-bookmark)
 
-;;;###autoload
-(defun helm-c-bmkext-run-edit ()
+(declare-function bookmark-get-filename "bookmark" (bookmark-name-or-record))
+(declare-function bmkext-bmenu-maybe-sort "ext:bookmark-extensions.el" (&optional alist))
+(defvar bmkext-bmenu-sort-function)
+
+
+;;; Filter functions
+;;
+(defun helm-bmkext-filter-setup-alist (fn &rest args)
+  "Return a filtered `bookmark-alist' sorted alphabetically."
+  (cl-loop
+   with alist = (bmkext-bmenu-maybe-sort
+                 (if args
+                     (apply #'(lambda (x) (funcall fn x)) args)
+                     (funcall fn)))
+   for i in alist
+   for b = (car i)
+   collect (propertize b 'location (bookmark-location b))))
+
+(defun helm-bmkext-run-sort-by-frequency ()
+  (interactive)
+  (helm-bmkext-set-mode-line "FREQ")
+  (setq bmkext-bmenu-sort-function 'bmkext-visited-more-p)
+  (helm-force-update))
+
+(defun helm-bmkext-run-sort-by-last-visit ()
+  (interactive)
+  (helm-bmkext-set-mode-line "LAST")
+  (setq bmkext-bmenu-sort-function 'bmkext-last-time-more-p)
+  (helm-force-update))
+
+(defun helm-bmkext-run-sort-alphabetically ()
+  (interactive)
+  (helm-bmkext-set-mode-line "ALPHA")
+  (setq bmkext-bmenu-sort-function 'bmkext-alpha-more-p)
+  (helm-force-update))
+
+(defun helm-bmkext-set-mode-line (str)
+  (if (string-match "Sort:\\[\\(.*\\)\\] " (cadr helm-bookmark-mode-line-string))
+      (setq helm-bookmark-mode-line-string (list (car helm-bookmark-mode-line-string)
+                                                 (replace-match
+                                                  str nil nil
+                                                  (cadr helm-bookmark-mode-line-string) 1)))
+      (setq helm-bookmark-mode-line-string (list (car helm-bookmark-mode-line-string)
+                                                 (concat (format "Sort:[%s] " str)
+                                                         (cadr helm-bookmark-mode-line-string))))))
+
+(defun helm-bmkext-init-mode-line ()
+  (helm-bmkext-set-mode-line (cl-case bmkext-bmenu-sort-function
+                               (bmkext-visited-more-p "FREQ")
+                               (bmkext-last-time-more-p "LAST")
+                               (bmkext-alpha-more-p "ALPHA")
+                               (t "ALPHA"))))
+
+(defun helm-bmkext-run-edit ()
   "Run `bmkext-edit-bookmark' from keyboard."
   (interactive)
-  (helm-c-quit-and-execute-action 'bmkext-edit-bookmark))
+  (with-helm-alive-p
+    (helm-quit-and-execute-action 'bmkext-edit-bookmark)))
 
+
 ;;; Addressbook.
 ;;
 ;;
-(defvar helm-c-source-bmkext-addressbook
+(defvar helm-source-bmkext-addressbook
   '((name . "Bookmark Addressbook")
     (init . (lambda ()
               (require 'bookmark-extensions)
+              (helm-bmkext-init-mode-line)
               (bookmark-maybe-load-default-file)
               (helm-init-candidates-in-buffer
-               "*helm bmkext addressbook*"
-               (helm-c-bmkext-addressbook-setup-alist))))
+               'global
+               (helm-bmkext-addressbook-setup-alist))))
     (candidates-in-buffer)
+    (search helm-bookmark-search-fn)
+    (match-part . helm-pp-bookmark-match-fn)
     (persistent-action
      . (lambda (candidate)
          (let ((bmk (helm-bookmark-get-bookmark-from-name
                      candidate)))
-           (bookmark--jump-via bmk 'pop-to-buffer))))
+           (bookmark--jump-via bmk 'switch-to-buffer))))
     (persistent-help . "Show contact - Prefix with C-u to append")
-    (filtered-candidate-transformer
-     helm-c-adaptive-sort
-     helm-c-highlight-bookmark)
+    (filtered-candidate-transformer . helm-highlight-bookmark)
     (action . (("Show Contact(s)"
                 . (lambda (candidate)
                     (let* ((contacts (helm-marked-candidates))
-                           (current-prefix-arg (or helm-current-prefix-arg
-                                                   (> (length contacts) 1))))
+                           (current-prefix-arg helm-current-prefix-arg))
                       (bookmark-jump
                        (helm-bookmark-get-bookmark-from-name (car contacts)))
                       (helm-aif (cdr contacts)
-                          (loop for bmk in it do
-                                (bookmark-jump
-                                 (helm-bookmark-get-bookmark-from-name bmk)))))))
+                          (let ((current-prefix-arg '(4)))
+                            (cl-loop for bmk in it do
+                                     (bookmark-jump
+                                      (helm-bookmark-get-bookmark-from-name bmk))))))))
                ("Send Mail"
                 . (lambda (candidate)
                     (let* ((contacts (helm-marked-candidates))
@@ -88,14 +129,15 @@
                           (addressbook-set-mail-buffer1 bmk))
                       (setq contacts (cdr contacts))
                       (when contacts
-                        (loop for bmk in contacts do
-                              (addressbook-set-mail-buffer1 bmk 'append))))))
+                        (cl-loop for bmk in contacts do
+                                 (addressbook-set-mail-buffer1 bmk 'append))))))
                ("Edit Bookmark"
                 . (lambda (candidate)
                     (let ((bmk (helm-bookmark-get-bookmark-from-name
                                 candidate)))
                       (addressbook-bookmark-edit
                        (assoc bmk bookmark-alist)))))
+               ("Delete bookmark(s)" . helm-delete-marked-bookmarks)
                ("Insert Email at point"
                 . (lambda (candidate)
                     (let* ((bmk   (helm-bookmark-get-bookmark-from-name
@@ -127,194 +169,154 @@
                       (addressbook-google-map full-bmk))))))))
 
 
-(defun helm-c-bmkext-addressbook-setup-alist ()
+(defun helm-bmkext-addressbook-setup-alist ()
   "Specialized filter function for bookmarks w3m."
-  (helm-c-bmkext-filter-setup-alist 'bmkext-addressbook-alist-only))
+  (helm-bmkext-filter-setup-alist 'bmkext-addressbook-alist-only))
 
-;; W3m bookmarks from bookmark-extensions.
-(defvar helm-c-source-bookmark-w3m
+
+;;; W3m bookmarks from bookmark-extensions.
+;;
+(defvar helm-source-bookmark-w3m
   '((name . "Bookmark W3m")
     (init . (lambda ()
               (require 'bookmark-extensions)
+              (helm-bmkext-init-mode-line)
               (bookmark-maybe-load-default-file)
               (helm-init-candidates-in-buffer
-               "*helm bmkext w3m*" (helm-c-bookmark-w3m-setup-alist))))
+               'global (helm-bookmark-w3m-setup-alist))))
     (candidates-in-buffer)
-    (filtered-candidate-transformer
-     helm-c-adaptive-sort
-     helm-c-highlight-bookmark)
+    (search helm-bookmark-search-fn)
+    (match-part . helm-pp-bookmark-match-fn)
+    (filtered-candidate-transformer . helm-highlight-bookmark)
     (type . bookmark)))
 
-(defun helm-c-bookmark-w3m-setup-alist ()
+(defun helm-bookmark-w3m-setup-alist ()
   "Specialized filter function for bookmarks w3m."
-  (helm-c-bmkext-filter-setup-alist 'bmkext-w3m-alist-only))
+  (helm-bmkext-filter-setup-alist 'bmkext-w3m-alist-only))
 
-;; Images
-(defvar helm-c-source-bookmark-images
+
+;;; Images
+;;
+(defvar helm-source-bookmark-images
   '((name . "Bookmark Images")
     (init . (lambda ()
               (require 'bookmark-extensions)
+              (helm-bmkext-init-mode-line)
               (bookmark-maybe-load-default-file)
               (helm-init-candidates-in-buffer
-               "*helm bmkext images*" (helm-c-bookmark-images-setup-alist))))
+               'global (helm-bookmark-images-setup-alist))))
     (candidates-in-buffer)
-    (filtered-candidate-transformer
-     helm-c-adaptive-sort
-     helm-c-highlight-bookmark)
+    (search helm-bookmark-search-fn)
+    (match-part . helm-pp-bookmark-match-fn)
+    (filtered-candidate-transformer . helm-highlight-bookmark)
     (type . bookmark)))
 
-(defun helm-c-bookmark-images-setup-alist ()
+(defun helm-bookmark-images-setup-alist ()
   "Specialized filter function for images bookmarks."
-  (helm-c-bmkext-filter-setup-alist 'bmkext-image-file-alist-only))
+  (helm-bmkext-filter-setup-alist 'bmkext-image-file-alist-only))
 
-;; Woman Man
-(defvar helm-c-source-bookmark-man
+
+;;; Woman Man
+;;
+(defvar helm-source-bookmark-man
   '((name . "Bookmark Woman&Man")
     (init . (lambda ()
               (require 'bookmark-extensions)
+              (helm-bmkext-init-mode-line)
               (bookmark-maybe-load-default-file)
               (helm-init-candidates-in-buffer
-               "*helm bmkext man*" (helm-c-bookmark-man-setup-alist))))
+               'global (helm-bookmark-man-setup-alist))))
     (candidates-in-buffer)
-    (filtered-candidate-transformer
-     helm-c-adaptive-sort
-     helm-c-highlight-bookmark)
+    (search helm-bookmark-search-fn)
+    (match-part . helm-pp-bookmark-match-fn)
+    (filtered-candidate-transformer . helm-highlight-bookmark)
     (type . bookmark)))
 
-(defun helm-c-bookmark-man-setup-alist ()
+(defun helm-bookmark-man-setup-alist ()
   "Specialized filter function for bookmarks w3m."
-  (append (helm-c-bmkext-filter-setup-alist 'bmkext-man-alist-only)
-          (helm-c-bmkext-filter-setup-alist 'bmkext-woman-alist-only)))
+  (helm-bmkext-filter-setup-alist 'bmkext-woman-man-alist-only))
 
-;; Gnus
-(defvar helm-c-source-bookmark-gnus
+
+;;; Gnus
+;;
+(defvar helm-source-bookmark-gnus
   '((name . "Bookmark Gnus")
     (init . (lambda ()
               (require 'bookmark-extensions)
+              (helm-bmkext-init-mode-line)
               (bookmark-maybe-load-default-file)
               (helm-init-candidates-in-buffer
-               "*helm bmkext gnus*" (helm-c-bookmark-gnus-setup-alist))))
+               'global (helm-bookmark-gnus-setup-alist))))
     (candidates-in-buffer)
-    (filtered-candidate-transformer
-     helm-c-adaptive-sort
-     helm-c-highlight-bookmark)
+    (search helm-bookmark-search-fn)
+    (match-part . helm-pp-bookmark-match-fn)
+    (filtered-candidate-transformer . helm-highlight-bookmark)
     (type . bookmark)))
 
-(defun helm-c-bookmark-gnus-setup-alist ()
+(defun helm-bookmark-gnus-setup-alist ()
   "Specialized filter function for bookmarks gnus."
-  (helm-c-bmkext-filter-setup-alist 'bmkext-gnus-alist-only))
+  (helm-bmkext-filter-setup-alist 'bmkext-gnus-alist-only))
 
-;; Info
-(defvar helm-c-source-bookmark-info
+
+;;; Info
+;;
+(defvar helm-source-bookmark-info
   '((name . "Bookmark Info")
     (init . (lambda ()
               (require 'bookmark-extensions)
+              (helm-bmkext-init-mode-line)
               (bookmark-maybe-load-default-file)
               (helm-init-candidates-in-buffer
-               "*helm bmkext info*" (helm-c-bookmark-info-setup-alist))))
+               'global (helm-bookmark-info-setup-alist))))
     (candidates-in-buffer)
-    (filtered-candidate-transformer
-     helm-c-adaptive-sort
-     helm-c-highlight-bookmark)
+    (search helm-bookmark-search-fn)
+    (match-part . helm-pp-bookmark-match-fn)
+    (filtered-candidate-transformer . helm-highlight-bookmark)
     (type . bookmark)))
 
-(defun helm-c-bookmark-info-setup-alist ()
+(defun helm-bookmark-info-setup-alist ()
   "Specialized filter function for bookmarks info."
-  (helm-c-bmkext-filter-setup-alist 'bmkext-info-alist-only))
+  (helm-bmkext-filter-setup-alist 'bmkext-info-alist-only))
 
-;; Local Files&directories
-(defvar helm-c-source-bookmark-files&dirs
+
+;;; Files and directories
+;;
+(defvar helm-source-bookmark-files&dirs
   '((name . "Bookmark Files&Directories")
     (init . (lambda ()
               (require 'bookmark-extensions)
+              (helm-bmkext-init-mode-line)
               (bookmark-maybe-load-default-file)
               (helm-init-candidates-in-buffer
-               "*helm bmkext files*" (helm-c-bookmark-local-files-setup-alist))))
+               'global (helm-bookmark-local-files-setup-alist))))
     (candidates-in-buffer)
-    (filtered-candidate-transformer
-     helm-c-adaptive-sort
-     helm-c-highlight-bookmark)
+    (search helm-bookmark-search-fn)
+    (match-part . helm-pp-bookmark-match-fn)
+    (filtered-candidate-transformer . helm-highlight-bookmark)
     (type . bookmark)))
 
-(defun helm-c-bookmark-local-files-setup-alist ()
+(defun helm-bookmark-local-files-setup-alist ()
   "Specialized filter function for bookmarks locals files."
-  (helm-c-bmkext-filter-setup-alist 'bmkext-local-file-alist-only))
+  (helm-bmkext-filter-setup-alist 'bmkext-file-alist-only))
 
-;; Su Files&directories
-(defvar helm-c-source-bookmark-su-files&dirs
-  '((name . "Bookmark Root-Files&Directories")
-    (init . (lambda ()
-              (require 'bookmark-extensions)
-              (bookmark-maybe-load-default-file)
-              (helm-init-candidates-in-buffer
-               "*helm bmkext su*" (helm-c-bookmark-su-files-setup-alist))))
-    (candidates-in-buffer)
-    (filtered-candidate-transformer
-     helm-c-adaptive-sort
-     helm-c-highlight-bookmark-su)
-    (type . bookmark)))
-
-(defun helm-c-bookmark-su-files-setup-alist ()
-  "Specialized filter function for bookmarks su/sudo files."
-  (declare (special bmkext-su-or-sudo-regexp))
-  (loop
-        with l = (helm-c-bmkext-filter-setup-alist 'bmkext-remote-file-alist-only)
-        for i in l
-        for isfile = (bookmark-get-filename i)
-        for istramp = (and isfile (boundp 'tramp-file-name-regexp)
-                           (save-match-data
-                             (string-match tramp-file-name-regexp isfile)))
-        for issu = (and istramp
-                        (string-match bmkext-su-or-sudo-regexp isfile))
-        if issu
-        collect i))
-
-;; Ssh Files&directories
-(defvar helm-c-source-bookmark-ssh-files&dirs
-  '((name . "Bookmark Ssh-Files&Directories")
-    (init . (lambda ()
-              (require 'bookmark-extensions)
-              (bookmark-maybe-load-default-file)
-              (helm-init-candidates-in-buffer
-               "*helm bmkext ssh*" (helm-c-bookmark-ssh-files-setup-alist))))
-    (candidates-in-buffer)
-    (filtered-candidate-transformer . helm-c-adaptive-sort)
-    (type . bookmark)))
-
-(defun helm-c-bookmark-ssh-files-setup-alist ()
-  "Specialized filter function for bookmarks ssh files."
-  (loop
-        with l = (helm-c-bmkext-filter-setup-alist 'bmkext-remote-file-alist-only)
-        for i in l
-        for isfile = (bookmark-get-filename i)
-        for istramp = (and isfile (boundp 'tramp-file-name-regexp)
-                           (save-match-data
-                             (string-match tramp-file-name-regexp isfile)))
-        for isssh = (and istramp
-                         (string-match "/ssh:" isfile))
-        if isssh
-        collect i))
-
+
 ;;;###autoload
 (defun helm-bookmark-ext ()
   "Preconfigured `helm' for bookmark-extensions sources.
 Needs bookmark-ext.el:
 <http://mercurial.intuxication.org/hg/emacs-bookmark-extension>.
-Contain also `helm-c-source-google-suggest'."
+Contain also `helm-source-google-suggest'."
   (interactive)
   (helm
    :sources
-   '(helm-c-source-bookmark-files&dirs
-     helm-c-source-bookmark-w3m
-     helm-c-source-google-suggest
-     helm-c-source-bmkext-addressbook
-     helm-c-source-bookmark-gnus
-     helm-c-source-bookmark-info
-     helm-c-source-bookmark-man
-     helm-c-source-bookmark-images
-     helm-c-source-bookmark-su-files&dirs
-     helm-c-source-bookmark-ssh-files&dirs
-     helm-c-source-bookmark-set)
+   '(helm-source-bookmark-files&dirs
+     helm-source-bookmark-w3m
+     helm-source-bmkext-addressbook
+     helm-source-bookmark-gnus
+     helm-source-bookmark-info
+     helm-source-bookmark-man
+     helm-source-bookmark-images
+     helm-source-bookmark-set)
    :prompt "SearchBookmark: "
    :buffer "*helm bmkext*"
    :default (buffer-name helm-current-buffer)))

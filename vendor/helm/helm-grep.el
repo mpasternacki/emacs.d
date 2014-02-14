@@ -1,6 +1,6 @@
-;;; helm-grep.el --- Helm Incremental Grep.
+;;; helm-grep.el --- Helm Incremental Grep. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012 Thierry Volpiatto <thierry.volpiatto@gmail.com>
+;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
-(eval-when-compile (require 'cl))
+(require 'cl-lib)
 (require 'helm)
 (require 'grep)
 (require 'helm-regexp)
@@ -24,17 +24,18 @@
 ;;; load wgrep proxy if it's available
 (require 'wgrep-helm nil t)
 
-(declare-function helm-c-buffer-list "helm-buffers")
+(declare-function helm-buffer-list "helm-buffers")
 (declare-function helm-elscreen-find-file "helm-elscreen" (file))
 (declare-function View-quit "view")
+(declare-function doc-view-goto-page "doc-view" (page))
 
 
 (defgroup helm-grep nil
   "Grep related Applications and libraries for Helm."
   :group 'helm)
 
-(defcustom helm-c-grep-default-command
-  "grep -d skip %e -n%cH -e %p %f"
+(defcustom helm-grep-default-command
+  "grep -a -d skip %e -n%cH -e %p %f"
   "Default grep format command for `helm-do-grep-1'.
 Where:
 '%e' format spec is for --exclude or --include grep options or
@@ -61,56 +62,66 @@ don't specify the '%e' format spec.
 Helm also support ack-grep and git-grep ,
 here a default command example for ack-grep:
 
-\(setq helm-c-grep-default-command \"ack-grep -Hn --no-group --no-color %e %p %f\"
-       helm-c-grep-default-recurse-command \"ack-grep -H --no-group --no-color %e %p %f\")
+\(setq helm-grep-default-command \"ack-grep -Hn --no-group --no-color %e %p %f\"
+       helm-grep-default-recurse-command \"ack-grep -H --no-group --no-color %e %p %f\")
 
 You can ommit the %e spec if you don't want to be prompted for types.
-`helm-c-grep-default-command' and `helm-c-grep-default-recurse-command'are
-independents, so you can enable `helm-c-grep-default-command' with ack-grep
-and `helm-c-grep-default-recurse-command' with grep if you want to be faster
+`helm-grep-default-command' and `helm-grep-default-recurse-command'are
+independents, so you can enable `helm-grep-default-command' with ack-grep
+and `helm-grep-default-recurse-command' with grep if you want to be faster
 on recursive grep.
 NOTE: remote grepping is not available with ack-grep."
   :group 'helm-grep
   :type  'string)
 
-(defcustom helm-c-grep-default-recurse-command
-  "grep -d recurse %e -n%cH -e %p %f"
+(defcustom helm-grep-default-recurse-command
+  "grep -a -d recurse %e -n%cH -e %p %f"
   "Default recursive grep format command for `helm-do-grep-1'.
-See `helm-c-grep-default-command' for format specs and infos about ack-grep."
+See `helm-grep-default-command' for format specs and infos about ack-grep."
   :group 'helm-grep
   :type  'string)
 
-(defcustom helm-c-default-zgrep-command
-  "zgrep -n%cH -e %p %f"
+(defcustom helm-default-zgrep-command
+  "zgrep -a -n%cH -e %p %f"
   "Default command for Zgrep.
-See `helm-c-grep-default-command' for infos on format specs."
+See `helm-grep-default-command' for infos on format specs."
   :group 'helm-grep
   :type  'string)
 
-(defcustom helm-c-pdfgrep-default-command
+(defcustom helm-ack-grep-executable "ack-grep"
+  "Default ack-grep command."
+  :group 'helm-grep
+  :type  'string)
+
+(defcustom helm-pdfgrep-default-command
   "pdfgrep --color never -niH %s %s"
   "Default command for pdfgrep."
   :group 'helm-grep
   :type  'string)
 
-(defcustom helm-c-grep-use-ioccur-style-keys t
+(defcustom helm-grep-use-ioccur-style-keys t
   "Use Arrow keys to jump to occurences."
   :group 'helm-grep
   :type  'boolean)
 
-(defcustom helm-c-pdfgrep-default-read-command "xpdf '%f' %p"
+(defcustom helm-pdfgrep-default-read-command nil
   "Default command to read pdf files from pdfgrep.
-Where '%f' format spec is filename and '%p' is page number"
+Where '%f' format spec is filename and '%p' is page number.
+e.g In Ubuntu you can set it to:
+
+    \"evince --page-label=%p '%f'\"
+
+If set to nil `doc-view-mode' will be used instead of an external command."
   :group 'helm-grep
   :type  'string)
 
-(defcustom helm-c-grep-max-length-history 100
-  "Max number of elements to save in `helm-c-grep-history'."
+(defcustom helm-grep-max-length-history 100
+  "Max number of elements to save in `helm-grep-history'."
   :group 'helm-grep
   :type 'integer)
 
 (defcustom helm-zgrep-file-extension-regexp
-  ".*\\(\.gz\\|\.bz\\|\.xz\\|\.lzma\\)$"
+  ".*\\(\\.gz\\|\\.bz\\|\\.xz\\|\\.lzma\\)$"
   "Default file extensions zgrep will search in."
   :group 'helm-grep
   :type 'string)
@@ -120,7 +131,7 @@ Where '%f' format spec is filename and '%p' is page number"
   :group 'helm-grep
   :type 'boolean)
 
-(defcustom helm-c-grep-preferred-ext nil
+(defcustom helm-grep-preferred-ext nil
   "This file extension will be preselected for grep."
   :group 'helm-grep
   :type  'string)
@@ -164,26 +175,27 @@ Where '%f' format spec is filename and '%p' is page number"
 ;;; Keymaps
 ;;
 ;;
-(defvar helm-c-grep-map
+(defvar helm-grep-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
-    (define-key map (kbd "M-<down>") 'helm-c-goto-next-file)
-    (define-key map (kbd "M-<up>")   'helm-c-goto-precedent-file)
-    (define-key map (kbd "C-c o")    'helm-c-grep-run-other-window-action)
+    (define-key map (kbd "M-<down>") 'helm-goto-next-file)
+    (define-key map (kbd "M-<up>")   'helm-goto-precedent-file)
+    (define-key map (kbd "C-c o")    'helm-grep-run-other-window-action)
+    (define-key map (kbd "C-c C-o")  'helm-grep-run-other-frame-action)
     (define-key map (kbd "C-w")      'helm-yank-text-at-point)
-    (define-key map (kbd "C-x C-s")  'helm-c-grep-run-save-buffer)
-    (when helm-c-grep-use-ioccur-style-keys
-      (define-key map (kbd "<right>")  'helm-c-grep-run-persistent-action)
-      (define-key map (kbd "<left>")  'helm-c-grep-run-default-action))
+    (define-key map (kbd "C-x C-s")  'helm-grep-run-save-buffer)
+    (when helm-grep-use-ioccur-style-keys
+      (define-key map (kbd "<right>")  'helm-grep-run-persistent-action)
+      (define-key map (kbd "<left>")  'helm-grep-run-default-action))
     (define-key map (kbd "C-c ?")    'helm-grep-help)
     (delq nil map))
   "Keymap used in Grep sources.")
 
-(defvar helm-c-pdfgrep-map
+(defvar helm-pdfgrep-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
-    (define-key map (kbd "M-<down>") 'helm-c-goto-next-file)
-    (define-key map (kbd "M-<up>")   'helm-c-goto-precedent-file)
+    (define-key map (kbd "M-<down>") 'helm-goto-next-file)
+    (define-key map (kbd "M-<up>")   'helm-goto-precedent-file)
     (define-key map (kbd "C-w")      'helm-yank-text-at-point)
     (define-key map (kbd "C-c ?")    'helm-pdfgrep-help)
     map)
@@ -204,16 +216,16 @@ Where '%f' format spec is filename and '%p' is page number"
 ;;; Internals vars
 ;;
 ;;
-(defvar helm-c-rzgrep-cache (make-hash-table :test 'equal))
-(defvar helm-c-grep-default-function 'helm-c-grep-init)
-(defvar helm-c-zgrep-recurse-flag nil)
-(defvar helm-c-grep-history nil)
+(defvar helm-rzgrep-cache (make-hash-table :test 'equal))
+(defvar helm-grep-default-function 'helm-grep-init)
+(defvar helm-zgrep-recurse-flag nil)
+(defvar helm-grep-history nil)
 (defvar helm-grep-last-targets nil)
 (defvar helm-grep-include-files nil)
 (defvar helm-grep-in-recurse nil)
 (defvar helm-grep-use-zgrep nil)
 (defvar helm-grep-last-default-directory nil)
-(defvar helm-c-grep-default-directory-fn nil
+(defvar helm-grep-default-directory-fn nil
   "A function that should return a directory to expand candidate to.
 It is intended to use as a let-bound variable, DON'T set this globaly.")
 (defvar helm-pdfgrep-targets nil)
@@ -224,7 +236,7 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
 ;;; Init
 ;;
 ;;
-(defun helm-c-grep-prepare-candidates (candidates)
+(defun helm-grep-prepare-candidates (candidates)
   "Prepare filenames and directories CANDIDATES for grep command line."
   ;; If one or more candidate is a directory, search in all files
   ;; of this candidate (e.g /home/user/directory/*).
@@ -238,66 +250,66 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
                                    (file-remote-p x 'localname))
                                candidates)
                        candidates))
-  (if helm-c-zgrep-recurse-flag
+  (if helm-zgrep-recurse-flag
       (mapconcat 'shell-quote-argument candidates " ")
-      (loop for i in candidates append
-            (cond ((string-match "^git" helm-c-grep-default-command)
-                   (list i))
-                  ;; Candidate is a directory and we use recursion.
-                  ((and (file-directory-p i)
-                        helm-grep-in-recurse)
-                   (list (expand-file-name i)))
-                  ;; Candidate is a directory, search in all files.
-                  ;; NOTE that `file-expand-wildcards' will return also
-                  ;; directories, they will be ignored by grep but not
-                  ;; by ack-grep that will grep all files of this directory
-                  ;; without recursing in subdirs though, see that as a one
-                  ;; level recursion with ack-grep.
-                  ;; So I leave it as it is, considering it is a feature. [1]
-                  ((or (file-directory-p i)
-                       (string-match "\\`[[]?[*][]]?\\'" (helm-c-basename i)))
-                   (setq i (replace-regexp-in-string "[[]?[*][]]?" "" i))
-                   (file-expand-wildcards
-                    (concat (file-name-as-directory (expand-file-name i)) "*") t))
-                  ;; Candidate is a file or wildcard and we use recursion, use the
-                  ;; current directory instead of candidate.
-                  ((and (or (file-exists-p i) (string-match "[*]" i))
-                        helm-grep-in-recurse)
-                   (list (expand-file-name
-                          (directory-file-name ; Needed for windoze.
-                           (file-name-directory (directory-file-name i))))))
-                  ;; Candidate use wildcard. Same comments as in [1].
-                  ((string-match "\\`[[]?[*][]]?[.].*\\'" (helm-c-basename i))
-                   (file-expand-wildcards
-                    (replace-regexp-in-string "[[]\\|[]]" "" i) t))
-                  ;; Else should be one or more file/directory
-                  ;; possibly marked.
-                  (t (list i))) into all-files
-            finally return
-            (if (string-match "^git" helm-c-grep-default-command)
-                (mapconcat 'identity all-files " ")
-                (mapconcat 'shell-quote-argument all-files " ")))))
+      ;; When candidate is a directory, search in all its files.
+      ;; NOTE that `file-expand-wildcards' will return also
+      ;; directories, they will be ignored by grep but not
+      ;; by ack-grep that will grep all files of this directory
+      ;; without recursing in their subdirs though, see that as a one
+      ;; level recursion with ack-grep.
+      ;; So I leave it as it is, considering it is a feature. [1]
+      (cl-loop for i in candidates append
+               (cond ((string-match "^git" helm-grep-default-command)
+                      (list i))
+                     ;; Candidate is a directory and we use recursion.
+                     ((and (file-directory-p i)
+                           helm-grep-in-recurse)
+                      (list (expand-file-name i)))
+                     ((file-directory-p i)
+                      (file-expand-wildcards
+                       (concat (file-name-as-directory (expand-file-name i)) "*") t))
+                     ;; Candidate is a file or wildcard and we use recursion, use the
+                     ;; current directory instead of candidate.
+                     ((and (or (file-exists-p i) (string-match "[*]" i))
+                           helm-grep-in-recurse)
+                      (list (expand-file-name
+                             (directory-file-name ; Needed for windoze.
+                              (file-name-directory (directory-file-name i))))))
+                     ;; Else should be one or more file/directory
+                     ;; possibly marked.
+                     ;; When real is a normal filename without wildcard
+                     ;; file-expand-wildcards returns a list of one file.
+                     ;; wildcards should have been already handled by
+                     ;; helm-read-file-name or helm-find-files but do it from
+                     ;; here too in case we are called from elsewhere.
+                     (t (file-expand-wildcards i t))) into all-files ; [1]
+                     finally return
+                     (if (string-match "^git" helm-grep-default-command)
+                         (mapconcat 'identity all-files " ")
+                         (mapconcat 'shell-quote-argument all-files " ")))))
 
 (defun helm-grep-command (&optional recursive)
   (let ((com (car (split-string (if recursive
-                                    helm-c-grep-default-recurse-command
-                                    helm-c-grep-default-command) " "))))
+                                    helm-grep-default-recurse-command
+                                    helm-grep-default-command) " "))))
     (if (string= com "git") "git-grep" com)))
 
-(defun* helm-grep-use-ack-p (&key where)
-  (case where
-    (default (string= (helm-grep-command) "ack-grep"))
-    (recursive (string= (helm-grep-command t) "ack-grep"))
-    (strict (and (string= (helm-grep-command t) "ack-grep")
-                 (string= (helm-grep-command) "ack-grep")))
+(cl-defun helm-grep-use-ack-p (&key where)
+  (cl-case where
+    (default (string= (helm-grep-command) helm-ack-grep-executable))
+    (recursive (string= (helm-grep-command t) helm-ack-grep-executable))
+    (strict (and (string= (helm-grep-command t) helm-ack-grep-executable)
+                 (string= (helm-grep-command) helm-ack-grep-executable)))
     (t (and (not (string= (helm-grep-command) "git-grep"))
-            (or (string= (helm-grep-command) "ack-grep")
-                (string= (helm-grep-command t) "ack-grep"))))))
-          
-(defun helm-c-grep-init (only-files &optional include zgrep)
+            (or (string= (helm-grep-command) helm-ack-grep-executable)
+                (string= (helm-grep-command t) helm-ack-grep-executable))))))
+
+(defun helm-grep-init (only-files &optional include zgrep)
   "Start an asynchronous grep process in ONLY-FILES list."
-  (let* ((default-directory (expand-file-name helm-ff-default-directory))
-         (fnargs            (helm-c-grep-prepare-candidates only-files))
+  (let* ((default-directory (or helm-default-directory
+                                (expand-file-name helm-ff-default-directory)))
+         (fnargs            (helm-grep-prepare-candidates only-files))
          (ignored-files     (unless (helm-grep-use-ack-p)
                               (mapconcat
                                #'(lambda (x)
@@ -319,7 +331,7 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
                                   ignored-files)))
          (types             (and (helm-grep-use-ack-p)
                                  ;; When %e format spec is not specified
-                                 ;; in `helm-c-grep-default-command'
+                                 ;; in `helm-grep-default-command'
                                  ;; we need to pass an empty string
                                  ;; to types to avoid error.
                                  (or include "")))
@@ -328,7 +340,7 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
                                           (string-match-p
                                            "[A-Z]" helm-pattern)) "i")))
          (cmd-line          (format-spec
-                             helm-c-grep-default-command
+                             helm-grep-default-command
                              (delq nil
                                    (list (unless zgrep
                                            (if types
@@ -338,8 +350,8 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
                                          (cons ?p (shell-quote-argument
                                                    helm-pattern))
                                          (cons ?f fnargs)))))
-         ;; Use pipe only with grep or git-grep.
-         (process-connection-type (helm-grep-use-ack-p))
+         ;; Use pipe only with grep, zgrep or git-grep.
+         (process-connection-type (and (not zgrep) (helm-grep-use-ack-p)))
          (tramp-verbose helm-tramp-verbose))
     (setq helm-grep-last-cmd-line cmd-line)
     ;; Start grep process.
@@ -351,7 +363,7 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
          "grep" helm-buffer cmd-line)
       ;; Init sentinel.
       (set-process-sentinel
-       (get-process "grep")
+       (get-buffer-process helm-buffer)
        #'(lambda (process event)
            (let ((noresult (= (process-exit-status process) 1)))
              (unless noresult
@@ -361,7 +373,7 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
                          ;; [FIXME] This is a workaround for zgrep
                          ;; that exit with code 1
                          ;; after a certain amount of results.
-                         (not helm-grep-use-zgrep))
+                         (not (with-helm-buffer helm-grep-use-zgrep)))
                     (with-current-buffer helm-buffer
                       (insert (concat "* Exit with code 1, no result found,"
                                       " Command line was:\n\n "
@@ -382,10 +394,6 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
                                       'face 'helm-grep-finish))))))
                    ((string= event "finished\n")
                     (with-helm-window
-                      ;; Make now `helm-c-grep-default-command' local
-                      ;; to have it in further resuming session.
-                      (set (make-local-variable 'helm-c-grep-default-command)
-                           helm-c-grep-default-command)
                       (setq mode-line-format
                             '(" " mode-line-buffer-identification " "
                               (line-number-mode "%l") " "
@@ -410,27 +418,19 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
                        (replace-regexp-in-string "\n" "" event))))))))))
 
 (defun helm-grep-collect-candidates ()
-  (let* ((helm-c-grep-default-command
-          (cond (helm-grep-use-zgrep helm-c-default-zgrep-command)
-                (helm-grep-in-recurse helm-c-grep-default-recurse-command)
-                ;; When resuming the local value of
-                ;; `helm-c-grep-default-command' is used, only git-grep
-                ;; should need this.
-                (t helm-c-grep-default-command)))
-         (helm-ff-default-directory helm-grep-last-default-directory))
-    (funcall helm-c-grep-default-function
-             helm-grep-last-targets
-             helm-grep-include-files
-             helm-grep-use-zgrep)))
+  (funcall helm-grep-default-function
+           helm-grep-last-targets
+           helm-grep-include-files
+           helm-grep-use-zgrep))
 
 
 ;;; Actions
 ;;
 ;;
-(defun helm-c-grep-action (candidate &optional where mark)
+(defun helm-grep-action (candidate &optional where mark)
   "Define a default action for `helm-do-grep' on CANDIDATE.
 WHERE can be one of other-window, elscreen, other-frame."
-  (let* ((split        (helm-c-grep-split-line candidate))
+  (let* ((split        (helm-grep-split-line candidate))
          (lineno       (string-to-number (nth 1 split)))
          (loc-fname    (or (with-current-buffer
                                (if (eq major-mode 'helm-grep-mode)
@@ -438,17 +438,21 @@ WHERE can be one of other-window, elscreen, other-frame."
                                    helm-buffer)
                              (get-text-property (point-at-bol) 'help-echo))
                            (car split)))
-         (tramp-method (file-remote-p helm-ff-default-directory 'method))
-         (tramp-host   (file-remote-p helm-ff-default-directory 'host))
+         (tramp-method (file-remote-p (or helm-ff-default-directory
+                                          default-directory) 'method))
+         (tramp-host   (file-remote-p (or helm-ff-default-directory
+                                          default-directory) 'host))
          (tramp-prefix (concat "/" tramp-method ":" tramp-host ":"))
          (fname        (if tramp-host
                            (concat tramp-prefix loc-fname) loc-fname)))
-    (case where
+    (cl-case where
       (other-window (find-file-other-window fname))
       (elscreen     (helm-elscreen-find-file fname))
       (other-frame  (find-file-other-frame fname))
-      (grep         (helm-c-grep-save-results-1))
-      (pdf          (helm-c-pdfgrep-action-1 split lineno (car split)))
+      (grep         (helm-grep-save-results-1))
+      (pdf          (if helm-pdfgrep-default-read-command
+                        (helm-pdfgrep-action-1 split lineno (car split))
+                        (find-file (car split)) (doc-view-goto-page lineno)))
       (t            (find-file fname)))
     (unless (or (eq where 'grep) (eq where 'pdf))
       (helm-goto-line lineno))
@@ -459,136 +463,145 @@ WHERE can be one of other-window, elscreen, other-frame."
     (unless (or helm-in-persistent-action
                 (eq major-mode 'helm-grep-mode)
                 (string= helm-pattern ""))
-      (setq helm-c-grep-history
+      (setq helm-grep-history
             (cons helm-pattern
-                  (delete helm-pattern helm-c-grep-history)))
-      (when (> (length helm-c-grep-history)
-               helm-c-grep-max-length-history)
-        (setq helm-c-grep-history
-              (delete (car (last helm-c-grep-history))
-                      helm-c-grep-history))))))
+                  (delete helm-pattern helm-grep-history)))
+      (when (> (length helm-grep-history)
+               helm-grep-max-length-history)
+        (setq helm-grep-history
+              (delete (car (last helm-grep-history))
+                      helm-grep-history))))))
 
-(defun helm-c-grep-persistent-action (candidate)
+(defun helm-grep-persistent-action (candidate)
   "Persistent action for `helm-do-grep'.
 With a prefix arg record CANDIDATE in `mark-ring'."
   (if current-prefix-arg
-      (helm-c-grep-action candidate nil 'mark)
-      (helm-c-grep-action candidate))
-  (helm-match-line-color-current-line))
+      (helm-grep-action candidate nil 'mark)
+      (helm-grep-action candidate))
+  (helm-highlight-current-line))
 
-(defun helm-c-grep-other-window (candidate)
+(defun helm-grep-other-window (candidate)
   "Jump to result in other window from helm grep."
-  (helm-c-grep-action candidate 'other-window))
+  (helm-grep-action candidate 'other-window))
 
-(defun helm-c-grep-other-frame (candidate)
+(defun helm-grep-other-frame (candidate)
   "Jump to result in other frame from helm grep."
-  (helm-c-grep-action candidate 'other-frame))
+  (helm-grep-action candidate 'other-frame))
 
-(defun helm-c-grep-jump-elscreen (candidate)
+(defun helm-grep-jump-elscreen (candidate)
   "Jump to result in elscreen from helm grep."
-  (helm-c-grep-action candidate 'elscreen))
+  (helm-grep-action candidate 'elscreen))
 
-(defun helm-c-goto-next-or-prec-file (n &optional type)
+(defun helm-goto-next-or-prec-file (n &optional type)
   "Go to next or precedent candidate file in helm grep/etags buffers.
 If N is positive go forward otherwise go backward."
-  (let* ((sel (helm-get-selection nil t))
+  (let* ((sel (if (eq major-mode 'helm-grep-mode)
+                  (buffer-substring (point-at-bol) (point-at-eol))
+                  (helm-get-selection nil t)))
          (current-line-list  (if (eq type 'etags)
                                  (split-string sel ": +" t)
-                                 (helm-c-grep-split-line sel)))
+                                 (helm-grep-split-line sel)))
          (current-fname      (nth 0 current-line-list))
          (bob-or-eof         (if (eq n 1) 'eobp 'bobp))
          (mark-maybe #'(lambda ()
                          (if (eq major-mode 'helm-grep-mode)
                              (ignore)
                              (helm-mark-current-line)))))
-      (catch 'break
-        (while (not (funcall bob-or-eof))
-          (forward-line n) ; Go forward or backward depending of n value.
-          ;; Exit when current-fname is not matched or in `helm-grep-mode'
-          ;; the line is not a grep line i.e 'fname:num:tag'.
-          (setq sel (buffer-substring (point-at-bol) (point-at-eol)))
-          (unless (or (string= current-fname
-                               (car (if (eq type 'etags)
-                                        (split-string sel ": +" t)
-                                        (helm-c-grep-split-line sel))))
-                      (and (eq major-mode 'helm-grep-mode)
-                           (not (get-text-property (point-at-bol) 'help-echo))))
-            (funcall mark-maybe)
-            (throw 'break nil))))
-      (cond ((and (> n 0) (eobp))
-             (re-search-backward ".")
-             (forward-line 0)
-             (funcall mark-maybe))
-            ((and (< n 0) (bobp))
-             (helm-aif (next-single-property-change (point-at-bol) 'help-echo)
-                 (goto-char it)
+    (catch 'break
+      (while (not (funcall bob-or-eof))
+        (forward-line n) ; Go forward or backward depending of n value.
+        ;; Exit when current-fname is not matched or in `helm-grep-mode'
+        ;; the line is not a grep line i.e 'fname:num:tag'.
+        (setq sel (buffer-substring (point-at-bol) (point-at-eol)))
+        (unless (or (string= current-fname
+                             (car (if (eq type 'etags)
+                                      (split-string sel ": +" t)
+                                      (helm-grep-split-line sel))))
+                    (and (eq major-mode 'helm-grep-mode)
+                         (not (get-text-property (point-at-bol) 'help-echo))))
+          (funcall mark-maybe)
+          (throw 'break nil))))
+    (cond ((and (> n 0) (eobp))
+           (re-search-backward ".")
+           (forward-line 0)
+           (funcall mark-maybe))
+          ((and (< n 0) (bobp))
+           (helm-aif (next-single-property-change (point-at-bol) 'help-echo)
+               (goto-char it)
              (forward-line 1))
-             (funcall mark-maybe)))))
+           (funcall mark-maybe)))))
 
 ;;;###autoload
-(defun helm-c-goto-precedent-file ()
+(defun helm-goto-precedent-file ()
   "Go to precedent file in helm grep/etags buffers."
   (interactive)
   (let ((etagp (when (string= (assoc-default
                                'name (helm-get-current-source)) "Etags")
                  'etags)))
     (with-helm-window
-      (helm-c-goto-next-or-prec-file -1 etagp))))
+      (helm-goto-next-or-prec-file -1 etagp))))
 
 ;;;###autoload
-(defun helm-c-goto-next-file ()
+(defun helm-goto-next-file ()
   "Go to precedent file in helm grep/etags buffers."
   (interactive)
   (let ((etagp (when (string= (assoc-default
                                'name (helm-get-current-source)) "Etags")
                  'etags)))
     (with-helm-window
-      (helm-c-goto-next-or-prec-file 1 etagp))))
+      (helm-goto-next-or-prec-file 1 etagp))))
 
-;;;###autoload
-(defun helm-c-grep-run-persistent-action ()
+(defun helm-grep-run-persistent-action ()
   "Run grep persistent action from `helm-do-grep-1'."
   (interactive)
-  (helm-attrset 'jump-persistent 'helm-c-grep-persistent-action)
-  (helm-execute-persistent-action 'jump-persistent))
+  (with-helm-alive-p
+    (helm-attrset 'jump-persistent 'helm-grep-persistent-action)
+    (helm-execute-persistent-action 'jump-persistent)))
 
-;;;###autoload
-(defun helm-c-grep-run-default-action ()
+(defun helm-grep-run-default-action ()
   "Run grep default action from `helm-do-grep-1'."
   (interactive)
-  (helm-c-quit-and-execute-action 'helm-c-grep-action))
+  (with-helm-alive-p
+    (helm-quit-and-execute-action 'helm-grep-action)))
 
-;;;###autoload
-(defun helm-c-grep-run-other-window-action ()
+(defun helm-grep-run-other-window-action ()
   "Run grep goto other window action from `helm-do-grep-1'."
   (interactive)
-  (helm-c-quit-and-execute-action 'helm-c-grep-other-window))
+  (with-helm-alive-p
+    (helm-quit-and-execute-action 'helm-grep-other-window)))
+
+(defun helm-grep-run-other-frame-action ()
+  "Run grep goto other frame action from `helm-do-grep-1'."
+  (interactive)
+  (with-helm-alive-p
+    (helm-quit-and-execute-action 'helm-grep-other-frame)))
 
 ;;;###autoload
-(defun helm-c-grep-run-save-buffer ()
+(defun helm-grep-run-save-buffer ()
   "Run grep save results action from `helm-do-grep-1'."
   (interactive)
-  (helm-c-quit-and-execute-action 'helm-c-grep-save-results))
+  (with-helm-alive-p
+    (helm-quit-and-execute-action 'helm-grep-save-results)))
 
 
 ;;; helm-grep-mode
 ;;
 ;;
-(defun helm-c-grep-save-results (_candidate)
-  (helm-c-grep-action _candidate 'grep))
+(defun helm-grep-save-results (candidate)
+  (helm-grep-action candidate 'grep))
 
-(defun helm-c-grep-save-results-1 ()
+(defun helm-grep-save-results-1 ()
   "Save helm grep result in a `grep-mode' buffer."
   (let ((buf "*hgrep*")
         new-buf)
     (when (get-buffer buf)
       (setq new-buf (read-string "GrepBufferName: " buf))
-      (loop for b in (helm-c-buffer-list)
-            when (and (string= new-buf b)
-                      (not (y-or-n-p
-                            (format "Buffer `%s' already exists overwrite? "
-                                    new-buf))))
-            do (setq new-buf (read-string "GrepBufferName: " "*hgrep ")))
+      (cl-loop for b in (helm-buffer-list)
+               when (and (string= new-buf b)
+                         (not (y-or-n-p
+                               (format "Buffer `%s' already exists overwrite? "
+                                       new-buf))))
+               do (setq new-buf (read-string "GrepBufferName: " "*hgrep ")))
       (setq buf new-buf))
     (with-current-buffer (get-buffer-create buf)
       (setq buffer-read-only t)
@@ -614,12 +627,12 @@ Special commands:
 ;;;###autoload
 (defun helm-gm-next-file ()
   (interactive)
-  (helm-c-goto-next-or-prec-file 1))
+  (helm-goto-next-or-prec-file 1))
 
 ;;;###autoload
 (defun helm-gm-precedent-file ()
   (interactive)
-  (helm-c-goto-next-or-prec-file -1))
+  (helm-goto-next-or-prec-file -1))
 
 ;;;###autoload
 (defun helm-grep-mode-quit ()
@@ -631,7 +644,7 @@ Special commands:
   (interactive)
   (let ((candidate (buffer-substring (point-at-bol) (point-at-eol))))
     (condition-case nil
-        (progn (helm-c-grep-action candidate) (delete-other-windows))
+        (progn (helm-grep-action candidate) (delete-other-windows))
       (error nil))))
 
 (defun helm-grep-mode-jump-other-window-1 (arg)
@@ -639,7 +652,7 @@ Special commands:
     (condition-case nil
         (progn
           (save-selected-window
-            (helm-c-grep-action candidate 'other-window)
+            (helm-grep-action candidate 'other-window)
             (recenter))
           (forward-line arg))
       (error nil))))
@@ -659,7 +672,7 @@ Special commands:
   (interactive)
   (let ((candidate (buffer-substring (point-at-bol) (point-at-eol))))
     (condition-case nil
-        (helm-c-grep-action candidate 'other-window)
+        (helm-grep-action candidate 'other-window)
       (error nil))))
 
 
@@ -669,24 +682,25 @@ Special commands:
 (defun helm-grep-hack-types ()
   "Return a list of known ack-grep types."
   (with-temp-buffer
-    (call-process "ack-grep" nil t nil
-                  "--help" "types")
+    ;; "--help-types" works with both 1.96 and 2.1+, while
+    ;; "--help types" works only with 1.96 Issue #422
+    (call-process helm-ack-grep-executable nil t nil "--help-types")
     (goto-char (point-min))
-    (loop while (re-search-forward
-                 "^ *--\\(\\[no\\]\\)\\([^. ]+\\) *\\(.*\\)" nil t)
-          collect (cons (concat (match-string 2)
-                                " [" (match-string 3) "]")
-                        (match-string 2))
-          collect (cons (concat "no" (match-string 2)
-                                " [" (match-string 3) "]")
-                        (concat "no" (match-string 2))))))
+    (cl-loop while (re-search-forward
+                    "^ *--\\(\\[no\\]\\)\\([^. ]+\\) *\\(.*\\)" nil t)
+             collect (cons (concat (match-string 2)
+                                   " [" (match-string 3) "]")
+                           (match-string 2))
+             collect (cons (concat "no" (match-string 2)
+                                   " [" (match-string 3) "]")
+                           (concat "no" (match-string 2))))))
 
-(defun helm-grep-ack-types-transformer (candidates source)
-  (loop for i in candidates
-        if (stringp i)
-        collect (rassoc i helm-grep-ack-types-cache)
-        else
-        collect i))
+(defun helm-grep-ack-types-transformer (candidates _source)
+  (cl-loop for i in candidates
+           if (stringp i)
+           collect (rassoc i helm-grep-ack-types-cache)
+           else
+           collect i))
 
 (defvar helm-grep-ack-types-cache nil)
 (defun helm-grep-read-ack-type ()
@@ -699,49 +713,42 @@ Special commands:
                 :name "*Ack-grep types*"
                 :marked-candidates t
                 :must-match t
-                :fc-transformer '(helm-c-adaptive-sort
+                :fc-transformer '(helm-adaptive-sort
                                   helm-grep-ack-types-transformer)
                 :buffer "*helm ack-types*")))
-    (mapconcat #'(lambda (type)
-                       (concat "--type=" type))
-               types " ")))
+    (mapconcat #'(lambda (type) (concat "--type=" type)) types " ")))
 
 
 ;;; grep extensions
 ;;
 ;;
-(defun helm-c-grep-guess-extensions (files)
+(defun helm-grep-guess-extensions (files)
   "Try to guess file extensions in FILES list when using grep recurse.
 These extensions will be added to command line with --include arg of grep."
-  (loop
-        with glob-list = nil
-        with lst = (if (file-directory-p (car files))
-                       (directory-files
-                        (car files) nil
-                        directory-files-no-dot-files-regexp)
-                       files)
-        for i in lst
-        for ext = (file-name-extension i t)
-        for glob = (and ext (not (string= ext ""))
-                        (concat "*" ext))
-        unless (or (not glob)
-                   (member glob glob-list)
-                   (member glob grep-find-ignored-files))
-        collect glob into glob-list
-        finally return (helm-fast-remove-dups
-                        (append glob-list
-                                (delq nil
-                                      (list "*" helm-c-grep-preferred-ext)))
-                                :test 'equal)))
+  (cl-loop with ext-list = (list helm-grep-preferred-ext "*")
+           with lst = (if (file-directory-p (car files))
+                          (directory-files
+                           (car files) nil
+                           directory-files-no-dot-files-regexp)
+                          files)
+           for i in lst
+           for ext = (file-name-extension i 'dot)
+           for glob = (and ext (not (string= ext ""))
+                           (concat "*" ext))
+           unless (or (not glob)
+                      (and glob-list (member glob glob-list))
+                      (and glob-list (member glob ext-list))
+                      (and glob-list (member glob grep-find-ignored-files)))
+           collect glob into glob-list
+           finally return (delq nil (append ext-list glob-list))))
 
 (defun helm-grep-get-file-extensions (files)
   "Try to return a list of file extensions to pass to include arg of grep."
-  (let* ((all-exts (helm-c-grep-guess-extensions
+  (let* ((all-exts (helm-grep-guess-extensions
                     (mapcar 'expand-file-name files)))
          (extensions (helm-comp-read "Search Only in: " all-exts
                                      :marked-candidates t
-                                     :preselect helm-c-grep-preferred-ext
-                                     :fc-transformer 'helm-c-adaptive-sort
+                                     :fc-transformer 'helm-adaptive-sort
                                      :buffer "*helm grep exts*"
                                      :name "*helm grep extensions*")))
     (if (listp extensions) ; Otherwise it is empty string returned by C-RET.
@@ -749,14 +756,15 @@ These extensions will be added to command line with --include arg of grep."
         ;; assume user entered more than one glob separated by space(s) and
         ;; split this string to pass it later to mapconcat.
         ;; e.g '("*.el *.py")
-        (loop for i in extensions
-              append (split-string-and-unquote i " "))
+        (cl-loop for i in extensions
+                 append (split-string-and-unquote i " "))
         (list "*"))))
 
 
 ;;; Set up source
 ;;
 ;;
+(defvar helm-source-grep nil)
 (defun helm-do-grep-1 (targets &optional recurse zgrep exts)
   "Launch grep on a list of TARGETS files.
 When RECURSE is given use -r option of grep and prompt user
@@ -772,7 +780,9 @@ in recurse, search being made on `helm-zgrep-file-extension-regexp'."
              helm-ff-default-directory
              (file-remote-p helm-ff-default-directory))
     (error "Error: Remote operation not supported with ack-grep."))
-  (let* ((exts (and recurse (not zgrep)
+  (let* ((exts (and recurse
+                    ;; [FIXME] I could handle this from helm-walk-directory.
+                    (not zgrep) ; zgrep doesn't handle -r opt.
                     (not (helm-grep-use-ack-p :where 'recursive))
                     (or exts (helm-grep-get-file-extensions targets))))
          (include-files (and exts
@@ -783,15 +793,14 @@ in recurse, search being made on `helm-zgrep-file-extension-regexp'."
                                             (remove "*" exts)
                                             exts) " ")))
          (types (and (not include-files)
+                     (not zgrep)
                      recurse
                      ;; When %e format spec is not specified
                      ;; ignore types and do not prompt for choice.
-                     (string-match "%e" helm-c-grep-default-command)
+                     (string-match "%e" helm-grep-default-command)
                      (helm-grep-read-ack-type)))
-         (helm-compile-source-functions
-          ;; rule out helm-match-plugin because the input is one regexp.
-          (delq 'helm-compile-source--match-plugin
-                (copy-sequence helm-compile-source-functions))))
+         (follow (and helm-follow-mode-persistent
+                      (assoc-default 'follow helm-source-grep))))
     ;; When called as action from an other source e.g *-find-files
     ;; we have to kill action buffer.
     (when (get-buffer helm-action-buffer)
@@ -800,46 +809,63 @@ in recurse, search being made on `helm-zgrep-file-extension-regexp'."
     ;; give a default value to `helm-ff-default-directory'.
     (unless helm-ff-default-directory
       (setq helm-ff-default-directory default-directory))
-    ;; We need these global vars
-    ;; to further pass infos to `helm-resume'.
-    (setq helm-grep-last-targets targets
-          helm-grep-include-files (or include-files types)
-          helm-grep-in-recurse recurse
-          helm-grep-use-zgrep zgrep
-          helm-grep-last-default-directory
-          helm-ff-default-directory)
+    ;; We need to store these vars locally
+    ;; to pass infos later to `helm-resume'.
+    (with-helm-temp-hook 'helm-after-initialize-hook
+      (with-helm-buffer
+        (set (make-local-variable 'helm-zgrep-recurse-flag)
+             (and recurse zgrep))
+        (set (make-local-variable 'helm-grep-last-targets) targets)
+        (set (make-local-variable 'helm-grep-include-files)
+             (or include-files types))
+        (set (make-local-variable 'helm-grep-in-recurse) recurse)
+        (set (make-local-variable 'helm-grep-use-zgrep) zgrep)
+        (set (make-local-variable 'helm-grep-last-default-directory)
+             helm-ff-default-directory)
+        (set (make-local-variable 'helm-grep-default-command)
+             (cond (helm-grep-use-zgrep helm-default-zgrep-command)
+                   (helm-grep-in-recurse helm-grep-default-recurse-command)
+                   ;; When resuming the local value of
+                   ;; `helm-grep-default-command' is used, only git-grep
+                   ;; should need this.
+                   (t helm-grep-default-command)))))
+    ;; Setup the source.
+    (setq helm-source-grep
+          `((name . ,(if zgrep "Zgrep" (capitalize (if recurse
+                                                       (helm-grep-command t)
+                                                       (helm-grep-command)))))
+            (header-name . (lambda (name)
+                             (concat name "(C-c ? Help)")))
+            (candidates-process . helm-grep-collect-candidates)
+            (filter-one-by-one . helm-grep-filter-one-by-one)
+            (candidate-number-limit . 9999)
+            (no-matchplugin)
+            (nohighlight)
+            (mode-line . helm-grep-mode-line-string)
+            ;; We need to specify keymap here and as :keymap arg [1]
+            ;; to make it available in further resuming.
+            (keymap . ,helm-grep-map)
+            (history . ,'helm-grep-history)
+            (action . ,(delq
+                        nil
+                        `(("Find File" . helm-grep-action)
+                          ("Find file other frame" . helm-grep-other-frame)
+                          ,(and (locate-library "elscreen")
+                                '("Find file in Elscreen"
+                                  . helm-grep-jump-elscreen))
+                          ("Save results in grep buffer" . helm-grep-save-results)
+                          ("Find file other window" . helm-grep-other-window))))
+            (persistent-action . helm-grep-persistent-action)
+            (persistent-help . "Jump to line (`C-u' Record in mark ring)")
+            (requires-pattern . 3)))
+    (and follow (helm-attrset 'follow follow helm-source-grep))
     (helm
-     :sources
-     `(((name . ,(if zgrep "Zgrep" (capitalize (if recurse
-                                                   (helm-grep-command t)
-                                                   (helm-grep-command)))))
-        (header-name . (lambda (name)
-                         (concat name "(C-c ? Help)")))
-        (candidates-process . helm-grep-collect-candidates)
-        (filtered-candidate-transformer helm-c-grep-cand-transformer)
-        (candidate-number-limit . 9999)
-        (nohighlight)
-        (mode-line . helm-grep-mode-line-string)
-        ;; We need to specify keymap here and as :keymap arg [1]
-        ;; to make it available in further resuming.
-        (keymap . ,helm-c-grep-map)
-        (history . ,'helm-c-grep-history)
-        (action . ,(delq
-                    nil
-                    `(("Find File" . helm-c-grep-action)
-                      ("Find file other frame" . helm-c-grep-other-frame)
-                      ,(and (locate-library "elscreen")
-                            '("Find file in Elscreen"
-                              . helm-c-grep-jump-elscreen))
-                      ("Save results in grep buffer" . helm-c-grep-save-results)
-                      ("Find file other window" . helm-c-grep-other-window))))
-        (persistent-action . helm-c-grep-persistent-action)
-        (persistent-help . "Jump to line (`C-u' Record in mark ring)")
-        (requires-pattern . 3)
-        (delayed)))
-     :buffer (format "*helm %s*" (if zgrep "zgrep" "grep"))
-     :keymap helm-c-grep-map ; [1]
-     :history 'helm-c-grep-history)))
+     :sources '(helm-source-grep)
+     :buffer (format "*helm %s*" (if zgrep "zgrep" (helm-grep-command recurse)))
+     :default-directory helm-grep-last-default-directory
+     :keymap helm-grep-map ; [1]
+     :history 'helm-grep-history
+     :truncate-lines t)))
 
 
 ;;; zgrep
@@ -850,25 +876,24 @@ in recurse, search being made on `helm-zgrep-file-extension-regexp'."
        (let* ((def-dir (or helm-ff-default-directory
                            default-directory))
               (only    (if recursive
-                           (or (gethash def-dir helm-c-rzgrep-cache)
+                           (or (gethash def-dir helm-rzgrep-cache)
                                (puthash
                                 def-dir
-                                (helm-c-walk-directory
+                                (helm-walk-directory
                                  def-dir
                                  :directories nil
                                  :path 'full
                                  :match helm-zgrep-file-extension-regexp)
-                                helm-c-rzgrep-cache))
+                                helm-rzgrep-cache))
                            flist)))
-         (when recursive (setq helm-c-zgrep-recurse-flag t))
          (helm-do-grep-1 only recursive 'zgrep))
-    (setq helm-c-zgrep-recurse-flag nil)))
+    (setq helm-zgrep-recurse-flag nil)))
 
 
 ;;; transformers
 ;;
 ;;
-(defun helm-c-grep-split-line (line)
+(defun helm-grep-split-line (line)
   "Split a grep output line."
   ;; The output of grep may send a truncated line in this chunk,
   ;; so don't split until grep line is valid, that is
@@ -877,47 +902,65 @@ in recurse, search being made on `helm-zgrep-file-extension-regexp'."
   (when (string-match helm-grep-split-line-regexp line)
     ;; Don't use split-string because buffer/file name or string
     ;; may contain a ":".
-    (loop for n from 1 to 3 collect (match-string n line))))
+    (cl-loop for n from 1 to 3 collect (match-string n line))))
 
-(defun helm-c-grep-cand-transformer (candidates sources)
-  "Filtered candidate transformer function for `helm-do-grep'."
-  (loop with root = (and helm-c-grep-default-directory-fn
-                         (funcall helm-c-grep-default-directory-fn))
-        for i in candidates
-        for split  = (and i (helm-c-grep-split-line i))
-        for fname  = (if (and root split)
-                         (expand-file-name (car split) root)
-                         (car-safe split))
-        for lineno = (nth 1 split)
-        for str    = (nth 2 split)
-        when (and fname lineno str)
-        collect
-        (cons (concat (propertize (file-name-nondirectory fname)
-                                  'face 'helm-grep-file
-                                  'help-echo fname) ":"
-                                  (propertize lineno 'face 'helm-grep-lineno) ":"
-                                  (helm-c-grep-highlight-match str))
-              i)))
+(defun helm-grep--filter-candidate-1 (candidate &optional dir)
+  (let* ((root   (or dir (and helm-grep-default-directory-fn
+                              (funcall helm-grep-default-directory-fn))))
+         (split  (helm-grep-split-line candidate))
+         (fname  (if (and root split)
+                     (expand-file-name (car split) root)
+                     (car-safe split)))
+         (lineno (nth 1 split))
+         (str    (nth 2 split)))
+    (when (and fname lineno str)
+      (cons (concat (propertize (file-name-nondirectory fname)
+                                'face 'helm-grep-file
+                                'help-echo fname) ":"
+                                (propertize lineno 'face 'helm-grep-lineno) ":"
+                                (helm-grep-highlight-match str))
+            candidate))))
 
-(defun helm-c-grep-highlight-match (str)
+(defun helm-grep-filter-one-by-one (candidate)
+  "`filter-one-by-one' transformer function for `helm-do-grep'."
+  (helm-grep--filter-candidate-1 candidate))
+  
+(defun helm-grep-cand-transformer (candidates _source)
+  "`filtered-candidate-transformer' function for `helm-do-grep'."
+  (cl-loop with root = (and helm-grep-default-directory-fn
+                            (funcall helm-grep-default-directory-fn))
+           for i in candidates
+           for cand = (helm-grep--filter-candidate-1 i root)
+           when cand collect cand))
+
+(defun helm-grep-highlight-match (str &optional multi-match)
   "Highlight in string STR all occurences matching `helm-pattern'."
-  (condition-case nil
-      (with-temp-buffer
-        (insert str)
-        (goto-char (point-min))
-        (while (and (re-search-forward helm-pattern nil t)
-                    (> (- (match-end 0) (match-beginning 0)) 0))
-          (add-text-properties
-           (match-beginning 0) (match-end 0)
-           '(face helm-grep-match)))
-        (buffer-string))
-    (error nil)))
+  (require 'helm-match-plugin)
+  (let (beg end)
+    (condition-case nil
+        (with-temp-buffer
+          (insert str)
+          (goto-char (point-min))
+          (cl-loop for reg in (if multi-match
+                                  (cl-loop for r in (helm-mp-split-pattern
+                                                     helm-pattern)
+                                           unless (string-match "\\`!" r)
+                                           collect r)
+                                  (list helm-pattern))
+                   do
+                   (while (and (re-search-forward reg nil t)
+                               (> (- (setq end (match-end 0))
+                                     (setq beg (match-beginning 0))) 0))
+                     (add-text-properties beg end '(face helm-grep-match)))
+                   do (goto-char (point-min))) 
+          (buffer-string))
+      (error nil))))
 
 
 ;;; Grep from buffer list
 ;;
 ;;
-(defun helm-c-grep-buffers-1 (candidate &optional zgrep)
+(defun helm-grep-buffers-1 (candidate &optional zgrep)
   "Run grep on all file--buffers or CANDIDATE if it is a file--buffer.
 If one of selected buffers is not a file--buffer,
 it is ignored and grep will run on all others file--buffers.
@@ -935,48 +978,48 @@ If a prefix arg is given run grep on all buffers ignoring non--file-buffers."
                     (helm-marked-candidates)))
          (win-conf (current-window-configuration))
          ;; Non--fname and remote buffers are ignored.
-         (bufs (loop for buf in cands
-                     for fname = (buffer-file-name (get-buffer buf))
-                     when (and fname (not (file-remote-p fname)))
-                     collect (expand-file-name fname))))
+         (bufs (cl-loop for buf in cands
+                        for fname = (buffer-file-name (get-buffer buf))
+                        when (and fname (not (file-remote-p fname)))
+                        collect (expand-file-name fname))))
     (if bufs
         (if zgrep
             (helm-do-grep-1 bufs nil 'zgrep)
             (helm-do-grep-1 bufs))
         ;; bufs is empty, thats mean we have only CANDIDATE
         ;; and it is not a buffer-filename, fallback to occur.
-        (helm-c-switch-to-buffer candidate)
+        (helm-switch-to-buffer candidate)
         (when (get-buffer helm-action-buffer)
           (kill-buffer helm-action-buffer))
         (helm-occur)
         (when (eq helm-exit-status 1)
           (set-window-configuration win-conf)))))
 
-(defun helm-c-grep-buffers (candidate)
+(defun helm-grep-buffers (candidate)
   "Action to grep buffers."
-  (helm-c-grep-buffers-1 candidate))
+  (helm-grep-buffers-1 candidate))
 
-(defun helm-c-zgrep-buffers (candidate)
+(defun helm-zgrep-buffers (candidate)
   "Action to zgrep buffers."
-  (helm-c-grep-buffers-1 candidate 'zgrep))
+  (helm-grep-buffers-1 candidate 'zgrep))
 
 
 ;;; Helm interface for pdfgrep
 ;;  pdfgrep program <http://pdfgrep.sourceforge.net/>
 ;;  and a pdf-reader (e.g xpdf) are needed.
 ;;
-(defvar helm-c-pdfgrep-default-function 'helm-c-pdfgrep-init)
-(defun helm-c-pdfgrep-init (only-files)
+(defvar helm-pdfgrep-default-function 'helm-pdfgrep-init)
+(defun helm-pdfgrep-init (only-files)
   "Start an asynchronous pdfgrep process in ONLY-FILES list."
   (let* ((default-directory (or helm-ff-default-directory
                                 default-directory))
-         (fnargs   (helm-c-grep-prepare-candidates
+         (fnargs   (helm-grep-prepare-candidates
                     (if (file-remote-p default-directory)
                         (mapcar #'(lambda (x)
                                     (file-remote-p x 'localname))
                                 only-files)
                         only-files)))
-         (cmd-line (format helm-c-pdfgrep-default-command
+         (cmd-line (format helm-pdfgrep-default-command
                            helm-pattern
                            fnargs))
          process-connection-type)
@@ -989,8 +1032,8 @@ If a prefix arg is given run grep on all buffers ignoring non--file-buffers."
          "pdfgrep" helm-buffer cmd-line)
       (message nil)
       (set-process-sentinel
-       (get-process "pdfgrep")
-       #'(lambda (process event)
+       (get-buffer-process helm-buffer)
+       #'(lambda (_process event)
            (if (string= event "finished\n")
                (with-helm-window
                  (setq mode-line-format
@@ -1009,15 +1052,12 @@ If a prefix arg is given run grep on all buffers ignoring non--file-buffers."
   "Launch pdfgrep with a list of ONLY files."
   (unless (executable-find "pdfgrep")
     (error "Error: No such program `pdfgrep'."))
-  (let* ((helm-compile-source-functions
-          ;; rule out helm-match-plugin because the input is one regexp.
-          (delq 'helm-compile-source--match-plugin
-                (copy-sequence helm-compile-source-functions)))
-         helm-grep-in-recurse) ; recursion is never used in pdfgrep.
+  (let* (helm-grep-in-recurse) ; recursion is never used in pdfgrep.
     ;; When called as action from an other source e.g *-find-files
     ;; we have to kill action buffer.
     (when (get-buffer helm-action-buffer)
       (kill-buffer helm-action-buffer))
+    (setq helm-pdfgrep-targets only)
     (helm
      :sources
      `(((name . "PdfGrep")
@@ -1025,32 +1065,31 @@ If a prefix arg is given run grep on all buffers ignoring non--file-buffers."
                   ;; If `helm-find-files' haven't already started,
                   ;; give a default value to `helm-ff-default-directory'.
                   (setq helm-ff-default-directory (or helm-ff-default-directory
-                                                      default-directory))
-                  (setq helm-pdfgrep-targets only)))
+                                                      default-directory))))
         (candidates-process
          . (lambda ()
-             (funcall helm-c-pdfgrep-default-function helm-pdfgrep-targets)))
-        (filtered-candidate-transformer helm-c-grep-cand-transformer)
+             (funcall helm-pdfgrep-default-function helm-pdfgrep-targets)))
+        (filter-one-by-one . helm-grep-filter-one-by-one)
         (candidate-number-limit . 9999)
+        (no-matchplugin)
         (nohighlight)
-        (history . ,'helm-c-grep-history)
-        (keymap . ,helm-c-pdfgrep-map)
+        (history . ,'helm-grep-history)
+        (keymap . ,helm-pdfgrep-map)
         (mode-line . helm-pdfgrep-mode-line-string)
-        (action . helm-c-pdfgrep-action)
+        (action . helm-pdfgrep-action)
         (persistent-help . "Jump to PDF Page")
-        (requires-pattern . 3)
-        (delayed)))
+        (requires-pattern . 3)))
      :buffer "*helm pdfgrep*"
-     :history 'helm-c-grep-history)))
+     :history 'helm-grep-history)))
 
-(defun helm-c-pdfgrep-action (candidate)
-  (helm-c-grep-action candidate 'pdf))
+(defun helm-pdfgrep-action (candidate)
+  (helm-grep-action candidate 'pdf))
 
-(defun helm-c-pdfgrep-action-1 (split pageno fname)
+(defun helm-pdfgrep-action-1 (_split pageno fname)
   (save-selected-window
     (start-file-process-shell-command
      "pdf-reader" nil
-     (format-spec helm-c-pdfgrep-default-read-command
+     (format-spec helm-pdfgrep-default-read-command
                   (list (cons ?f fname) (cons ?p pageno))))))
 
 ;;;###autoload
@@ -1069,14 +1108,14 @@ See also `helm-do-grep-1'."
   (require 'helm-mode)
   (let* ((preselection (or (dired-get-filename nil t)
                            (buffer-file-name (current-buffer))))
-         (only    (helm-c-read-file-name
+         (only    (helm-read-file-name
                    "Search in file(s): "
                    :marked-candidates t
                    :preselect (and helm-do-grep-preselect-candidate
                                    (if helm-ff-transformer-show-only-basename
-                                       (helm-c-basename preselection)
+                                       (helm-basename preselection)
                                        preselection))))
-        (prefarg (or current-prefix-arg helm-current-prefix-arg)))
+         (prefarg (or current-prefix-arg helm-current-prefix-arg)))
     (helm-do-grep-1 only prefarg)))
 
 ;;;###autoload
@@ -1087,12 +1126,12 @@ See also `helm-do-grep-1'."
   (let* ((prefarg (or current-prefix-arg helm-current-prefix-arg))
          (preselection (or (dired-get-filename nil t)
                            (buffer-file-name (current-buffer))))
-         (ls (helm-c-read-file-name
+         (ls (helm-read-file-name
               "Search in file(s): "
               :marked-candidates t
               :preselect (and helm-do-grep-preselect-candidate
                               (if helm-ff-transformer-show-only-basename
-                                  (helm-c-basename preselection)
+                                  (helm-basename preselection)
                                   preselection)))))
     (helm-ff-zgrep-1 ls prefarg)))
 
@@ -1103,7 +1142,7 @@ See also `helm-do-grep-1'."
   (require 'helm-mode)
   (let* ((preselection (or (dired-get-filename nil t)
                            (buffer-file-name (current-buffer))))
-         (only (helm-c-read-file-name
+         (only (helm-read-file-name
                 "Search in file(s): "
                 :marked-candidates t
                 :test #'(lambda (file)
@@ -1112,10 +1151,10 @@ See also `helm-do-grep-1'."
                               (file-directory-p file)))
                 :preselect (and helm-do-grep-preselect-candidate
                                 (if helm-ff-transformer-show-only-basename
-                                    (helm-c-basename preselection)
+                                    (helm-basename preselection)
                                     preselection))))
-         (helm-c-grep-default-function 'helm-c-pdfgrep-init))
-  (helm-do-pdfgrep-1 only)))
+         (helm-grep-default-function 'helm-pdfgrep-init))
+    (helm-do-pdfgrep-1 only)))
 
 
 (provide 'helm-grep)

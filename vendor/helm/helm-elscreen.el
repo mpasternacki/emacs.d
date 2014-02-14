@@ -1,6 +1,6 @@
-;;; helm-elscreen.el -- Elscreen support
+;;; helm-elscreen.el -- Elscreen support -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012 Thierry Volpiatto <thierry.volpiatto@gmail.com>
+;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
-(eval-when-compile (require 'cl))
+(require 'cl-lib)
 (require 'helm)
 
 (declare-function elscreen-find-screen-by-buffer "ext:elscreen.el" (buffer &optional create))
@@ -27,7 +27,7 @@
   "Open buffer in new screen, if marked buffers open all in elscreens."
   (helm-require-or-error 'elscreen 'helm-find-buffer-on-elscreen)
   (helm-aif (helm-marked-candidates)
-      (dolist (i it)
+      (cl-dolist (i it)
         (let ((target-screen (elscreen-find-screen-by-buffer
                               (get-buffer i) 'create)))
           (elscreen-goto target-screen)))
@@ -39,14 +39,14 @@
   (helm-require-or-error 'elscreen 'helm-elscreen-find-file)
   (elscreen-find-file file))
 
-(defvar helm-c-source-elscreen
+(defvar helm-source-elscreen
   '((name . "Elscreen")
     (candidates
      . (lambda ()
          (if (cdr (elscreen-get-screen-to-name-alist))
              (sort
-              (loop for sname in (elscreen-get-screen-to-name-alist)
-                    append (list (format "[%d] %s" (car sname) (cdr sname))))
+              (cl-loop for sname in (elscreen-get-screen-to-name-alist)
+                       append (list (format "[%d] %s" (car sname) (cdr sname))))
               #'(lambda (a b) (compare-strings a nil nil b nil nil))))))
     (action
      . (("Change Screen" .
@@ -54,7 +54,7 @@
                            (elscreen-goto (- (aref candidate 1) (aref "0" 0)))))
         ("Kill Screen(s)" .
                           (lambda (candidate)
-                            (dolist (i (helm-marked-candidates))
+                            (cl-dolist (i (helm-marked-candidates))
                               (elscreen-goto (- (aref i 1) (aref "0" 0)))
                               (elscreen-kill))))
         ("Only Screen" .
@@ -66,7 +66,7 @@
 (defun helm-elscreen ()
   "Preconfigured helm to list elscreen."
   (interactive)
-  (helm-other-buffer 'helm-c-source-elscreen "*Helm Elscreen*"))
+  (helm-other-buffer 'helm-source-elscreen "*Helm Elscreen*"))
 
 (provide 'helm-elscreen)
 

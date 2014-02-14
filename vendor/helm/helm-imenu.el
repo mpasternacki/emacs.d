@@ -1,6 +1,6 @@
-;;; helm-imenu.el --- Helm interface for Imenu
+;;; helm-imenu.el --- Helm interface for Imenu -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012 Thierry Volpiatto <thierry.volpiatto@gmail.com>
+;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -17,96 +17,118 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'helm)
 (require 'imenu)
+(require 'helm-utils)
 
+
 (defgroup helm-imenu nil
   "Imenu related libraries and applications for helm."
   :group 'helm)
 
-(defcustom helm-c-imenu-delimiter " / "
-  "Delimit type of candidates and his value in `helm-buffer'."
+(defcustom helm-imenu-delimiter " / "
+  "Delimit types of candidates and his value in `helm-buffer'."
   :group 'helm-imenu
   :type 'string)
 
+(defcustom helm-imenu-execute-action-at-once-if-one t
+  "Goto the candidate when only one is remaining."
+  :group 'helm-imenu
+  :type 'boolean)
+
 ;;; Internals
-(defvar helm-c-imenu-index-filter nil)
-(make-variable-buffer-local 'helm-c-imenu-index-filter)
+(defvar helm-cached-imenu-alist nil)
+(make-variable-buffer-local 'helm-cached-imenu-alist)
 
-(defvar helm-c-cached-imenu-alist nil)
-(make-variable-buffer-local 'helm-c-cached-imenu-alist)
+(defvar helm-cached-imenu-candidates nil)
+(make-variable-buffer-local 'helm-cached-imenu-candidates)
 
-(defvar helm-c-cached-imenu-candidates nil)
-(make-variable-buffer-local 'helm-c-cached-imenu-candidates)
-
-(defvar helm-c-cached-imenu-tick nil)
-(make-variable-buffer-local 'helm-c-cached-imenu-tick)
-
-(defun helm-imenu-create-candidates (entry)
-  "Create candidates with ENTRY."
-  (if (listp (cdr entry))
-      (mapcan
-       (lambda (sub)
-         (if (consp (cdr sub))
-             (mapcar
-              (lambda (subentry)
-                (concat (car entry) helm-c-imenu-delimiter subentry))
-              (helm-imenu-create-candidates sub))
-             (list (concat (car entry) helm-c-imenu-delimiter (car sub)))))
-       (cdr entry))
-      (list entry)))
-
-(defvar helm-c-source-imenu
+(defvar helm-cached-imenu-tick nil)
+(make-variable-buffer-local 'helm-cached-imenu-tick)
+
+(defvar helm-source-imenu
   '((name . "Imenu")
-    (candidates . helm-c-imenu-candidates)
+    (candidates . helm-imenu-candidates)
+    (allow-dups)
+    (candidate-transformer . helm-imenu-transformer)
     (persistent-action . (lambda (elm)
-                           (helm-c-imenu-default-action elm)
-                           (unless (fboundp 'semantic-imenu-tag-overlay)
-                             (helm-match-line-color-current-line))))
+                           (imenu elm)
+                           (helm-highlight-current-line)))
     (persistent-help . "Show this entry")
-    (action . helm-c-imenu-default-action))
-  "See (info \"(emacs)Imenu\")")
-
-(defun helm-c-imenu-candidates ()
+    (action . (lambda (candidate)
+                (imenu candidate)
+                ;; If semantic is supported in this buffer
+                ;; imenu used `semantic-imenu-goto-function'
+                ;; and position have been highlighted,
+                ;; no need to highlight again.
+                (unless (eq imenu-default-goto-function
+                            'semantic-imenu-goto-function)
+                  (helm-highlight-current-line nil nil nil nil 'pulse))))
+  "See (info \"(emacs)Imenu\")"))
+
+(defun helm-imenu-candidates ()
   (with-helm-current-buffer
     (let ((tick (buffer-modified-tick)))
-      (if (eq helm-c-cached-imenu-tick tick)
-          helm-c-cached-imenu-candidates
+      (if (eq helm-cached-imenu-tick tick)
+          helm-cached-imenu-candidates
           (setq imenu--index-alist nil)
-          (setq helm-c-cached-imenu-tick tick
-                helm-c-cached-imenu-candidates
-                (ignore-errors
-                  (mapcan
-                   'helm-imenu-create-candidates
-                   (setq helm-c-cached-imenu-alist
-                         (let ((index (imenu--make-index-alist)))
-                           (if helm-c-imenu-index-filter
-                               (funcall helm-c-imenu-index-filter index)
-                               index))))))
-          (setq helm-c-cached-imenu-candidates
-                (mapcar #'(lambda (x)
-                            (if (stringp x) x (car x)))
-                        helm-c-cached-imenu-candidates))))))
+          (setq helm-cached-imenu-tick tick
+                helm-cached-imenu-candidates
+                (let ((index (imenu--make-index-alist))) 
+                  (helm-imenu--candidates-1
+                   (delete (assoc "*Rescan*" index) index))))))))
 
-(defun helm-c-imenu-default-action (elm)
-  "The default action for `helm-c-source-imenu'."
-  (let ((path (split-string elm helm-c-imenu-delimiter))
-        (alist helm-c-cached-imenu-alist))
-    (dolist (elm path)
-      (setq alist (assoc elm alist)))
-    (imenu alist)))
+(defun helm-imenu--candidates-1 (alist)
+  (cl-loop for elm in alist
+           append (if (imenu--subalist-p elm)
+                      (helm-imenu--candidates-1
+                       (cl-loop for (e . v) in (cdr elm) collect
+                                (cons (propertize
+                                       e 'helm-imenu-type (car elm))
+                                      v)))
+                      (and (cdr elm) ; bug in imenu, should not be needed.
+                           (list elm)))))
 
+(defun helm-imenu--get-prop (item)
+  ;; property value of ITEM can have itself
+  ;; a property value which have itself a property value
+  ;; ...and so on; Return a list of all these
+  ;; properties values starting at ITEM.
+  (let* ((prop (get-text-property 0 'helm-imenu-type item))
+         (lst  (list prop item)))
+    (when prop
+      (while prop
+        (setq prop (get-text-property 0 'helm-imenu-type prop))
+        (and prop (push prop lst)))
+      lst)))
+
+(defun helm-imenu-transformer (candidates)
+  (cl-loop for (k . v) in candidates
+           for types = (or (helm-imenu--get-prop k)
+                           (list "Function" k))
+           collect
+           (cons (mapconcat (lambda (x)
+                              (propertize
+                               x 'face (cond ((string= x "Variables")
+                                              'font-lock-variable-name-face)
+                                             ((string= x "Function")
+                                              'font-lock-function-name-face)
+                                             ((string= x "Types")
+                                              'font-lock-type-face))))
+                            types helm-imenu-delimiter)
+                 (cons k v))))
+
 ;;;###autoload
 (defun helm-imenu ()
   "Preconfigured `helm' for `imenu'."
   (interactive)
   (let ((imenu-auto-rescan t)
-        (imenu-default-goto-function
-         (if (fboundp 'semantic-imenu-goto-function)
-             'semantic-imenu-goto-function
-             'imenu-default-goto-function)))
-    (helm :sources 'helm-c-source-imenu
+        (str (thing-at-point 'symbol))
+        (helm-execute-action-at-once-if-one
+         helm-imenu-execute-action-at-once-if-one))
+    (helm :sources 'helm-source-imenu
+          :default (list (concat "\\_<" str "\\_>") str)
           :buffer "*helm imenu*")))
 
 (provide 'helm-imenu)

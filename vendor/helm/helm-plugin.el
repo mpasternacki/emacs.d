@@ -1,6 +1,6 @@
-;;; helm-plugin.el --- Helm plugins
+;;; helm-plugin.el --- Helm plugins -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012 Thierry Volpiatto <thierry.volpiatto@gmail.com>
+;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -17,78 +17,89 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'helm)
+(require 'helm-utils)
 
 (declare-function Info-index-nodes "info" (&optional file))
 (declare-function Info-goto-node "info" (&optional fork))
 (declare-function Info-find-node "info.el" (filename nodename &optional no-going-back))
 
+
 ;;; Plug-in: `info-index'
 ;;
 ;;
-(defun* helm-c-info-init (&optional (file (helm-attr 'info-file)))
-  (let (result)
-    (unless (helm-candidate-buffer)
-      (save-window-excursion
-        (info file)
-        (let (Info-history
-              (tobuf (helm-candidate-buffer 'global))
-              (infobuf (current-buffer))
-              s e)
-          (dolist (node (or (helm-attr 'index-nodes) (Info-index-nodes)))
-            (Info-goto-node node)
-            (goto-char (point-min))
-            (while (search-forward "\n* " nil t)
-              (unless (search-forward "Menu:\n" (1+ (point-at-eol)) t)
-                '(save-current-buffer (buffer-substring-no-properties (point-at-bol) (point-at-eol)) result)
-                (setq s (point-at-bol)
-                      e (point-at-eol))
-                (with-current-buffer tobuf
-                  (insert-buffer-substring infobuf s e)
-                  (insert "\n"))))))))))
+(defvar Info-history)
+(cl-defun helm-info-init (&optional (file (helm-attr 'info-file)))
+  ;; Allow reinit candidate buffer when using edebug.
+  (helm-aif (and debug-on-error
+                 (helm-candidate-buffer))
+      (kill-buffer it))
+  (unless (helm-candidate-buffer)
+    (save-window-excursion
+      (info file)
+      (let (Info-history
+            (tobuf (helm-candidate-buffer 'global))
+            (infobuf (current-buffer))
+            s e
+            (nodes (or (helm-attr 'index-nodes) (Info-index-nodes))))
+        (cl-dolist (node nodes)
+          (Info-goto-node node)
+          (goto-char (point-min))
+          (while (search-forward "\n* " nil t)
+            (unless (search-forward "Menu:\n" (1+ (point-at-eol)) t)
+              (save-current-buffer (buffer-substring-no-properties
+                                    (point-at-bol) (point-at-eol)))
+              (setq s (point-at-bol)
+                    e (point-at-eol))
+              (with-current-buffer tobuf
+                (insert-buffer-substring infobuf s e)
+                (insert "\n")))))))))
 
-(defun helm-c-info-goto (node-line)
+(defun helm-info-goto (node-line)
   (Info-goto-node (car node-line))
   (helm-goto-line (cdr node-line)))
 
-(defun helm-c-info-display-to-real (line)
+(defun helm-info-display-to-real (line)
   (and (string-match
         ;; This regexp is stolen from Info-apropos-matches
         "\\* +\\([^\n]*.+[^\n]*\\):[ \t]+\\([^\n]*\\)\\.\\(?:[ \t\n]*(line +\\([0-9]+\\))\\)?" line)
        (cons (format "(%s)%s" (helm-attr 'info-file) (match-string 2 line))
              (string-to-number (or (match-string 3 line) "1")))))
 
-(defun helm-c-make-info-source (source file)
+(defun helm-make-info-source (source file)
   `(,@source
     (name . ,(concat "Info Index: " file))
     (info-file . ,file)
-    (init . helm-c-info-init)
-    (display-to-real . helm-c-info-display-to-real)
+    (init . helm-info-init)
+    (display-to-real . helm-info-display-to-real)
     (get-line . buffer-substring)
     (candidates-in-buffer)
-    (action ("Goto node" . helm-c-info-goto))))
+    (action ("Goto node" . helm-info-goto))))
 
 (defun helm-compile-source--info-index (source)
   (helm-aif (helm-interpret-value (assoc-default 'info-index source))
-      (helm-c-make-info-source source it)
+      (helm-make-info-source source it)
     source))
 
 (add-to-list 'helm-compile-source-functions 'helm-compile-source--info-index)
 
 (helm-document-attribute 'info-index "info-index plugin"
-  "Create a source of info index very easily.
+  "  Create a source of info index very easily.
 
-ex. (defvar helm-c-source-info-wget '((info-index . \"wget\"))")
+  Example:
+
+  (defvar helm-source-info-wget '((info-index . \"wget\"))")
 
 (helm-document-attribute 'index-nodes "info-index plugin (optional)"
-  "Index nodes of info file.
+  "  Index nodes of info file.
 
-If it is omitted, `Info-index-nodes' is used to collect index nodes.
-Some info files are missing index specification.
+  If it is omitted, `Info-index-nodes' is used to collect index
+  nodes. Some info files are missing index specification.
 
-ex. See `helm-c-source-info-screen'.")
+  See `helm-source-info-screen'.")
 
+
 ;;; Plug-in: `candidates-file'
 ;;
 ;; List all lines in a file.
@@ -105,30 +116,32 @@ ex. See `helm-c-source-info-screen'.")
 (add-to-list 'helm-compile-source-functions 'helm-compile-source--candidates-file)
 
 (defun helm-p-candidates-file-init ()
-  (destructuring-bind (file &optional updating)
+  (cl-destructuring-bind (file &optional updating)
       (helm-mklist (helm-attr 'candidates-file))
     (setq file (helm-interpret-value file))
-    (with-current-buffer (helm-candidate-buffer (find-file-noselect file))
+    (with-current-buffer (helm-candidate-buffer 'global)
+      (insert-file-contents file)
       (when updating
         (buffer-disable-undo)
         (font-lock-mode -1)
         (auto-revert-mode 1)))))
 
 (helm-document-attribute 'candidates-file "candidates-file plugin"
-  "Use a file as the candidates buffer.
+  "  Use a file as the candidates buffer.
 
-1st argument is a filename, string or function name or variable name.
-If optional 2nd argument is non-nil, the file is opened with
-`auto-revert-mode' enabled.
+  1st argument is a filename, string or function name or variable
+  name. If optional 2nd argument is non-nil, the file is opened with
+  `auto-revert-mode' enabled.
 
-e.g
+  Example:
 
-\(defvar helm-c-source-test-file
-  '((name . \"test1\")
-    (candidates-file \"~/.emacs.el\" t)))
+  \(defvar helm-source-test-file
+    '((name . \"test1\")
+      (candidates-file \"~/.emacs.el\" t)))
 
-Will list all lines in .emacs.el.")
+  Will list all lines in .emacs.el.")
 
+
 ;;; Plug-in: `headline'
 ;;
 ;;
@@ -161,69 +174,70 @@ Will list all lines in .emacs.el.")
      (helm-interpret-value (helm-attr 'subexp)))))
 
 (helm-document-attribute 'headline "Headline plug-in"
-  "Regexp string for helm-headline to scan.")
+  "  Regexp string for helm-headline to scan.")
 (helm-document-attribute 'condition "Headline plug-in"
-  "A sexp representing the condition to use helm-headline.")
+  "  A sexp representing the condition to use helm-headline.")
 (helm-document-attribute 'subexp "Headline plug-in"
-  "Display (match-string-no-properties subexp).")
+  "  Display (match-string-no-properties subexp).")
 
 (defun helm-headline-get-candidates (regexp subexp)
   (with-helm-current-buffer
     (save-excursion
       (goto-char (point-min))
       (if (functionp regexp) (setq regexp (funcall regexp)))
-      (let (hierarchy curhead)
-        (flet ((matched ()
+      (let ((matched 
+             #'(lambda ()
                  (if (numberp subexp)
-                     (cons (match-string-no-properties subexp) (match-beginning subexp))
+                     (cons (match-string-no-properties subexp)
+                           (match-beginning subexp))
                      (cons (buffer-substring (point-at-bol) (point-at-eol))
-                           (point-at-bol))))
-               (hierarchies (headlines)
-                 (1+ (loop for (_ . hierarchy) in headlines
-                           maximize hierarchy)))
-               (vector-0-n (v n)
-                 (loop for i from 0 to hierarchy
-                       collecting (aref curhead i)))
-               (arrange (headlines)
+                           (point-at-bol)))))
+            (arrange
+             #'(lambda (headlines)
                  (unless (null headlines) ; FIX headlines empty bug!
-                   (loop with curhead = (make-vector (hierarchies headlines) "")
-                         for ((str . pt) . hierarchy) in headlines
-                         do (aset curhead hierarchy str)
-                         collecting
-                         (cons
-                          (format "H%d:%s" (1+ hierarchy)
-                                  (mapconcat 'identity (vector-0-n curhead hierarchy) " / "))
-                          pt)))))
-          (if (listp regexp)
-              (arrange
-               (sort
-                (loop for re in regexp
-                      for hierarchy from 0
-                      do (goto-char (point-min))
-                      appending
-                      (loop
-                            while (re-search-forward re nil t)
-                            collect (cons (matched) hierarchy)))
-                (lambda (a b) (> (cdar b) (cdar a)))))
-              (loop while (re-search-forward regexp nil t)
-                    collect (matched))))))))
-
+                   (cl-loop with curhead = (make-vector
+                                            (1+ (cl-loop for (_ . hierarchy) in headlines
+                                                         maximize hierarchy))
+                                            "")
+                            for ((str . pt) . hierarchy) in headlines
+                            do (aset curhead hierarchy str)
+                            collecting
+                            (cons
+                             (format "H%d:%s" (1+ hierarchy)
+                                     (mapconcat 'identity
+                                                (cl-loop for i from 0 to hierarchy
+                                                         collecting (aref curhead i))
+                                                " / "))
+                             pt))))))
+        (if (listp regexp)
+            (funcall arrange
+                     (sort
+                      (cl-loop for re in regexp
+                               for hierarchy from 0
+                               do (goto-char (point-min))
+                               appending
+                               (cl-loop
+                                while (re-search-forward re nil t)
+                                collect (cons (funcall matched) hierarchy)))
+                      (lambda (a b) (> (cdar b) (cdar a)))))
+            (cl-loop while (re-search-forward regexp nil t)
+                     collect (funcall matched)))))))
 
 (defun helm-headline-make-candidate-buffer (regexp subexp)
   (with-current-buffer (helm-candidate-buffer 'local)
-    (loop for (content . pos) in (helm-headline-get-candidates regexp subexp)
-          do (insert
-              (format "%5d:%s\n"
-                      (with-helm-current-buffer
-                        (line-number-at-pos pos))
-                      content)))))
+    (cl-loop for (content . pos) in (helm-headline-get-candidates regexp subexp)
+             do (insert
+                 (format "%5d:%s\n"
+                         (with-helm-current-buffer
+                           (line-number-at-pos pos))
+                         content)))))
 
 (defun helm-headline-goto-position (pos recenter)
   (goto-char pos)
   (unless recenter
     (set-window-start (get-buffer-window helm-current-buffer) (point))))
 
-
+
 ;;; Plug-in: `persistent-help'
 ;;
 ;; Add help about persistent action in `helm-buffer' header.
@@ -246,84 +260,31 @@ Will list all lines in .emacs.el.")
                           (or (ignore-errors (caar it))  ""))))
                "")
            " (keeping session)")))
-
+
+;;; Document new attributes
+;;
+;;
 (helm-document-attribute 'persistent-help "persistent-help plug-in"
-  "A string to explain persistent-action of this source.
-It also accepts a function or a variable name.")
+  "  A string to explain persistent-action of this source. It also
+  accepts a function or a variable name.")
 
-
-;;; Plug-in: Type `customize'
-;;
-;;
-(defvar helm-additional-type-attributes nil)
-
-(defun helm-c-uniq-list (lst)
-  "Like `remove-duplicates' in CL.
-But cut deeper duplicates and test by `equal'. "
-  (reverse (remove-duplicates (reverse lst) :test 'equal)))
-
-(defun helm-c-arrange-type-attribute (type spec)
-  "Override type attributes by `define-helm-type-attribute'.
-
-The SPEC is like source. The symbol `REST' is replaced
-with original attribute value.
-
- Example: Set `play-sound-file' as default action
-   (helm-c-arrange-type-attribute 'file
-      '((action (\"Play sound\" . play-sound-file)
-         REST ;; Rest of actions (find-file, find-file-other-window, etc...)."
-  (add-to-list 'helm-additional-type-attributes
-               (cons type
-                     (loop with typeattr = (assoc-default
-                                            type helm-type-attributes)
-                           for (attr . value) in spec
-                           if (listp value)
-                           collect (cons attr
-                                         (helm-c-uniq-list
-                                          (loop for v in value
-                                                if (eq v 'REST)
-                                                append
-                                                (assoc-default attr typeattr)
-                                                else
-                                                collect v)))
-                           else
-                           collect (cons attr value)))))
-(put 'helm-c-arrange-type-attribute 'lisp-indent-function 1)
-
-(defun helm-compile-source--type-customize (source)
-  (helm-aif (assoc-default (assoc-default 'type source)
-                           helm-additional-type-attributes)
-      (append it source)
-    source))
-
-(add-to-list 'helm-compile-source-functions
-             'helm-compile-source--type-customize t)
-
-;;; Plug-in: `default-action'
-;;
-;;
-(defun helm-compile-source--default-action (source)
-  (helm-aif (assoc-default 'default-action source)
-      (append `((action ,it ,@(remove it (assoc-default 'action source))))
-              source)
-    source))
-(add-to-list 'helm-compile-source-functions
-             'helm-compile-source--default-action t)
-
-(helm-document-attribute 'default-action "default-action plug-in"
-  "Default action.")
 (helm-document-attribute 'default-directory "type . file-line"
-  "`default-directory' to interpret file.")
+  "  `default-directory' to interpret file.")
+
 (helm-document-attribute 'before-jump-hook "type . file-line / line"
-  "Function to call before jumping to the target location.")
+  "  Function to call before jumping to the target location.")
+
 (helm-document-attribute 'after-jump-hook "type . file-line / line"
-  "Function to call after jumping to the target location.")
+  "  Function to call after jumping to the target location.")
+
 (helm-document-attribute 'adjust "type . file-line"
-  "Search around line matching line contents.")
+  "  Search around line matching line contents.")
+
 (helm-document-attribute 'recenter "type . file-line / line"
-  "`recenter' after jumping.")
+  "  `recenter' after jumping.")
+
 (helm-document-attribute 'target-file "type . line"
-  "Goto line of target-file.")
+  "  Goto line of target-file.")
 
 (provide 'helm-plugin)
 
