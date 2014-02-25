@@ -1,4 +1,3 @@
-(require 'iswitchb)
 (require 'erc-match)
 (require 'erc-track)
 (require 'erc-fill)

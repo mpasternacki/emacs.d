@@ -1,8 +1,8 @@
 (setq cedet-root-path
       (file-name-as-directory (expand-file-name
                                "~/.emacs.d/site-lisp/cedet/")))
-(add-to-list 'Info-directory-list
-             "~/.emacs.d/site-lisp/cedet/doc/info")
+;(add-to-list 'Info-directory-list
+;             "~/.emacs.d/site-lisp/cedet/doc/info")
 
 ;;; https://gist.github.com/alexott/3930120
 (load-file (concat cedet-root-path "cedet-devel-load.el"))
@@ -23,33 +23,6 @@
 ;; load contrib library
 (require 'eassist)
  
-;; customisation of modes
-(defun alexott/cedet-hook ()
-  (local-set-key [(control return)] 'semantic-ia-complete-symbol-menu)
-  (local-set-key "\C-c?" 'semantic-ia-complete-symbol)
-  ;;
-  (local-set-key "\C-c>" 'semantic-complete-analyze-inline)
-  (local-set-key "\C-c=" 'semantic-decoration-include-visit)
- 
-  (local-set-key "\C-cj" 'semantic-ia-fast-jump)
-  (local-set-key "\C-cq" 'semantic-ia-show-doc)
-  (local-set-key "\C-cs" 'semantic-ia-show-summary)
-  (local-set-key "\C-cp" 'semantic-analyze-proto-impl-toggle)
-  )
-(add-hook 'c-mode-common-hook 'alexott/cedet-hook)
-(add-hook 'lisp-mode-hook 'alexott/cedet-hook)
-(add-hook 'scheme-mode-hook 'alexott/cedet-hook)
-(add-hook 'emacs-lisp-mode-hook 'alexott/cedet-hook)
-(add-hook 'erlang-mode-hook 'alexott/cedet-hook)
- 
-(defun alexott/c-mode-cedet-hook ()
-  (local-set-key "\C-ct" 'eassist-switch-h-cpp)
-  (local-set-key "\C-xt" 'eassist-switch-h-cpp)
-  (local-set-key "\C-ce" 'eassist-list-methods)
-  (local-set-key "\C-c\C-r" 'semantic-symref)
-  )
-(add-hook 'c-mode-common-hook 'alexott/c-mode-cedet-hook)
- 
 (semanticdb-enable-gnu-global-databases 'c-mode t)
 (semanticdb-enable-gnu-global-databases 'c++-mode t)
  
@@ -66,3 +39,4 @@
 ;;; end alexott cedet config
 (add-to-list 'load-path (expand-file-name "~/.emacs.d/site-lisp/ecb/"))
 (require 'ecb)
+

@@ -22,3 +22,6 @@ make
 
 cd ../org-mode
 make autoloads
+
+cd ../cedet
+make
