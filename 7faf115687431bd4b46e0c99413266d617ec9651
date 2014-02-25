@@ -1,0 +1,15 @@
+---
+:vendorificator_version: 0.5.3
+:current_branch: master
+:current_sha: f2bb95a2d6ae8fdf12985d5c48ecfe894277df31
+:git_describe: vendor/cedet/HEAD-20140208-207-gf2bb95a
+:module_name: ledger
+:module_version: bc08eed3cb1bdb4f67d1b77273f3254d0cf13be2
+:module_group:
+:unparsed_args:
+  :repository: https://github.com/ledger/ledger.git
+  :subdirectory: lisp
+:parsed_args:
+  :repository: https://github.com/ledger/ledger.git
+  :subdirectory: lisp
+:git_revision: bc08eed3cb1bdb4f67d1b77273f3254d0cf13be2
