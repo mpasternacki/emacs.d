@@ -1,0 +1,24 @@
+---
+:vendorificator_version: 0.5.3
+:current_branch: master
+:current_sha: feef2040905f6d5dd5baa99068f6120c0b11efb0
+:git_describe: vendor/ledger/bc08eed3cb1bdb4f67d1b77273f3254d0cf13be2-3-gfeef204
+:module_name: org-mode
+:module_version: 8.2.5h
+:module_group:
+:unparsed_args:
+  :version: 8.2.5h
+  :url: http://orgmode.org/org-8.2.5h.tar.gz
+:parsed_args:
+  :version: 8.2.5h
+  :url: http://orgmode.org/org-8.2.5h.tar.gz
+  :filename: org-8.2.5h.tar.gz
+  :type: :targz
+  :unpack: tar -xzf
+  :basename: org-8.2.5h
+  :extname: .tar.gz
+:archive_checksum: !binary |-
+  ZjBmNDkyNGM5ZDU3NTU3YjEyZjUzNWMwMzJmNWY4NTg0Y2MyN2FiNmFmMmFm
+  Yzk5MzlmOWFjZjFhZjJjNWQ4MA==
+:archive_filesize: 4220242
+:archive_url: http://orgmode.org/org-8.2.5h.tar.gz
