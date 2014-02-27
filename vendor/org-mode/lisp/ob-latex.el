@@ -1,6 +1,6 @@
 ;;; ob-latex.el --- org-babel functions for latex "evaluation"
 
-;; Copyright (C) 2009-2013 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2014 Free Software Foundation, Inc.
 
 ;; Author: Eric Schulte
 ;; Keywords: literate programming, reproducible research
@@ -50,7 +50,7 @@
   '((:results . "latex") (:exports . "results"))
   "Default arguments to use when evaluating a LaTeX source block.")
 
-(defcustom org-babel-latex-htlatex nil
+(defcustom org-babel-latex-htlatex ""
   "The htlatex command to enable conversion of latex to SVG or HTML."
   :group 'org-babel
   :type 'string)
@@ -59,7 +59,7 @@
   '("[usenames]{color}" "{tikz}" "{color}" "{listings}" "{amsmath}")
   "Packages to use for htlatex export."
   :group 'org-babel
-  :type '(list string))
+  :type '(repeat (string)))
 
 (defun org-babel-expand-body:latex (body params)
   "Expand BODY according to PARAMS, return the expanded body."
@@ -95,7 +95,11 @@ This function is called by `org-babel-execute-src-block'."
          ((and (string-match "\\.png$" out-file) (not imagemagick))
           (org-create-formula-image
            body out-file org-format-latex-options in-buffer))
-         ((or (string-match "\\.pdf$" out-file) imagemagick)
+         ((string-match "\\.tikz$" out-file)
+	  (when (file-exists-p out-file) (delete-file out-file))
+	  (with-temp-file out-file
+	    (insert body)))
+	 ((or (string-match "\\.pdf$" out-file) imagemagick)
 	  (with-temp-file tex-file
 	    (require 'ox-latex)
 	    (insert
@@ -137,7 +141,7 @@ This function is called by `org-babel-execute-src-block'."
 		(delete-file transient-pdf-file))))))
 	 ((and (or (string-match "\\.svg$" out-file)
 		   (string-match "\\.html$" out-file))
-	       org-babel-latex-htlatex)
+	       (not (string= "" org-babel-latex-htlatex)))
 	  (with-temp-file tex-file
 	    (insert (concat
 		     "\\documentclass[preview]{standalone}
@@ -165,7 +169,8 @@ This function is called by `org-babel-execute-src-block'."
 	   ((file-exists-p (concat (file-name-sans-extension tex-file) ".html"))
 	    (if (string-match "\\.html$" out-file)
 		(shell-command "mv %s %s"
-			       (concat (file-name-base tex-file) ".html")
+			       (concat (file-name-sans-extension tex-file)
+				       ".html")
 			       out-file)
 	      (error "HTML file produced but SVG file requested.")))))
          ((string-match "\\.\\([^\\.]+\\)$" out-file)

@@ -1,6 +1,6 @@
 ;;; ox-taskjuggler.el --- TaskJuggler Back-End for Org Export Engine
 ;;
-;; Copyright (C) 2007-2013 Free Software Foundation, Inc.
+;; Copyright (C) 2007-2014 Free Software Foundation, Inc.
 ;;
 ;; Emacs Lisp Archive Entry
 ;; Filename: ox-taskjuggler.el
@@ -800,7 +800,9 @@ a unique id will be associated to it."
           (if (eq (org-element-property :todo-type task) 'done) "100"
             (org-element-property :COMPLETE task)))
          (depends (org-taskjuggler-resolve-dependencies task info))
-         (effort (org-element-property :EFFORT task))
+         (effort (let ((property
+			(intern (concat ":" (upcase org-effort-property)))))
+		   (org-element-property property task)))
          (milestone
           (or (org-element-property :MILESTONE task)
               (not (or (org-element-map (org-element-contents task) 'headline
@@ -894,16 +896,10 @@ Return output file's name."
   (interactive)
   (let ((outfile
          (org-export-output-file-name org-taskjuggler-extension subtreep)))
-    (if async
-        (org-export-async-start
-            (lambda (f)
-              (org-export-add-to-stack f 'taskjuggler)
-              (run-hook-with-args 'org-taskjuggler-final-hook f))
-          `(expand-file-name
-            (org-export-to-file 'taskjuggler ,outfile ,subtreep ,visible-only)))
-      (org-export-to-file 'taskjuggler outfile subtreep visible-only)
-      (run-hook-with-args 'org-taskjuggler-final-hook outfile)
-      outfile)))
+    (org-export-to-file 'taskjuggler outfile
+      async subtreep visible-only nil nil
+      (lambda (file)
+	(run-hook-with-args 'org-taskjuggler-final-hook file) nil))))
 
 ;;;###autoload
 (defun org-taskjuggler-export-and-process (&optional subtreep visible-only)
