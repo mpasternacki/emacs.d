@@ -1,6 +1,6 @@
 ;;; org-compat.el --- Compatibility code for Org-mode
 
-;; Copyright (C) 2004-2013 Free Software Foundation, Inc.
+;; Copyright (C) 2004-2014 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -190,10 +190,12 @@ If DELETE is non-nil, delete all those overlays."
     found))
 
 (defun org-get-x-clipboard (value)
-  "Get the value of the x clipboard, compatible with XEmacs, and GNU Emacs 21."
-  (if (eq window-system 'x)
-      (let ((x (org-get-x-clipboard-compat value)))
-	(if x (org-no-properties x)))))
+  "Get the value of the x or Windows clipboard, compatible with XEmacs, and GNU Emacs 21."
+  (cond ((eq window-system 'x)
+	 (let ((x (org-get-x-clipboard-compat value)))
+	   (if x (org-no-properties x))))
+	((and (eq window-system 'w32) (fboundp 'w32-get-clipboard-data))
+	 (w32-get-clipboard-data))))
 
 (defsubst org-decompose-region (beg end)
   "Decompose from BEG to END."
@@ -257,6 +259,12 @@ ignored in this case."
 		  n (1+ n)
 		  next (+ from (* n inc)))))
 	(nreverse seq)))))
+
+;; `set-transient-map' is only in Emacs >= 24.4
+(defalias 'org-set-transient-map
+  (if (fboundp 'set-transient-map)
+      'set-transient-map
+    'set-temporary-overlay-map))
 
 ;; Region compatibility
 
@@ -335,10 +343,11 @@ Works on both Emacs and XEmacs."
       (org-xemacs-without-invisibility (indent-line-to column))
     (indent-line-to column)))
 
-(defun org-move-to-column (column &optional force buffer)
-  (if (featurep 'xemacs)
-      (org-xemacs-without-invisibility (move-to-column column force buffer))
-    (move-to-column column force)))
+(defun org-move-to-column (column &optional force buffer ignore-invisible)
+  (let ((buffer-invisibility-spec ignore-invisible))
+    (if (featurep 'xemacs)
+	(org-xemacs-without-invisibility (move-to-column column force buffer))
+      (move-to-column column force))))
 
 (defun org-get-x-clipboard-compat (value)
   "Get the clipboard value on XEmacs or Emacs 21."

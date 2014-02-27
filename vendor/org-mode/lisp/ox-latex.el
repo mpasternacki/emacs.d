@@ -1,9 +1,11 @@
 ;;; ox-latex.el --- LaTeX Back-End for Org Export Engine
 
-;; Copyright (C) 2011-2013  Free Software Foundation, Inc.
+;; Copyright (C) 2011-2014 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 ;; Keywords: outlines, hypermedia, calendar, wp
+
+;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -426,7 +428,7 @@ environment."
   :type 'string)
 
 (defcustom org-latex-inline-image-rules
-  '(("file" . "\\.\\(pdf\\|jpeg\\|jpg\\|png\\|ps\\|eps\\|tikz\\|pgf\\)\\'"))
+  '(("file" . "\\.\\(pdf\\|jpeg\\|jpg\\|png\\|ps\\|eps\\|tikz\\|pgf\\|svg\\)\\'"))
   "Rules characterizing image files that can be inlined into LaTeX.
 
 A rule consists in an association whose key is the type of link
@@ -554,7 +556,8 @@ returned as-is."
 
 ;;;; Drawers
 
-(defcustom org-latex-format-drawer-function nil
+(defcustom org-latex-format-drawer-function
+  (lambda (name contents) contents)
   "Function called to format a drawer in LaTeX code.
 
 The function must accept two parameters:
@@ -563,19 +566,16 @@ The function must accept two parameters:
 
 The function should return the string to be exported.
 
-For example, the variable could be set to the following function
-in order to mimic default behaviour:
-
-\(defun org-latex-format-drawer-default \(name contents\)
-  \"Format a drawer element for LaTeX export.\"
-  contents\)"
+The default function simply returns the value of CONTENTS."
   :group 'org-export-latex
+  :version "24.4"
+  :package-version '(Org . "8.3")
   :type 'function)
 
 
 ;;;; Inlinetasks
 
-(defcustom org-latex-format-inlinetask-function nil
+(defcustom org-latex-format-inlinetask-function 'ignore
   "Function called to format an inlinetask in LaTeX code.
 
 The function must accept six parameters:
@@ -655,7 +655,7 @@ into previewing problems, please consult
   :group 'org-export-latex
   :type '(choice
 	  (const :tag "Use listings" t)
-	  (const :tag "Use minted" 'minted)
+	  (const :tag "Use minted" minted)
 	  (const :tag "Export verbatim" nil)))
 
 (defcustom org-latex-listings-langs
@@ -690,8 +690,8 @@ a list containing two strings: the name of the option, and the
 value.  For example,
 
   (setq org-latex-listings-options
-    '((\"basicstyle\" \"\\small\")
-      (\"keywordstyle\" \"\\color{black}\\bfseries\\underbar\")))
+    '((\"basicstyle\" \"\\\\small\")
+      (\"keywordstyle\" \"\\\\color{black}\\\\bfseries\\\\underbar\")))
 
 will typeset the code in a small size font with underlined, bold
 black keywords.
@@ -1210,12 +1210,8 @@ channel."
 CONTENTS holds the contents of the block.  INFO is a plist
 holding contextual information."
   (let* ((name (org-element-property :drawer-name drawer))
-	 (output (if (functionp org-latex-format-drawer-function)
-		     (funcall org-latex-format-drawer-function
-			      name contents)
-		   ;; If there's no user defined function: simply
-		   ;; display contents of the drawer.
-		   contents)))
+	 (output (funcall org-latex-format-drawer-function
+			  name contents)))
     (org-latex--wrap-label drawer output)))
 
 
@@ -1323,13 +1319,13 @@ holding contextual information."
     (let* ((class (plist-get info :latex-class))
 	   (level (org-export-get-relative-level headline info))
 	   (numberedp (org-export-numbered-headline-p headline info))
-	   (class-sectionning (assoc class org-latex-classes))
+	   (class-sectioning (assoc class org-latex-classes))
 	   ;; Section formatting will set two placeholders: one for
 	   ;; the title and the other for the contents.
 	   (section-fmt
-	    (let ((sec (if (functionp (nth 2 class-sectionning))
-			   (funcall (nth 2 class-sectionning) level numberedp)
-			 (nth (1+ level) class-sectionning))))
+	    (let ((sec (if (functionp (nth 2 class-sectioning))
+			   (funcall (nth 2 class-sectioning) level numberedp)
+			 (nth (1+ level) class-sectioning))))
 	      (cond
 	       ;; No section available for that LEVEL.
 	       ((not sec) nil)
@@ -1378,7 +1374,13 @@ holding contextual information."
 		  (when (org-export-first-sibling-p headline info)
 		    (format "\\begin{%s}\n" (if numberedp 'enumerate 'itemize)))
 		  ;; Itemize headline
-		  "\\item " full-text "\n" headline-label pre-blanks contents)))
+		  "\\item"
+		  (and full-text (org-string-match-p "\\`[ \t]*\\[" full-text)
+		       "\\relax")
+		  " " full-text "\n"
+		  headline-label
+		  pre-blanks
+		  contents)))
 	    ;; If headline is not the last sibling simply return
 	    ;; LOW-LEVEL-BODY.  Otherwise, also close the list, before
 	    ;; any blank line.
@@ -1500,7 +1502,7 @@ holding contextual information."
 		       (org-element-property :priority inlinetask))))
     ;; If `org-latex-format-inlinetask-function' is provided, call it
     ;; with appropriate arguments.
-    (if (functionp org-latex-format-inlinetask-function)
+    (if (not (eq org-latex-format-inlinetask-function 'ignore))
 	(funcall org-latex-format-inlinetask-function
 		 todo todo-type priority title tags contents)
       ;; Otherwise, use a default template.
@@ -1561,14 +1563,32 @@ contextual information."
 			 (1- count)))))
 	 (checkbox (case (org-element-property :checkbox item)
 		     (on "$\\boxtimes$ ")
-		     (off "$\\Box$ ")
+		     (off "$\\square$ ")
 		     (trans "$\\boxminus$ ")))
 	 (tag (let ((tag (org-element-property :tag item)))
 		;; Check-boxes must belong to the tag.
 		(and tag (format "[{%s}] "
 				 (concat checkbox
 					 (org-export-data tag info)))))))
-    (concat counter "\\item" (or tag (concat " " checkbox))
+    (concat counter
+	    "\\item"
+	    (cond
+	     (tag)
+	     (checkbox (concat " " checkbox))
+	     ;; Without a tag or a check-box, if CONTENTS starts with
+	     ;; an opening square bracket, add "\relax" to "\item",
+	     ;; unless the brackets comes from an initial export
+	     ;; snippet (i.e. it is inserted willingly by the user).
+	     ((and contents
+		   (org-string-match-p "\\`[ \t]*\\[" contents)
+		   (not (let ((e (car (org-element-contents item))))
+			  (and (eq (org-element-type e) 'paragraph)
+			       (let ((o (car (org-element-contents e))))
+				 (and (eq (org-element-type o) 'export-snippet)
+				      (eq (org-export-snippet-backend o)
+					  'latex)))))))
+	      "\\relax ")
+	     (t " "))
 	    (and contents (org-trim contents))
 	    ;; If there are footnotes references in tag, be sure to
 	    ;; add their definition at the end of the item.  This
@@ -1620,7 +1640,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
 	  (value (org-remove-indentation
 		  (org-element-property :value latex-environment))))
       (if (not (org-string-nw-p label)) value
-	;; Environment is labelled: label must be within the environment
+	;; Environment is labeled: label must be within the environment
 	;; (otherwise, a reference pointing to that element will count
 	;; the section instead).
 	(with-temp-buffer
@@ -1725,7 +1745,16 @@ used as a communication channel."
 			  ((= (aref options 0) ?,)
 			   (format "[%s]"(substring options 1)))
 			  (t (format "[%s]" options)))
-		    path)))
+		    path))
+      (when (equal filetype "svg")
+	(setq image-code (replace-regexp-in-string "^\\\\includegraphics"
+						   "\\includesvg"
+						   image-code
+						   nil t))
+	(setq image-code (replace-regexp-in-string "\\.svg}"
+						   "}"
+						   image-code
+						   nil t))))
     ;; Return proper string, depending on FLOAT.
     (case float
       (wrap (format "\\begin{wrapfigure}%s
@@ -1848,18 +1877,13 @@ contextual information."
 	 (latex-type (let ((env (plist-get attr :environment)))
 		       (cond (env (format "%s" env))
 			     ((eq type 'ordered) "enumerate")
-			     ((eq type 'unordered) "itemize")
-			     ((eq type 'descriptive) "description")))))
+			     ((eq type 'descriptive) "description")
+			     (t "itemize")))))
     (org-latex--wrap-label
      plain-list
      (format "\\begin{%s}%s\n%s\\end{%s}"
 	     latex-type
-	     ;; Put optional arguments, if any inside square brackets
-	     ;; when necessary.
-	     (let ((options (format "%s" (or (plist-get attr :options) ""))))
-	       (cond ((equal options "") "")
-		     ((string-match "\\`\\[.*\\]\\'" options) options)
-		     (t (format "[%s]" options))))
+	     (or (plist-get attr :options) "")
 	     contents
 	     latex-type))))
 
@@ -2037,11 +2061,11 @@ contextual information."
 	       (float-env
 		(cond ((and (not float) (plist-member attributes :float)) "%s")
 		      ((string= "multicolumn" float)
-		       (format "\\begin{figure*}[%s]\n%s%%s\n\\end{figure*}"
+		       (format "\\begin{figure*}[%s]\n%%s%s\n\\end{figure*}"
 			       org-latex-default-figure-position
 			       caption-str))
 		      ((or caption float)
-		       (format "\\begin{figure}[H]\n%s%%s\n\\end{figure}"
+		       (format "\\begin{figure}[H]\n%%s%s\n\\end{figure}"
 			       caption-str))
 		      (t "%s"))))
 	  (format
@@ -2710,23 +2734,8 @@ Export is done in a buffer named \"*Org LATEX Export*\", which
 will be displayed when `org-export-show-temporary-export-buffer'
 is non-nil."
   (interactive)
-  (if async
-      (org-export-async-start
-	  (lambda (output)
-	    (with-current-buffer (get-buffer-create "*Org LATEX Export*")
-	      (erase-buffer)
-	      (insert output)
-	      (goto-char (point-min))
-	      (LaTeX-mode)
-	      (org-export-add-to-stack (current-buffer) 'latex)))
-	`(org-export-as 'latex ,subtreep ,visible-only ,body-only
-			',ext-plist))
-    (let ((outbuf
-	   (org-export-to-buffer 'latex "*Org LATEX Export*"
-				 subtreep visible-only body-only ext-plist)))
-      (with-current-buffer outbuf (LaTeX-mode))
-      (when org-export-show-temporary-export-buffer
-	(switch-to-buffer-other-window outbuf)))))
+  (org-export-to-buffer 'latex "*Org LATEX Export*"
+    async subtreep visible-only body-only ext-plist (lambda () (LaTeX-mode))))
 
 ;;;###autoload
 (defun org-latex-convert-region-to-latex ()
@@ -2763,19 +2772,11 @@ between \"\\begin{document}\" and \"\\end{document}\".
 
 EXT-PLIST, when provided, is a property list with external
 parameters overriding Org default settings, but still inferior to
-file-local settings.
-
-Return output file's name."
+file-local settings."
   (interactive)
   (let ((outfile (org-export-output-file-name ".tex" subtreep)))
-    (if async
-	(org-export-async-start
-	    (lambda (f) (org-export-add-to-stack f 'latex))
-	  `(expand-file-name
-	    (org-export-to-file
-	     'latex ,outfile ,subtreep ,visible-only ,body-only ',ext-plist)))
-      (org-export-to-file
-       'latex outfile subtreep visible-only body-only ext-plist))))
+    (org-export-to-file 'latex outfile
+      async subtreep visible-only body-only ext-plist)))
 
 ;;;###autoload
 (defun org-latex-export-to-pdf
@@ -2807,18 +2808,10 @@ file-local settings.
 
 Return PDF file's name."
   (interactive)
-  (if async
-      (let ((outfile (org-export-output-file-name ".tex" subtreep)))
-	(org-export-async-start
-	    (lambda (f) (org-export-add-to-stack f 'latex))
-	  `(expand-file-name
-	    (org-latex-compile
-	     (org-export-to-file
-	      'latex ,outfile ,subtreep ,visible-only ,body-only
-	      ',ext-plist)))))
-    (org-latex-compile
-     (org-latex-export-to-latex
-      nil subtreep visible-only body-only ext-plist))))
+  (let ((outfile (org-export-output-file-name ".tex" subtreep)))
+    (org-export-to-file 'latex outfile
+      async subtreep visible-only body-only ext-plist
+      (lambda (file) (org-latex-compile file)))))
 
 (defun org-latex-compile (texfile &optional snippet)
   "Compile a TeX file.
@@ -2874,9 +2867,13 @@ Return PDF file name or an error if it couldn't be produced."
 	  ;; Else remove log files, when specified, and signal end of
 	  ;; process to user, along with any error encountered.
 	  (when (and (not snippet) org-latex-remove-logfiles)
-	    (dolist (ext org-latex-logfiles-extensions)
-	      (let ((file (concat out-dir base-name "." ext)))
-		(when (file-exists-p file) (delete-file file)))))
+	    (dolist (file (directory-files
+			   out-dir t
+			   (concat (regexp-quote base-name)
+				   "\\(?:\\.[0-9]+\\)?"
+				   "\\."
+				   (regexp-opt org-latex-logfiles-extensions))))
+	      (delete-file file)))
 	  (message (concat "Process completed"
 			   (if (not errors) "."
 			     (concat " with errors: " errors)))))

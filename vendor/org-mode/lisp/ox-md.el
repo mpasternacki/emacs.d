@@ -1,9 +1,11 @@
 ;;; ox-md.el --- Markdown Back-End for Org Export Engine
 
-;; Copyright (C) 2012, 2013  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2014 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou@gmail.com>
 ;; Keywords: org, wp, markdown
+
+;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,12 +22,9 @@
 
 ;;; Commentary:
 
-;; This library implements a Markdown back-end (vanilla flavour) for
-;; Org exporter, based on `html' back-end.
-;;
-;; It provides two commands for export, depending on the desired
-;; output: `org-md-export-as-markdown' (temporary buffer) and
-;; `org-md-export-to-markdown' ("md" file).
+;; This library implements a Markdown back-end (vanilla flavor) for
+;; Org exporter, based on `html' back-end.  See Org manual for more
+;; information.
 
 ;;; Code:
 
@@ -78,6 +77,7 @@ This variable can be set to either `atx' or `setext'."
 		     (headline . org-md-headline)
 		     (horizontal-rule . org-md-horizontal-rule)
 		     (inline-src-block . org-md-verbatim)
+		     (inner-template . org-md-inner-template)
 		     (italic . org-md-italic)
 		     (item . org-md-item)
 		     (line-break . org-md-line-break)
@@ -97,19 +97,26 @@ This variable can be set to either `atx' or `setext'."
 ;;; Filters
 
 (defun org-md-separate-elements (tree backend info)
-  "Make sure elements are separated by at least one blank line.
+  "Fix blank lines between elements.
 
 TREE is the parse tree being exported.  BACKEND is the export
 back-end used.  INFO is a plist used as a communication channel.
 
+Make sure there's no blank line before a plain list, unless it is
+located right after a paragraph.  Otherwise, add a blank line
+between elements.  Blank lines between items are preserved.
+
 Assume BACKEND is `md'."
-  (org-element-map tree org-element-all-elements
+  (org-element-map tree (remq 'item org-element-all-elements)
     (lambda (elem)
-      (unless (eq (org-element-type elem) 'org-data)
-	(org-element-put-property
-	 elem :post-blank
-	 (let ((post-blank (org-element-property :post-blank elem)))
-	   (if (not post-blank) 1 (max 1 post-blank)))))))
+      (org-element-put-property
+       elem :post-blank
+       (if (and (eq (org-element-type (org-export-get-next-element elem info))
+		    'plain-list)
+		(not (and (eq (org-element-type elem) 'paragraph)
+			  (org-export-get-previous-element elem info))))
+	   0
+	 1))))
   ;; Return updated tree.
   tree)
 
@@ -245,7 +252,8 @@ a communication channel."
 	      (off "[ ] "))
 	    (let ((tag (org-element-property :tag item)))
 	      (and tag (format "**%s:** "(org-export-data tag info))))
-	    (org-trim (replace-regexp-in-string "^" "    " contents)))))
+	    (and contents
+		 (org-trim (replace-regexp-in-string "^" "    " contents))))))
 
 
 ;;;; Line Break
@@ -404,6 +412,14 @@ a communication channel."
 
 ;;;; Template
 
+(defun org-md-inner-template (contents info)
+  "Return body of document after converting it to Markdown syntax.
+CONTENTS is the transcoded contents string.  INFO is a plist
+holding export options."
+  ;; Make sure CONTENTS is separated from table of contents and
+  ;; footnotes with at least a blank line.
+  (org-trim (org-html-inner-template (concat "\n" contents "\n") info)))
+
 (defun org-md-template (contents info)
   "Return complete document string after Markdown conversion.
 CONTENTS is the transcoded contents string.  INFO is a plist used
@@ -438,21 +454,8 @@ Export is done in a buffer named \"*Org MD Export*\", which will
 be displayed when `org-export-show-temporary-export-buffer' is
 non-nil."
   (interactive)
-  (if async
-      (org-export-async-start
-	  (lambda (output)
-	    (with-current-buffer (get-buffer-create "*Org MD Export*")
-	      (erase-buffer)
-	      (insert output)
-	      (goto-char (point-min))
-	      (text-mode)
-	      (org-export-add-to-stack (current-buffer) 'md)))
-	`(org-export-as 'md ,subtreep ,visible-only))
-    (let ((outbuf (org-export-to-buffer
-		   'md "*Org MD Export*" subtreep visible-only)))
-      (with-current-buffer outbuf (text-mode))
-      (when org-export-show-temporary-export-buffer
-	(switch-to-buffer-other-window outbuf)))))
+  (org-export-to-buffer 'md "*Org MD Export*"
+    async subtreep visible-only nil nil (lambda () (text-mode))))
 
 ;;;###autoload
 (defun org-md-convert-region-to-md ()
@@ -487,12 +490,7 @@ contents of hidden elements.
 Return output file's name."
   (interactive)
   (let ((outfile (org-export-output-file-name ".md" subtreep)))
-    (if async
-	(org-export-async-start
-	    (lambda (f) (org-export-add-to-stack f 'md))
-	  `(expand-file-name
-	    (org-export-to-file 'md ,outfile ,subtreep ,visible-only)))
-      (org-export-to-file 'md outfile subtreep visible-only))))
+    (org-export-to-file 'md outfile async subtreep visible-only)))
 
 
 (provide 'ox-md)
