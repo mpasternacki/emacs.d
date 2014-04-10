@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.3
+:current_branch: master
+:current_sha: 07dbd27ebd928854098744fb29acbd3fc399a02b
+:git_describe: vendor/cedet/HEAD-20140208-215-g07dbd27
+:module_name: git-modes
+:module_version: 42e989c178aa0f90cedf9e6221dcbf888a9db2b0
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/magit/git-modes.git
+:git_revision: 42e989c178aa0f90cedf9e6221dcbf888a9db2b0
