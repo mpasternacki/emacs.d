@@ -47,7 +47,7 @@ end
 archive 'color-theme',  :version => '6.6.0',       :url =>'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
 archive 'php-mode',     :version => '1.5.0',       :url => 'http://downloads.sourceforge.net/php-mode/php-mode-1.5.0.tar.gz'
 archive 'gnuplot-mode', :version => '0.6.0',       :url => 'http://feff.phys.washington.edu/~ravel/software/gnuplot-mode/gnuplot-mode.0.6.0.tar.gz'
-archive 'auctex',       :version => '11.86',       :url => 'http://ftp.gnu.org/pub/gnu/auctex/auctex-11.86.tar.gz'
+archive 'auctex',       :version => '11.87',       :url => 'http://ftp.gnu.org/pub/gnu/auctex/auctex-11.87.tar.gz'
 archive 'nxhtml',       :version => '2.08-100425', :url => 'http://ourcomments.org/Emacs/DL/elisp/nxhtml/zip/nxhtml-2.08-100425.zip'
 
 download 'http://brian.mastenbrook.net/static/files/dotfiles/color-theme-pastelmac.el'
