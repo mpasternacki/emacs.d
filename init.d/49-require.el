@@ -15,6 +15,7 @@
 (require 'magit)
 (require 'paredit)
 (require 'coffee-mode)
+(require 'ledger-mode)
 (load "auctex")
 (load "preview-latex")
 (load "darcsum/darcsum")
@@ -24,4 +25,4 @@
 (load "yaml-mode/yaml-mode")
 (load "haml-mode/haml-mode")
 (load "scss-mode/scss-mode")
-(load "go-mode/go-mode")
+(load "nxhtml/nxhtml/nxml-where")

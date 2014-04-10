@@ -16,7 +16,8 @@
                 "coffee-mode"
                 "helm"
                 "ruby-mode"
-                "git-modes"))
+                "git-modes"
+                "ledger"))
              load-path)
 
       exec-path

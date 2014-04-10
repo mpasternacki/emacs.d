@@ -58,6 +58,7 @@
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("/\\(Rake\\|Gem\\|Vagrant\\)file$" . ruby-mode))
 (add-to-list 'auto-mode-alist '("\\.\\(rake\\|gemspec\\)$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("/\\.mutt/tmp/mutt-[^/]*$" . message-mode))
 
 (add-to-list 'completion-ignored-extensions ".lx64fsl")
 (add-to-list 'completion-ignored-extensions ".dx64fsl")

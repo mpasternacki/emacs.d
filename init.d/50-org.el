@@ -3,6 +3,7 @@
 
 (require 'org)
 (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
+(add-to-list 'org-modules 'org-mac-iCal)
 
 (define-key mode-specific-map [?a] 'org-agenda)
 
@@ -36,10 +37,11 @@
 
 (add-hook 'remember-mode-hook 'org-remember-apply-template)
 
+
 (define-key global-map [(control meta ?r)] 'remember)
 
 (setq
- org-agenda-files '("~/EVERYTHING.org")
+ org-agenda-files '("~/master.org" "~/org")
  org-agenda-include-diary t
  org-agenda-ndays 7
  org-agenda-show-all-dates t
@@ -47,10 +49,11 @@
  org-agenda-skip-scheduled-if-done t
  org-agenda-start-on-weekday nil
  org-deadline-warning-days 14
- org-default-notes-file "~/EVERYTHING.org"
+ org-default-notes-file "~/master.org"
  org-export-with-LaTeX-fragments t
  org-fast-tag-selection-single-key (quote expert)
  org-log-done t
+ org-mobile-directory "~/Dropbox/Apps/MobileOrg"
  org-remember-store-without-prompt t
  org-reverse-note-order t
  org-todo-keywords '((sequence "TODO" "DOING" "VERIFY" "|" "DONE" "DELEGATED"))
@@ -75,3 +78,29 @@
 
  remember-annotation-functions (quote (org-remember-annotation))
  remember-handler-functions (quote (org-remember-handler)))
+
+(defadvice org-mobile-files-alist (after org-mobile-files-alist-fix-names activate)
+  (setq ad-return-value
+        (mapcar (lambda (f)
+                  (cons (car f)
+                        (file-name-nondirectory (car f))))
+                ad-return-value)))
+
+;;; org-mac-iCal imports events multiple times; luckily, the lines are
+;;; identical, so we can just sort lines and remove duplicates.
+(defun jph/uniquify-diary ()
+  (interactive)
+  (with-current-buffer (find-file-noselect diary-file)
+    (sort-lines nil (point-min) (point-max))
+    (goto-char (point-min))
+    (delete-blank-lines)
+    (delete-blank-lines)
+    (replace-regexp "\\([^\n]+\n\\)\\1+" "\\1")
+    (save-buffer)))
+
+(defun jph/org-mac-iCal ()
+  (interactive)
+  (org-mac-iCal)
+  (jph/uniquify-diary))
+
+(add-hook 'org-agenda-mode-hook 'jph/org-mac-iCal)
