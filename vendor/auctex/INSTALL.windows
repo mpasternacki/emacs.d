@@ -279,12 +279,10 @@ used single quotes for that.
      `~/.xemacs/init.el' from within XEmacs).
 
      The default configuration of AUCTeX is probably not the best fit
-     for Windows systems.  You might want to add
+     for Windows systems with MiKTeX.  You might want to add
           (require 'tex-mik)
-     or
-          (require 'tex-fptex)
-     in order to get more appropriate values for MiKTeX and fpTeX,
-     respectively after loading `auctex.el' and `preview-latex.el'.
+     after loading `auctex.el' and `preview-latex.el' in order to get
+     more appropriate values for some customization options.
 
      You can always use
 
