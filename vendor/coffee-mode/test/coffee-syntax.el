@@ -21,9 +21,6 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl))
-
 (require 'ert)
 (require 'coffee-mode)
 
@@ -38,6 +35,23 @@
     (should (eobp))
 
     (backward-word 1)
+    (should (bobp))))
+
+;;
+;; #219 Invalid slash property
+;;
+(ert-deftest slash-syntax-property ()
+  "`/' is not treat as close paren"
+  (with-coffee-temp-buffer
+    "( / )"
+    (forward-sexp 1)
+    (should (eobp))
+
+    (backward-sexp 1)
+    (should (bobp))
+
+    (forward-cursor-on "/")
+    (backward-up-list)
     (should (bobp))))
 
 ;;; coffee-syntax.el end here

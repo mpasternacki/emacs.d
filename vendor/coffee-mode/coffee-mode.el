@@ -1,4 +1,4 @@
-;;; coffee-mode.el --- Major mode to edit CoffeeScript files in Emacs
+;;; coffee-mode.el --- Major mode to edit CoffeeScript files in Emacs -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2010 Chris Wanstrath
 
@@ -6,7 +6,7 @@
 ;; Keywords: CoffeeScript major mode
 ;; Author: Chris Wanstrath <chris@ozmm.org>
 ;; URL: http://github.com/defunkt/coffee-mode
-;; Package-Requires: ((emacs "24.1"))
+;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -135,8 +135,9 @@
 (require 'font-lock)
 (require 'rx)
 
-(eval-when-compile
-  (require 'cl))
+(require 'cl-lib)
+
+(declare-function electric-pair-backward-delete-char-untabify "elec-pair")
 
 ;;
 ;; Customizable Variables
@@ -221,6 +222,11 @@ with CoffeeScript."
   :group 'coffee
   :type 'boolean)
 
+(defcustom coffee-after-compile-hook nil
+  "Hook called after compile to Javascript"
+  :type 'hook
+  :group 'coffee)
+
 (defvar coffee-mode-map
   (let ((map (make-sparse-keymap)))
     ;; key bindings
@@ -249,6 +255,11 @@ with CoffeeScript."
 ;;
 ;; Commands
 ;;
+
+(defun coffee-comint-filter (string)
+  (ansi-color-apply
+   (replace-regexp-in-string "\x1b\\[.[GJK]" "" string)))
+
 (defun coffee-repl ()
   "Launch a CoffeeScript REPL using `coffee-command' as an inferior mode."
   (interactive)
@@ -262,10 +273,8 @@ with CoffeeScript."
             coffee-command
             coffee-args-repl))
 
-    ;; Workaround: https://github.com/defunkt/coffee-mode/issues/30
-    (set (make-local-variable 'comint-preoutput-filter-functions)
-         (cons (lambda (string)
-                 (replace-regexp-in-string "\x1b\\[.[GJK]" "" string)) nil)))
+    ;; Workaround for ansi colors
+    (add-hook 'comint-preoutput-filter-functions 'coffee-comint-filter nil t))
 
   (pop-to-buffer coffee-repl-buffer))
 
@@ -321,6 +330,14 @@ called `coffee-compiled-buffer-name'."
   (interactive)
   (coffee-compile-region (point-min) (point-max)))
 
+(defsubst coffee-generate-sourcemap-p ()
+  (cl-find-if (lambda (opt) (member opt '("-m" "--map"))) coffee-args-compile))
+
+(defun coffee-generate-sourcemap ()
+  (let ((file (buffer-file-name)))
+    (unless (zerop (call-process coffee-command nil nil nil "-m" file))
+      (error "Can't generate sourcemap %s" (file-name-nondirectory file)))))
+
 (defun coffee-compile-region (start end)
   "Compiles a region and displays the JavaScript in a buffer called
 `coffee-compiled-buffer-name'."
@@ -337,14 +354,23 @@ called `coffee-compiled-buffer-name'."
                           nil)
          (append coffee-args-compile (list "-s" "-p")))
 
-  (let ((buffer (get-buffer coffee-compiled-buffer-name)))
+  (when (coffee-generate-sourcemap-p)
+    (coffee-generate-sourcemap))
+  (let* ((buffer (get-buffer coffee-compiled-buffer-name))
+         (file (file-name-nondirectory (buffer-file-name)))
+         (props (list :sourcemap (concat (file-name-sans-extension file) ".map")
+                      :line (line-number-at-pos)
+                      :column (current-column)
+                      :source file)))
     (save-selected-window
       (pop-to-buffer buffer)
       (with-current-buffer buffer
         (let ((buffer-file-name "tmp.js"))
           (setq buffer-read-only t)
           (set-auto-mode)
-          (goto-char (point-min)))))))
+          (goto-char (point-min))
+          (forward-line 1) ;; 1st line is comment
+          (run-hook-with-args 'coffee-after-compile-hook props))))))
 
 (defun coffee-get-repl-proc ()
   (unless (comint-check-proc coffee-repl-buffer)
@@ -437,7 +463,7 @@ called `coffee-compiled-buffer-name'."
 
 ;; Regular expressions
 (eval-and-compile
-  (defvar coffee-regexp-regexp "\\s$\\(\\(?:\\\\/\\|[^/\n\r]\\)*\\)\\s$"))
+  (defvar coffee-regexp-regexp "\\s/\\(\\(?:\\\\/\\|[^/\n\r]\\)*\\)\\s/"))
 
 ;; String Interpolation(This regexp is taken from ruby-mode)
 (defvar coffee-string-interpolation-regexp "#{[^}\n\\\\]*\\(?:\\\\.[^}\n\\\\]*\\)*}")
@@ -526,7 +552,7 @@ For details, see `comment-dwim'."
 output in a compilation buffer."
   (interactive "sArguments: ")
   (let ((compilation-buffer-name-function
-         (lambda (this-mode)
+         (lambda (_this-mode)
            (generate-new-buffer-name coffee-compiled-buffer-name))))
     (compile (concat coffee-command " " args))))
 
@@ -604,8 +630,7 @@ output in a compilation buffer."
   (if (= (point) (line-beginning-position))
       (coffee-insert-spaces coffee-tab-width)
     (save-excursion
-      (let ((prev-indent (coffee-previous-indent))
-            (cur-indent (current-indentation)))
+      (let ((prev-indent (coffee-previous-indent)))
         ;; Shift one column to the left
         (beginning-of-line)
         (coffee-insert-spaces coffee-tab-width)
@@ -635,8 +660,7 @@ output in a compilation buffer."
   ;; Remember the current line indentation level,
   ;; insert a newline, and indent the newline to the same
   ;; level as the previous line.
-  (let ((prev-indent (current-indentation))
-        (indent-next nil))
+  (let ((prev-indent (current-indentation)))
     (delete-horizontal-space t)
     (newline)
     (coffee-insert-spaces prev-indent)
@@ -662,12 +686,16 @@ Delete ARG spaces if ARG!=1."
                         (back-to-indentation)
                         (point)))
            (not (bolp)))
-      (let ((extra-space-count (% (current-column) coffee-tab-width)))
-        (backward-delete-char-untabify
-         (if (zerop extra-space-count)
-             coffee-tab-width
-           extra-space-count)))
-    (backward-delete-char-untabify arg)))
+      (let* ((extra-space-count (% (current-column) coffee-tab-width))
+             (deleted-chars (if (zerop extra-space-count)
+                                coffee-tab-width
+                              extra-space-count)))
+        (if (and electric-pair-mode (featurep 'elec-pair))
+            (electric-pair-backward-delete-char-untabify deleted-chars)
+          (backward-delete-char-untabify deleted-chars)))
+    (if (and electric-pair-mode (featurep 'elec-pair))
+        (electric-pair-backward-delete-char-untabify arg)
+      (backward-delete-char-untabify arg))))
 
 ;; Indenters help determine whether the current line should be
 ;; indented further based on the content of the previous line. If a
@@ -879,7 +907,7 @@ comments such as the following:
           (let ((cur-indent (current-indentation)))
             (when (<= cur-indent start-indent)
               (setq start-indent cur-indent)
-              (decf count)))
+              (cl-decf count)))
           (when (<= count 0)
             (back-to-indentation)
             (setq finish t)))))))
@@ -889,7 +917,7 @@ comments such as the following:
   (interactive "p")
   (unless count
     (setq count 1))
-  (dotimes (i count)
+  (dotimes (_i count)
     (let* ((curline-is-defun (coffee-current-line-is-defun))
            start-indent)
       (coffee-skip-forward-lines 1)
@@ -959,7 +987,7 @@ comments such as the following:
     (while (and (< i 3)
                 (< (+ start-point i) limit)
                 (eq (char-after (+ start-point i)) quote-char))
-      (incf i))
+      (cl-incf i))
     i))
 
 (defun coffee-syntax-block-strings-stringify ()
@@ -987,7 +1015,7 @@ comments such as the following:
            (put-text-property (1- quote-ending-pos) quote-ending-pos
                               'syntax-table (string-to-syntax "|"))))))
 
-(defun coffee-syntax-peropertize-block-comment ()
+(defun coffee-syntax-propertize-block-comment ()
   (let ((curpoint (point))
         (inhibit-changing-match-data t))
     (let* ((valid-comment-start nil)
@@ -1020,7 +1048,7 @@ comments such as the following:
                                 'syntax-table (string-to-syntax "_")))))))
     (coffee-regexp-regexp (1 (string-to-syntax "_")))
     ("###"
-     (0 (ignore (coffee-syntax-peropertize-block-comment)))))
+     (0 (ignore (coffee-syntax-propertize-block-comment)))))
    (point) end))
 
 ;;
@@ -1042,7 +1070,7 @@ comments such as the following:
   (modify-syntax-entry ?\n "> b" coffee-mode-syntax-table)
 
   ;; Treat slashes as paired delimiters; useful for finding regexps.
-  (modify-syntax-entry ?/ "$" coffee-mode-syntax-table)
+  (modify-syntax-entry ?/ "/" coffee-mode-syntax-table)
 
   (set (make-local-variable 'comment-start) "#")
 
@@ -1073,7 +1101,7 @@ comments such as the following:
 
   ;; Don't let electric-indent-mode break coffee-mode.
   (set (make-local-variable 'electric-indent-functions)
-       (list (lambda (arg) 'no-indent)))
+       (list (lambda (_arg) 'no-indent)))
 
   ;; no tabs
   (setq indent-tabs-mode coffee-indent-tabs-mode))
