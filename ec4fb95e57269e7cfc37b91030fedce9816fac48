@@ -1,0 +1,24 @@
+---
+:vendorificator_version: 0.5.3
+:current_branch: master
+:current_sha: 07dbd27ebd928854098744fb29acbd3fc399a02b
+:git_describe: vendor/cedet/HEAD-20140208-215-g07dbd27
+:module_name: auctex
+:module_version: '11.87'
+:module_group:
+:unparsed_args:
+  :version: '11.87'
+  :url: http://ftp.gnu.org/pub/gnu/auctex/auctex-11.87.tar.gz
+:parsed_args:
+  :version: '11.87'
+  :url: http://ftp.gnu.org/pub/gnu/auctex/auctex-11.87.tar.gz
+  :filename: auctex-11.87.tar.gz
+  :type: :targz
+  :unpack: tar -xzf
+  :basename: auctex-11.87
+  :extname: .tar.gz
+:archive_checksum: !binary |-
+  NjNkNTcyMjllNTg1ZGJmNzI3ZjU1NDUzMzc2MTViOTk3NDg4YmZkZjQ3NTI3
+  NGRhMDcxOGM5MGI3N2JkNWNmMg==
+:archive_filesize: 1206073
+:archive_url: http://ftp.gnu.org/pub/gnu/auctex/auctex-11.87.tar.gz
