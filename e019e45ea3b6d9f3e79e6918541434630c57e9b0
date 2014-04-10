@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.3
+:current_branch: master
+:current_sha: 07dbd27ebd928854098744fb29acbd3fc399a02b
+:git_describe: vendor/cedet/HEAD-20140208-215-g07dbd27
+:module_name: helm
+:module_version: e7e16ce3b0b800699dc70ff059ca15a6195e3bdf
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/emacs-helm/helm.git
+:git_revision: e7e16ce3b0b800699dc70ff059ca15a6195e3bdf
