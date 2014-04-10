@@ -262,10 +262,13 @@ It is intended to use as a let-bound variable, DON'T set this globaly.")
       (cl-loop for i in candidates append
                (cond ((string-match "^git" helm-grep-default-command)
                       (list i))
-                     ;; Candidate is a directory and we use recursion.
+                     ;; Candidate is a directory and we use recursion or ack.
                      ((and (file-directory-p i)
-                           helm-grep-in-recurse)
+                           (or helm-grep-in-recurse
+                               ;; ack-grep accept directory [1].
+                               (helm-grep-use-ack-p)))
                       (list (expand-file-name i)))
+                     ;; Grep doesn't support directory only when not in recurse.
                      ((file-directory-p i)
                       (file-expand-wildcards
                        (concat (file-name-as-directory (expand-file-name i)) "*") t))
@@ -773,7 +776,7 @@ You can give more than one arg separated by space.
 e.g *.el *.py *.tex.
 If you are using ack-grep, you will be prompted for --type
 instead.
-If prompt is empty '--exclude `grep-find-ignored-files'' is used instead.
+If prompt is empty '--exclude `grep-find-ignored-files' is used instead.
 ZGREP when non--nil use zgrep instead, without prompting for a choice
 in recurse, search being made on `helm-zgrep-file-extension-regexp'."
   (when (and (helm-grep-use-ack-p)
@@ -857,7 +860,7 @@ in recurse, search being made on `helm-zgrep-file-extension-regexp'."
                           ("Find file other window" . helm-grep-other-window))))
             (persistent-action . helm-grep-persistent-action)
             (persistent-help . "Jump to line (`C-u' Record in mark ring)")
-            (requires-pattern . 3)))
+            (requires-pattern . 2)))
     (and follow (helm-attrset 'follow follow helm-source-grep))
     (helm
      :sources '(helm-source-grep)
@@ -923,15 +926,12 @@ in recurse, search being made on `helm-zgrep-file-extension-regexp'."
 
 (defun helm-grep-filter-one-by-one (candidate)
   "`filter-one-by-one' transformer function for `helm-do-grep'."
-  (helm-grep--filter-candidate-1 candidate))
-  
-(defun helm-grep-cand-transformer (candidates _source)
-  "`filtered-candidate-transformer' function for `helm-do-grep'."
-  (cl-loop with root = (and helm-grep-default-directory-fn
-                            (funcall helm-grep-default-directory-fn))
-           for i in candidates
-           for cand = (helm-grep--filter-candidate-1 i root)
-           when cand collect cand))
+  (let ((helm-grep-default-directory-fn
+         (or helm-grep-default-directory-fn
+             (lambda () (or helm-ff-default-directory
+                            helm-default-directory
+                            default-directory)))))
+    (helm-grep--filter-candidate-1 candidate)))
 
 (defun helm-grep-highlight-match (str &optional multi-match)
   "Highlight in string STR all occurences matching `helm-pattern'."
@@ -1078,7 +1078,7 @@ If a prefix arg is given run grep on all buffers ignoring non--file-buffers."
         (mode-line . helm-pdfgrep-mode-line-string)
         (action . helm-pdfgrep-action)
         (persistent-help . "Jump to PDF Page")
-        (requires-pattern . 3)))
+        (requires-pattern . 2)))
      :buffer "*helm pdfgrep*"
      :history 'helm-grep-history)))
 
