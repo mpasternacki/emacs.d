@@ -19,9 +19,9 @@ Frequently Asked Questions about AUCTeX
      cause of the error yourself.
 
      First, you can try to generate a so-called backtrace which shows
-     functions involved in a program error.  In order to do this, start
-     Emacs with the command line `emacs --debug-init' and/or put the
-     line
+     the functions involved in a program error.  In order to do this,
+     start Emacs with the command line `emacs --debug-init' and/or put
+     the line
 
           (setq debug-on-error t)
 
@@ -34,17 +34,12 @@ Frequently Asked Questions about AUCTeX
      Second, you can try to figure out if something in your personal or
      site configuration triggers the error by starting Emacs without
      such customizations.  You can do this by invoking Emacs with the
-     command line `emacs -q -no-site-file'.  Once Emacs is running,
-     copy the line
-
-          (load "auctex.el" nil t t)
-
-     into the `*scratch*' buffer and type `M-x eval-buffer RET'.  This
-     makes sure that AUCTeX will be used for the file types it
-     supports.  After you have done so, you can load the file
-     triggering the error.  If everything is working now, you know that
-     you have to search either in the site configuration file or your
-     personal init file for statements related to the problem.
+     command line `emacs -q -no-site-file -l auctex'.  The `-l' option
+     `auctex.el' which you normally do in your init file.  After you
+     have started Emacs like this, you can load the file triggering the
+     error.  If everything is working now, you know that you have to
+     search either in the site configuration file or your personal init
+     file for statements related to the problem.
 
   2. What versions of Emacs and XEmacs are supported?
 
@@ -54,28 +49,17 @@ Frequently Asked Questions about AUCTeX
      through the XEmacs package system.  If you are looking for a
      recommendation, it would appear that the smoothest working
      platform on all operating systems at the current point of time
-     would be Emacs 22.1.  At the time of this writing, however, it has
-     not been released and is still under development.  The quality of
-     the development version is quite solid, so we recommend giving it
-     a try.  With a developer version, of course, you have to be
-     prepared to update in case you managed to get your snapshot at a
-     bad time.  The second best choice would be the latest released
-     Emacs 21.4.  However, Unicode support is less good, there is no
-     version for the popular GTK toolkit, and the native versions for
-     Windows and MacOS don't offer toolbar and preview-latex support.
+     would be Emacs 22 or higher.
 
-     Our success with XEmacs has been less than convincing.  Under the
-     Windows operating system, nominally the only option for a released,
-     stable Emacs variant supporting toolbars and preview-latex would be
-     XEmacs 21.4.  However, code for core functionality like formatting
-     and syntax highlighting tends to be different and often older than
-     even Emacs 21.4, and Unicode support as delivered is problematic
-     at best, missing on Windows.  Both AUCTeX and XEmacs developers
-     don't hear much from active users of the combination.  Partly for
-     that reason, problems tend to go unnoticed for long amounts of
-     time and are often found, if at all, after releases.  No
-     experiences or recommendations can be given for beta or developer
-     versions of XEmacs.
+     Our success with XEmacs has been less than convincing.  Code for
+     core functionality like formatting and syntax highlighting tends
+     to be different and often older than even Emacs 21.4, and Unicode
+     support as delivered is problematic at best, missing on Windows.
+     Both AUCTeX and XEmacs developers don't hear much from active
+     users of the combination.  Partly for that reason, problems tend
+     to go unnoticed for long amounts of time and are often found, if
+     at all, after releases.  No experiences or recommendations can be
+     given for beta or developer versions of XEmacs.
 
   3. What should I do when `./configure' does not find programs like
      latex?
@@ -118,7 +102,22 @@ Frequently Asked Questions about AUCTeX
      The information in the debugging buffer can help you find the
      cause of the error in your init file.
 
-  8. What does AUC stand for?
+  8. Why does `TeX-next-error' (`C-c `') fail?
+
+     When writing the log file, TeX puts information related to a file,
+     including error messages, between a pair of parentheses.  AUCTeX
+     determines the file where the error happened by parsing the log
+     file and counting the parentheses.  This can fail when there are
+     other, unbalanced parentheses present.
+
+     As a workaround you can activate so-called file:line:error
+     messages for the log file.  (Those are are easier to parse, but
+     may lack some details.)  Either you do this in the configuration
+     of your TeX system (consult its manual to see where this is) or
+     you add a command line switch to the (la)tex call, e.g. by
+     customizing `LaTeX-command-style' or `TeX-command-list'.
+
+  9. What does AUC stand for?
 
      AUCTeX came into being at Aalborg University in Denmark.  Back then
      the Danish name of the university was Aalborg Universitetscenter;

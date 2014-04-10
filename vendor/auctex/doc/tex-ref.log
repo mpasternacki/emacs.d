@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdftex 2010.1.13)  21 FEB 2010 13:37
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdftex 2012.11.25)  30 NOV 2012 20:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -13,7 +13,7 @@ entering extended mode
 \metaxbox=\box18
 \metaxwidth=\dimen18
 
-Underfull \vbox (badness 10000) detected at line 395
+Underfull \vbox (badness 10000) detected at line 396
 
 \vbox(161.80061+2.0)x104.068
 .\hbox(6.80002+2.0)x104.068, glue set 17.8531fil
@@ -66,7 +66,7 @@ Underfull \vbox (badness 10000) detected at line 395
 .etc.
 
 
-Underfull \vbox (badness 10000) detected at line 435
+Underfull \vbox (badness 10000) detected at line 436
 
 \vbox(176.20067+2.0)x104.068
 .\hbox(6.80002+2.0)x104.068, glue set 7.22795fil
@@ -125,20 +125,21 @@ Underfull \vbox (badness 10000) detected at line 435
 .etc.
 
 [1{/home/angeli/.texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] )</usr/shar
-e/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texmf-tex
-live/fonts/type1/public/amsfonts/cm/cmbx8.pfb></usr/share/texmf-texlive/fonts/t
-ype1/public/amsfonts/cm/cmcsc10.pfb></usr/share/texmf-texlive/fonts/type1/publi
-c/amsfonts/cm/cmmi10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/
-cm/cmr6.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr7.pfb><
-/usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/te
-xmf-texlive/fonts/type1/public/amsfonts/cm/cmsl8.pfb></usr/share/texmf-texlive/
-fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/share/texmf-texlive/fonts/type1/
-public/amsfonts/cm/cmsy8.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfo
-nts/cm/cmti8.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmtt8
-.pfb>
-Output written on tex-ref.pdf (2 pages, 162561 bytes).
+e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texl
+ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx8.pfb></usr/share/texlive/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/share/texlive/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fon
+ts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1
+/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
+amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmsl8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cms
+y6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb></usr/s
+hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb>
+Output written on tex-ref.pdf (2 pages, 153648 bytes).
 PDF statistics:
- 57 PDF objects out of 1000 (max. 8388607)
+ 59 PDF objects out of 1000 (max. 8388607)
+ 42 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
