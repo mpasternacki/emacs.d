@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.5.3
+:current_branch: master
+:current_sha: 07dbd27ebd928854098744fb29acbd3fc399a02b
+:git_describe: vendor/cedet/HEAD-20140208-215-g07dbd27
+:module_name: ecb
+:module_version: 071706b22efcfeb65da8381e317220d7f9d8cb54
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/alexott/ecb.git
+:git_revision: 071706b22efcfeb65da8381e317220d7f9d8cb54
