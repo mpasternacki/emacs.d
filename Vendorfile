@@ -20,6 +20,8 @@ git 'https://github.com/alexott/ecb.git'
 git 'ruby-mode', repository: 'https://github.com/ruby/ruby.git', subdirectory: 'misc'
 git 'ledger', repository: 'https://github.com/ledger/ledger.git', subdirectory: 'lisp'
 
+git 'git://notmuchmail.org/git/notmuch', subdirectory: 'emacs'
+
 archive 'org-mode',
         version: '8.2.5h',
         url: 'http://orgmode.org/org-8.2.5h.tar.gz'
