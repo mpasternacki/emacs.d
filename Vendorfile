@@ -3,7 +3,6 @@
 
 git 'https://github.com/drothlis/pretty-symbols.git' do FileUtils.rm 'README' end
 git 'https://github.com/magit/magit.git'
-git 'https://github.com/capitaomorte/yasnippet.git'
 git 'https://github.com/technomancy/clojure-mode.git'
 git 'https://github.com/senny/rvm.el.git'
 git 'https://github.com/nex3/haml-mode.git'
@@ -21,6 +20,11 @@ git 'ruby-mode', repository: 'https://github.com/ruby/ruby.git', subdirectory: '
 git 'ledger', repository: 'https://github.com/ledger/ledger.git', subdirectory: 'lisp'
 
 git 'git://notmuchmail.org/git/notmuch', subdirectory: 'emacs'
+
+git 'https://github.com/capitaomorte/yasnippet.git' do
+  system 'git submodule update --init --recursive'
+  system 'git submodule foreach --recursive "rm -rf .git"'
+end
 
 archive 'org-mode',
         version: '8.2.5h',
