@@ -8,11 +8,87 @@ welcomed by submitting a Pull Request for [Home.mdpp][1].
 ------
 
 !TOC
+# FAQ
+
+## I have updated from melpa and I have errors
+
+Normally since helm, when installed from (m)elpa force dependency to
+[Async](https://github.com/jwiegley/emacs-async) you should not have this problem
+anymore, however if it happen, do like this:
+
+1. Uninstall `helm` from `list-packages`
+
+2. Close emacs
+
+3. Start `emacs -Q`
+
+4. Reinstall `helm` from `list-packages`
+
+5. Restart emacs
+
+And report bug on [emacs helm issues](https://github.com/emacs-helm/helm/issues)
+
+
+_Note:_ After upgrading as usual you will have anyway to restart emacs for the changes take effect.
+
+_Note:_ [emacs-async](https://github.com/jwiegley/emacs-async) is available as "async" in melpa.
+
+## I have warnings when compiling from emacs-24.3.1
+
+Helm have no warning when compiling with >=emacs-24.4, but when compiling
+with 24.3 you may have many warnings (due to bugs in emacs itself relative
+to lexical-binding and eieio), don't be afraid, just ignore them ;-).
+
+## Void function function-put
+
+Bad installation of helm, please reinstall, See [Here](https://github.com/emacs-helm/helm/wiki#ihaveupdatedfrommelpaandihaveerrors) how to do.
+
+## I have an error message when starting helm-M-x with a prefix arg
+
+Please pass your prefix args AFTER starting helm-M-x.
+Read the embeded documentation for more infos (C-c ?).
+
+## I cannot exit with empty string in completing-read's
+
+The answer is in your mode-line:
+`C-RET` or `M-RET`.
+
+## I want to modify source attributes but source is nil e.g helm-occur
+
+If the source is `nil`, it is probably setup when command starts, and probably
+it is defined using new `helm-make-source` with its own class.
+If the source is defined with a specialized class (not a generic class like
+`helm-source-sync`, `helm-source-async`, `helm-source-in-buffer`, `helm-source-dummy`)
+You can add a new defmethod in your init file e.g:
+
+```emacs-lisp
+(defmethod helm-setup-user-source ((source helm-source-ffiles))
+  (helm-source-add-action-to-source-if
+   "Byte compile file(s) async"
+   'async-byte-compile-file
+   source
+   'helm-ff-candidates-lisp-p))
+```
+or
+
+```emacs-lisp
+(defmethod helm-setup-user-source ((source helm-source-multi-occur))
+  (oset source :follow 1))
+```
+You can also setup the source yourself:
+
+```emacs-lisp
+(with-eval-after-load "helm-regexp.el"
+  (setq helm-source-occur (helm-make-source "Occur" 'helm-source-multi-occur))
+  (setq helm-source-occur (helm-make-source "Moccur" 'helm-source-multi-occur)))
+```
+_Note:_ Don't define a new `defmethod` `helm-setup-user-source` with generic classes as specified above.
+
 
 # Wiki maintainer instructions
 
 1. Checkout wiki repo at `git@github.com:emacs-helm/helm.wiki.git`
-2. Get markdown-pp at https://github.com/thierryvolpiatto/markdown-pp.git
+2. Get markdown-pp at https://github.com/jreese/markdown-pp
 3. Install markdown-pp
 
    For help on setup.py:
@@ -54,8 +130,43 @@ For a quick try, you can also run the shell script provided with helm if your sy
     ./emacs-helm.sh
 
 NOTE: If you install Helm in a different way using your own autoloads and personal configuration,
-      be sure to know and understand what you are doing, otherwise expect diverses bugs and failures.
+      be sure to know and understand what you are doing, otherwise expect diverse bugs and failures.
       You are warned!
+
+# Emacs completion vs Helm
+
+Emacs' default minibuffer completion is subtly different to Helm, and many
+([1][mental1], [2][mental2], [3][mental3]) new comers struggle with the difference.
+
+## Emacs default completion is **minibuffer centric**
+
+Emacs helps you narrow down your selection by transforming your minibuffer
+input when you hit `<tab>`.  And then your give it some more detail and hit
+`<tab>` again, until finally,the **minibuffer** contains the desired input and
+you hit `<enter>` to select it.
+
+## Helm is **completion window centric**
+
+In Helm, you don't pay attention to the minibuffer.  Instead, you look at the
+completion window *and* the currently highlighted item.
+
+You narrow the list shown in the **completion window** by providing more input.
+
+When the item is close enough to the current highlight, you navigate to it
+with `<C-n>` and hit `<enter>` to select it.
+
+## The key implications of the helm "mental model"
+
+1. `<tab>` is not needed to expand the minibuffer input.
+
+    - The minibuffer need not *ever* contain the selection you want, so
+      there is no point in transforming it.
+
+2. Therefore `<tab>` is used to select a different action in Helm.
+
+    - In Emacs completion, there is only one action available, but Helm
+      offers many actions.
+    - This is a feature.  Please don't ask how to make `<tab>` do expansion.
 
 # Debugging
 
@@ -169,7 +280,7 @@ Example:
     Find Files or url: ~/ el$
     Will show all what finish with el
 
-    
+
 Inside the `helm-find-files` buffer, you can move your selected row up
 or down with C-n C-p or arrow keys. When a row is selected, `C-z` performs the
 default action, which is different depending on the context.
@@ -306,7 +417,7 @@ your eshell aliases. This allow you creating personal actions for
 
 -   Because eshell accept shell commands but also elisp functions.
 
-All these command should end with `$1`.
+All these command should end with `https://github.com/emacs-helm/helm/issues/495`.
 
 You will have completion against all these aliases once eshell is loaded (start it once before using
 helm-find-files).
@@ -315,7 +426,7 @@ helm-find-files).
 
  Go in eshell, an enter at prompt:
 
-    alias my_alias command $1
+    alias my_alias command https://github.com/emacs-helm/helm/issues/495
 
 NOTE: don`t forget to escape the $.
 
@@ -443,8 +554,15 @@ find/xargs.
 It supports wildcards and respects the variables `grep-find-ignored-files`
 and `grep-find-ignored-directories`.
 
-It has full tramp integration. (you can grep file on a remote host or
-in su/sudo methods).
+It works with `tramp` (you can grep file on a remote host or
+in su/sudo methods) BUT (read carefully):
+
+Tramp support badly multiples processes launched in a short delay of time (less than 5s actually)
+so I recommend that you suspend helm updating with `C-!` while you write your regexp, once done
+hit again `C-!` to restart helm updating.
+
+If you don't do that it will work, but slowly and you may expect failures.
+
 
 -   NOTE: When using it recursively, `grep-find-ignored-files` is not
     used unless you don`t specify the only extensions of files where you
@@ -460,7 +578,10 @@ This version should accept the `--exclude-dir` option.
 
     Install it from homebrew with:
 
-         brew install grep
+         brew tap homebrew/dupes
+         brew install homebrew/dupes/grep
+   
+    You should also set `helm-grep-default-command` to use `ggrep` instead of `grep`.
 
 ## Helm do grep
 
@@ -658,6 +779,30 @@ fast and you don't need to update database manually. To use with
 helm-locate, you will need his command line named `es`. Be sure to
 modify the PATH environment variable, to include path to the directory
 that contain `es`.
+
+# Helm findutils
+
+You can use the `gnu find` command easily from `helm-find-files` when you want
+to search in subdirectories instead of using helm locate, it is bound to `C-c /`
+by default in `helm-find-files`.
+The search with this command is actually performed literally, however you can use a space to
+match multiple pattern within a line.
+
+- Note: In Windows the Gnuw32 version is not working, you will have to install the msys version.
+
+However the msys `find` isn't available as standalone program,
+it can be installed as part of [msys](http://www.mingw.org/wiki/MSYS).
+And msys, by itself, is installed using [mingw installer](http://www.mingw.org/).
+
+So one would need to:
+
+1) [download and install mingw installer from here](http://sourceforge.net/projects/mingw/files/latest/download?source=files)
+
+2) install msys `find` using that installer
+
+3) add msys bin directory to PATH (e.g. "C:\MinGW\msys\1.0\bin")
+
+I believe mingw itself wouldn't be required to be installed, but I might be mistaken.
 
 # Helm Etags
 
@@ -901,7 +1046,7 @@ To fix this problem, you can define a `pcomplete/sudo`  function and put it in y
 
 However this an incomplete definition of `pcomplete/sudo` which will not work in some case
 without modifications to some emacs functions due to bugs unresolved in emacs, to fix this
-you can use my [pcomplete-extension](https://github.com/thierryvolpiatto/emacs-tv-config/blob/master/pcomplete-extension.el)
+you can use my [pcomplete-extension](https://github.com/thierryvolpiatto/pcomplete-extension)
 which will provide more completions working well with helm like `apt-get` or `find`.
 
 ## Write your own pcomplete functions
@@ -909,7 +1054,7 @@ which will provide more completions working well with helm like `apt-get` or `fi
 You can enhance Emacs pcomplete by writing your own pcomplete
 functions.
 
-See [pcomplete-extension](https://github.com/thierryvolpiatto/emacs-tv-config/blob/master/pcomplete-extension.el)
+See [pcomplete-extension](https://github.com/thierryvolpiatto/pcomplete-extension)
 For more enhanced completions.
 
  Here an example with `find` command:
@@ -961,7 +1106,7 @@ Add this to `init.el`
 
 Completion in emacs `shell` is using `completion-at-point`, `helm-mode` provide completion for this
 starting from emacs-24.4 and is not available in emacs-24.3.
-Same as above, you should use [pcomplete-extension](https://github.com/thierryvolpiatto/emacs-tv-config/blob/master/pcomplete-extension.el)
+Same as above, you should use [pcomplete-extension](https://github.com/thierryvolpiatto/pcomplete-extension)
 to have a better experience.
 
 # Usefuls extensions
@@ -984,3 +1129,7 @@ Or at gmane: [gmane.emacs.helm.user](http://dir.gmane.org/gmane.emacs.helm.user)
 
 [1]: https://github.com/emacs-helm/helm/blob/master/doc/Home.mdpp
 [2]: https://github.com/thierryvolpiatto/markdown-pp#readme
+[mental1]: https://github.com/emacs-helm/helm/issues/495
+[mental2]: https://github.com/emacs-helm/helm/issues/222
+[mental3]: https://groups.google.com/forum/#!topic/emacs-helm/zaBbg2tFAuM
+
