@@ -1,3 +1,25 @@
+2014-09-13  ESS Maintainers <ESS-core@r-project.org>
+
+  * Version 14.09 released.
+
+2013-12-10  Rodney Sparapani  <rsparapa@mcw.edu>
+
+	* Makeconf (SITELISP): tersely documenting SITELISP
+	and incorporating into comments for emacs variants
+	* Makeconf (INFODIR): updating INFODIR for Mac OS X
+
+2013-12-07  ESS Maintainers <ESS-core@r-project.org>
+
+  * Version 13.09-1 released.
+
+2013-09-27  ESS Maintainers <ESS-core@r-project.org>
+
+  * Version 13.09 released.
+
+2013-05-14  ESS Maintainers <ESS-core@r-project.org>
+
+  * Version 13.05 released.
+
 2013-01-14  Rodney Sparapani  <rsparapa@mcw.edu>
 
 	* Makeconf (INFODIR): on Mac OS X, this

@@ -16,10 +16,8 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-;; Boston, MA 02111-1307, USA.
+;; A copy of the GNU General Public License is available at
+;; http://www.r-project.org/Licenses/
 
 ;; Last update: 2012-02-27
 
@@ -274,7 +272,7 @@ and their default values of an R function. Built on \\[ess-r-args-show]."
   (insert "("); (skeleton-pair-insert-maybe nil)
   (if (and (not eldoc-mode)
            ess-local-process-name ; has a process and it must still be running
-           (get-ess-process ess-local-process-name))
+           (ess-get-process ess-local-process-name))
       (ess-r-args-show)))
 
 ;; MM: I would strongly discourage use of the following:
@@ -312,7 +310,7 @@ ess-r-args-current-function if no argument given."
 ;; (defun ess-r-object-tooltip ()
 ;;   "Get info for object at point, and display it in a tooltip."
 ;;   (interactive)
-;;   (let ((proc (get-ess-process))
+;;   (let ((proc (ess-get-process))
 ;;         (objname (current-word))
 ;;         (curbuf (current-buffer))
 ;;         (tmpbuf (get-buffer-create " *ess-r-object-tooltip*"))

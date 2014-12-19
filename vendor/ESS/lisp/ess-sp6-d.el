@@ -21,9 +21,8 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; A copy of the GNU General Public License is available at
+;; http://www.r-project.org/Licenses/
 
 ;;; Commentary:
 
@@ -112,9 +111,9 @@ New way to do it."
     (run-mode-hooks 'ess-S+-post-run-hook)))
 
 (defvar ess-S+--injected-code
-  ".ess.funargs <- function(object){
-  funname <- deparse(substitute(object))
-  fun <- try(object, silent = TRUE) ## works for special objects also
+  ".ess_funargs <- function(funname){
+  ## funname <- deparse(substitute(object))
+  fun <- try(eval(parse(text=funname)), silent = TRUE)
   if(is.function(fun)) {
     special <- grepl('[:$@[]', funname)
     args <- args(fun)

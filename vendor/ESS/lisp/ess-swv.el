@@ -23,9 +23,8 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; A copy of the GNU General Public License is available at
+;; http://www.r-project.org/Licenses/
 
 ;;; Commentary:
 
@@ -108,27 +107,39 @@
             ))
 
     (save-excursion
-      (ess-execute (format "require(tools)")) ;; Make sure tools is loaded.
+      ;; (ess-execute (format "require(tools)")) ;; Make sure tools is loaded.
       (basic-save-buffer); do not Sweave/Stangle old version of file !
-      (let* ((sprocess (get-ess-process ess-current-process-name))
+      (let* ((sprocess (ess-get-process ess-current-process-name))
              (sbuffer (process-buffer sprocess))
              (rnw-file (buffer-file-name))
              (Rnw-dir (file-name-directory rnw-file))
              (buf-coding (symbol-name buffer-file-coding-system))
              ;; could consider other encodings, but utf-8 is "R standard" for non-ASCII:
              (cmd-args (concat "\"" rnw-file "\""
-                               (if (and (eq ess-swv-processor 'sweave)
-                                        (string-match "^utf-8" buf-coding))
+                               (if (string-match "^utf-8" buf-coding)
                                    ", encoding = \"utf-8\"")))
              (Sw-cmd
-              (format
-               "local({..od <- getwd(); setwd(%S); %s(%s); setwd(..od) })"
-               Rnw-dir cmd cmd-args))
-             )
+              (format ess-swv-processing-command cmd cmd-args)))
         (message "%s()ing %S" cmd rnw-file)
         (ess-execute Sw-cmd 'buffer nil nil)
         (switch-to-buffer rnw-buf)
         (ess-show-buffer (buffer-name sbuffer) nil)))))
+
+(defcustom ess-swv-processing-command ".ess_weave(%s, %s)"
+  "Command used by `ess-swv-run-in-R'.
+
+First %s is literally replaced by the processing command (for
+example: Sweave) second %s is replaced with a string containing a
+processed file and possibly additional argument encoding (example:
+\"path/to/foo.Rnw\", encoding='utf-8')
+
+.ess_weave changes the working directory to that of the supplied
+file.
+
+If you want to simply call knitr or Sweave in global environment
+set this command to \"%s(%s)\"."
+  :group 'ess-R
+  :type 'string)
 
 (defcustom ess-swv-processor 'sweave
   "Processor to use for weaving and tangling.
@@ -144,14 +155,14 @@ Depending on the `ess-swv-processor' used."
   (ess-swv-run-in-R (cond ((eq ess-swv-processor 'sweave)
                            "Stangle")
                           ((eq ess-swv-processor 'knitr)
-                           "require(knitr); purl")
+                           "purl")
                           (t (error "Not a valid processor %s" ess-swv-processor)))))
 
-(defun ess-swv-weave (choose)
+(defun ess-swv-weave (&optional choose)
   "Run Sweave/knit on the current .Rnw file.
 Depending on the `ess-swv-processor' used.
 
-If CHOOSE is non-nil, offer a menu of available weavers. 
+If CHOOSE is non-nil, offer a menu of available weavers.
 "
   (interactive "P")
   (let ((processor (if choose
@@ -160,7 +171,7 @@ If CHOOSE is non-nil, offer a menu of available weavers.
     (ess-swv-run-in-R (cond ((equal processor "sweave")
                              "Sweave")
                             ((equal processor "knitr")
-                             "require(knitr); knit")
+                             "knit")
                             (t (error "Not a valid processor %s" ess-swv-processor))))))
 
 (defun ess-swv-sweave ()
@@ -176,12 +187,12 @@ If CHOOSE is non-nil, offer a menu of available weavers.
 (defun ess-swv-knit ()
   "Run knit on the current .Rnw file."
   (interactive)
-  (ess-swv-run-in-R "require(knitr) ; knit"))
+  (ess-swv-run-in-R "knit"))
 
 (defun ess-swv-purl ()
   "Run purl on the current .Rnw file."
   (interactive)
-  (ess-swv-run-in-R "require(knitr) ; purl"))
+  (ess-swv-run-in-R "purl"))
 
 (defun ess-swv-latex ()
   "Run LaTeX on the product of Sweave()ing the current file."
@@ -234,7 +245,7 @@ default using the first entry of `ess-swv-pdflatex-commands' and display it."
          (cmd (if (stringp pdfviewer)
                   (list pdfviewer pdffile)
                 (append pdfviewer  (list pdffile)))))
-                           
+
     ;;(shell-command (concat "pdflatex " latex-filename))
     (message "Running '%s' on '%s' ..." pdflatex-cmd latex-filename)
     (with-current-buffer tex-buf (erase-buffer))
@@ -364,6 +375,8 @@ file and latex the result."
     ["LaTeX"  ess-swv-latex   t]
     ["PDF(LaTeX)" ess-swv-PDF t]
     ["PS (dvips)" ess-swv-PS  t]
+    ["Knit" ess-swv-knit   t]
+    ["Purl" ess-swv-purl   t]
     ["Insert Sexpr" ess-insert-Sexpr t]
     ["AUCTeX Interface" ess-swv-toggle-plug-into-AUCTeX
      :style toggle :selected ess-swv-plug-into-AUCTeX-p]
