@@ -290,6 +290,10 @@ it and type @kbd{u}.  If point is in a diff header when you type
 @kbd{s} or @kbd{u}, all hunks belonging to that diff are moved at the
 same time.
 
+Currently it is only possible to stage from the status buffer.
+Staging and unstaging from diff buffers that show unstaged and staged
+changes is not possible yet.
+
 If the region is active when you type @kbd{s} or @kbd{u}, only the
 changes in the region are staged or unstaged.  (This works line by
 line: if the beginning of a line is in the region it is included in
@@ -335,8 +339,8 @@ messages. This is particularly useful if you have a hook that
 occasionally causes git to refuse your commit.
 
 To abort a commit use @kbd{C-c C-k}.  The commit message is saved and
-can later be retrieved in the commit message buffer using @kbd{M-p}
-and @kbd{M-a}.
+can later be retrieved in the commit message buffer using @kbd{M-n}
+and @kbd{M-p}.
 
 Typing @kbd{C} will also pop up the change description buffer, but in
 addition, it will try to insert a ChangeLog-style entry for the change
@@ -605,7 +609,7 @@ Typing @kbd{M r} will let you rename a remote.
 @section Branches in the Branch Manager
 
 In the branch manager, each branch is displayed on a separate line.  The
-current local branch is marked by a ``#'' in front of the name.  Remote
+current local branch is marked by a ``*'' in front of the name.  Remote
 branches are grouped by the remote they come from.
 
 If a local branch tracks a remote branch some extra information is
