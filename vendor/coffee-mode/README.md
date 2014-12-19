@@ -1,4 +1,4 @@
-CoffeeScript Major Mode
+CoffeeScript Major Mode [![melpa badge][melpa-badge]][melpa-link] [![melpa stable badge][melpa-stable-badge]][melpa-stable-link]
 =======================
 
 An Emacs major mode for [CoffeeScript][cs] and [IcedCoffeeScript][ics].
@@ -16,8 +16,10 @@ a menu bar, and a few cute commands.
 
 ## Installation
 
-Install from the [GNU Emacs Lisp Package Archive][elpa] or [MELPA][melpa].
+You can install `coffee-mode` from [MELPA][melpa] with package.el.
 
+**Please do not install [GNU Emacs Lisp Package Archive][elpa] version.**
+It's too old and many features(triple quote etc) are not implemented.
 
 ## Whitespace
 
@@ -67,6 +69,12 @@ following configuration. You can install `sourcemap` package from [MELPA](melpa)
 ```lisp
 (setq coffee-args-compile '("-c" "-m")) ;; generating sourcemap
 (add-hook 'coffee-after-compile-hook 'sourcemap-goto-corresponding-point)
+
+;; If you want to remove sourcemap file after jumping corresponding point
+(defun my/coffee-after-compile-hook (props)
+  (sourcemap-goto-corresponding-point props)
+  (delete-file (plist-get props :sourcemap)))
+(add-hook 'coffee-after-compile-hook 'my/coffee-after-compile-hook)
 ```
 
 ## imenu
@@ -152,4 +160,8 @@ Please file bugs at <http://github.com/defunkt/coffee-mode/issues>
 [tm]: http://github.com/defunkt/textmate.el
 [im]: http://chopmo.blogspot.com/2008/09/quickly-jumping-to-symbols.html
 [elpa]: http://elpa.gnu.org/
-[melpa]: http://melpa.milkbox.net/
+[melpa]: http://melpa.org/
+[melpa-link]: http://melpa.org/#/coffee-mode
+[melpa-stable-link]: http://stable.melpa.org/#/coffee-mode
+[melpa-badge]: http://melpa.org/packages/coffee-mode-badge.svg
+[melpa-stable-badge]: http://stable.melpa.org/packages/coffee-mode-badge.svg

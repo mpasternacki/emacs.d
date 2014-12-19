@@ -1,6 +1,6 @@
 ;;; coffee-highlight.el --- Test for highlighting of coffee-mode.el
 
-;; Copyright (C) 2013 by Syohei YOSHIDA
+;; Copyright (C) 2014 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 
@@ -63,6 +63,21 @@
     (should (face-at-cursor-p 'font-lock-type-face))
 
     (forward-cursor-on "bar")
+    (should-not (face-at-cursor-p 'font-lock-variable-name-face))))
+
+(ert-deftest prototype-access-with-underscore ()
+  "Prototype which includes underscore access"
+
+  (with-coffee-temp-buffer
+    "Foo_Bar::baz"
+
+    (forward-cursor-on "Foo")
+    (should (face-at-cursor-p 'font-lock-type-face))
+
+    (forward-cursor-on "Bar")
+    (should (face-at-cursor-p 'font-lock-type-face))
+
+    (forward-cursor-on "baz")
     (should-not (face-at-cursor-p 'font-lock-variable-name-face))))
 
 (ert-deftest prototype-access-nested-access ()
@@ -320,7 +335,7 @@ foo =
   (dolist (js-keyword '("if" "else" "new" "return" "try" "catch"
                         "finally" "throw" "break" "continue" "for" "in" "while"
                         "delete" "instanceof" "typeof" "switch" "super" "extends"
-                        "class" "until" "loop"))
+                        "class" "until" "loop" "yield"))
     (with-coffee-temp-buffer
       js-keyword
       (should (face-at-cursor-p 'font-lock-keyword-face)))))
@@ -923,5 +938,18 @@ block-strings-end
     (forward-cursor-on "block-strings-end")
     (should-not (face-at-cursor-p 'font-lock-string-face))
     (should (or (face-at-cursor-p nil)  (face-at-cursor-p 'default)))))
+
+(ert-deftest highlight-class-attribute-which-includes-underscore ()
+  "Regression test for #272"
+  (with-coffee-temp-buffer
+    "
+class Foo
+  BAR_BAZ: 'foo'
+"
+    (forward-cursor-on "BAR")
+    (should (face-at-cursor-p 'font-lock-type-face))
+
+    (forward-cursor-on "BAZ")
+    (should (face-at-cursor-p 'font-lock-type-face))))
 
 ;;; coffee-highlight.el end here
