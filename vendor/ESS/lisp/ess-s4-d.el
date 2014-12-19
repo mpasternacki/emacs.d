@@ -21,9 +21,9 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; A copy of the GNU General Public License is available at
+;; http://www.r-project.org/Licenses/
+
 
 ;;; Commentary:
 
@@ -55,7 +55,7 @@
      (inferior-ess-help-command         . "help(\"%s\")\n")
      (inferior-ess-help-filetype . nil)
      (inferior-ess-search-list-command  . ".SmodePaths()\n")
-     (inferior-ess-load-command         . ".SmodeLoad(\"%s\")\n")
+     (ess-load-command         . ".SmodeLoad(\"%s\")\n")
      (inferior-ess-dump-command         . ".SmodeDump(\"%s\", \"%s\")\n")
 
      (inferior-ess-start-file           . nil) ;"~/.ess-S3")

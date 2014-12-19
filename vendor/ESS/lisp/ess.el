@@ -26,9 +26,8 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 ;;
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; A copy of the GNU General Public License is available at
+;; http://www.r-project.org/Licenses/
 
 ;;; Commentary:
 
@@ -161,37 +160,44 @@
  ; Miscellaneous "ESS globals"
 
 (defun ess-version-string ()
-  (let* ((fname (concat ess-etc-directory "SVN-REVISION"))
-         (buffer (and (file-exists-p fname)
-                      (find-file-noselect fname)))
-         c1 c2
-         (rev
-          (if buffer
-              ;; then it has two lines that look like
-              ;; |Revision: 4803
-              ;; |Last Changed Date: 2012-04-16
-              (with-current-buffer buffer
-                (ess-write-to-dribble-buffer
-                 (format "(ess-version-string): buffer=%s\n" (buffer-name (current-buffer))))
-                (goto-char (point-min))
-                (when (re-search-forward "Revision: \\(.*\\)" nil t)
-                  (setq c1 (buffer-substring (match-beginning 1) (match-end 1)))
-                  (ess-write-to-dribble-buffer (format "  (ess-version-string): c1=%s\n" c1))
-                  ;; line 2
-                  (forward-line 1)
-                  (when (re-search-forward ".*: \\(.*\\)" nil t)
-                    (setq c2 (buffer-substring (match-beginning 1) (match-end 1)))
-                    (concat "rev. " c1 " (" c2 ")")))))))
-
-    (if (not rev) (setq rev "<unknown>"))
+  (let* ((svn-fname (concat ess-etc-directory "SVN-REVISION"))
+         (svn-rev
+          (when (file-exists-p svn-fname)
+            ;; then it has two lines that look like
+            ;; |Revision: 4803
+            ;; |Last Changed Date: 2012-04-16
+            (with-current-buffer (find-file-noselect svn-fname)
+              (goto-char (point-min))
+              (when (re-search-forward "Revision: \\(.*\\)\n.*: \\(.*\\)" nil t)
+                (concat "svn: " (match-string 1) " (" (match-string 2) ")")))))
+         (git-fname (concat (file-name-directory ess-lisp-directory) ".git/refs/heads/master"))
+         (git-rev (when (file-exists-p git-fname)
+                    (with-current-buffer (find-file-noselect git-fname)
+                      (goto-char (point-min))
+                      (concat "git: "(buffer-substring 1 (point-at-eol))))))
+         (elpa-fname (concat (file-name-directory ess-lisp-directory) "ess-pkg.el"))
+         (elpa-rev (when (file-exists-p elpa-fname)
+                     ;; get it from ELPA dir name, (probbly won't wokr if instaleed manually)
+                     (concat "elpa: "
+                             (replace-regexp-in-string "ess-" ""
+                                                       (file-name-nondirectory
+                                                        (substring (file-name-directory ess-lisp-directory)
+                                                                   1 -1)))))))
     ;; set the "global" ess-revision:
-    (setq ess-revision rev)
+    (setq ess-revision (format "%s%s%s"
+                               (or svn-rev "")
+                               (or git-rev "")
+                               (or elpa-rev "")))
+    (when (string= ess-revision "")
+      (setq ess-revision "<unknown>"))
     (concat ess-version " [" ess-revision "]")))
 
 
 (defun ess-version ()
   (interactive)
-  (message (concat "ess-version : " (ess-version-string))))
+  (message (format "ess-version: %s (loaded from %s)"
+                   (ess-version-string)
+                   (file-name-directory ess-lisp-directory))))
 
 ;;; Set up for menus, if necessary
 ;;;  --> is done in ess-mode.el, ess-inf.el, etc
@@ -220,8 +226,7 @@ Invoke this command with C-u C-u C-y."
   (interactive "*P")
   (if (equal '(16) ARG)
       (ess-yank-cleaned-commands)
-    (yank ARG))
-  )
+    (funcall (or (command-remapping 'yank (point)) 'yank)  ARG)))
 
  ; ESS Completion
 (defun ess-completing-read (prompt collection &optional predicate
@@ -269,7 +274,6 @@ See also `ess-use-ido'.
       (completing-read prompt collection predicate require-match initial-input hist def)
       )))
 
-
 (defun ess-load-extras (&optional inferior)
   "Load all the extra features depending on custom settings."
 
@@ -284,28 +288,28 @@ See also `ess-use-ido'.
                    (eq ess-use-auto-complete t)
                  ess-use-auto-complete))
       (add-to-list 'ac-modes mode)
-      ;; (mapcar (lambda (el) (add-to-list 'ac-trigger-commands el))
-      ;;         '(ess-smart-comma smart-operator-comma skeleton-pair-insert-maybe))
-      (add-to-list 'ac-sources 'ac-source-filename)
-      (when isR 
-        (add-to-list 'ac-sources 'ac-source-R)))
+      ;; files should be in front; ugly, but needes
+      (when ess-ac-sources
+        (setq ac-sources
+              (delq 'ac-source-filename ac-sources))
+        (mapcar (lambda (el) (add-to-list 'ac-sources el))
+                ess-ac-sources)
+        (add-to-list 'ac-sources 'ac-source-filename)))
 
     ;; eldoc)
     (require 'eldoc)
-    (when (and ess-funargs-command ;; if mode provide this, it suports eldoc
+    (when (and ess-eldoc-function ;; if mode provide this, it suports eldoc
                (or (and (not inferior) ess-use-eldoc)
                    (and inferior (eq ess-use-eldoc t))))
       (when (> eldoc-idle-delay 0.4) ;; default is too slow for paren help
         (set (make-local-variable 'eldoc-idle-delay) 0.1))
-      (set (make-local-variable 'eldoc-documentation-function) 'ess-eldoc-function)
+      (set (make-local-variable 'eldoc-documentation-function) ess-eldoc-function)
       (when emacsp
-        (turn-on-eldoc-mode)
-        ))
+        (turn-on-eldoc-mode)))
 
     ;; tracebug
     (when (and ess-use-tracebug emacsp inferior isR)
-      (ess-tracebug 1))
-    ))
+      (ess-tracebug 1))))
 
 
 
@@ -385,7 +389,7 @@ Otherwise try a list of fixed known viewers.
                     (executable-find "xpdf")
                     (executable-find "acroread")
                     (executable-find "xdg-open")
-                    ;; this one is wrongly wrong, (ok for time being as it is use donly in swv)
+                    ;; this one is wrong, (ok for time being as it is used only in swv)
                     (car (ess-get-words-from-vector
                           "getOption(\"pdfviewer\")\n"))
                     )))

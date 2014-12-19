@@ -23,9 +23,8 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; A copy of the GNU General Public License is available at
+;; http://www.r-project.org/Licenses/
 
 ;;; Commentary:
 
@@ -99,12 +98,13 @@ return new alist whose car is the new pair and cdr is ALIST.
       (cons (cons item value) alist))))
 
 
-(defun ess-select-alist-dialect ()
+(defun ess-select-alist-dialect (&optional dialect)
   "Query user for an ESS dialect and return the matching customize-alist."
   (interactive)
   (let* ((dialects '("R" "S+" "julia" "arc" "vst" "omg" "s3" "s4" "stata" "sp3" "sp4"
                      "sqpe4" "sp5" "sqpe" "XLS" "SAS"))
-         (dialect (ess-completing-read "Dialect" dialects nil t)))
+         (dialect (or dialect
+                      (ess-completing-read "Dialect" dialects nil t))))
     (cond
      ((string= dialect "arc")   ARC-customize-alist)
      ((string= dialect "vst")   VST-customize-alist)
@@ -159,12 +159,10 @@ buffer on the local computer."
       (add-to-list 'ess-process-name-list
                    (list ess-current-process-name)))))
 
+(defvar ess-remote nil
+  "Indicator, t in ess-remote buffers.")
 
-;;; ess-remote is constructed by looking at ess-add-process and
-;;; ESS-elsewhere and ess-multi and then simplifying.
-;;;
-
-(defun ess-remote (&optional proc-name)
+(defun ess-remote (&optional proc-name dialect)
   "Execute this command from within a buffer running a process.  It
 runs `ess-add-ess-process' to add the process to
 `ess-process-name-alist' and to make it the
@@ -178,38 +176,48 @@ you are talking to S or R or SAS, then execute `ess-remote' to make
 the current buffer an inferior-ess buffer with the right behavior for
 the language you are currently working with.  With S and R, use C-c
 C-n to send lines over.  With SAS, use C-c i
-`ess-eval-line-and-step-invisibly' to send lines over invisibly."
+`ess-eval-line-and-step-invisibly' to send lines over invisibly.
+
+DIALECT is the desired ess-dialect. If nil, ask for dialect"
 
   (interactive)
   (ess-add-ess-process)
   ;; Need to select a remote-customize-alist
-  (let ((ess-customize-alist (ess-select-alist-dialect)))
+  (let ((ess-customize-alist (ess-select-alist-dialect dialect)))
     (ess-write-to-dribble-buffer
      (format "\n(ESS-remote): ess-dialect=%s, buf=%s\n" ess-dialect
              (current-buffer)))
     (ess-setq-vars-local ess-customize-alist)
     (inferior-ess-mode)
+    (set (make-local-variable 'ess-remote) t)
     (setq ess-local-process-name (or proc-name ess-current-process-name))
+
     (goto-char (point-max))
-    (if inferior-ess-language-start
-        (ess-eval-linewise inferior-ess-language-start
-                           nil nil nil 'wait-prompt))
 
-    ;; todo: this is ugly, add to customise alist
-    (if (and (equal ess-dialect "R") (ess-current-R-at-least '2.7.0))
-        (ess-command ess--R-injected-code))
+    (when (equal ess-dialect "R")
+      ;; ugly fix for evn variable. What can we do :(
+      (ess-eval-linewise (format "options(pager='%s')\n" inferior-ess-pager)
+                         nil nil nil 'wait)
+      (ess--R-load-ESSR))
 
-    ;; (ess-load-extras t) ;; not working
+    (when (equal ess-dialect "S+")
+      (ess-command ess-S+--injected-code))
 
-    (if (equal ess-dialect "S+")
-        (ess-command ess-S+--injected-code))
+    (when (equal ess-language "SAS")
+      (font-lock-mode 0)
+      (SAS-log-mode)
+      (shell-mode)
+      (setq buffer-read-only nil)
+      (font-lock-mode 1))
 
-    (if (equal ess-language "SAS")
-        (progn (font-lock-mode 0)
-               (SAS-log-mode)
-               (shell-mode)
-               (setq buffer-read-only nil)
-               (font-lock-mode 1)))))
+    (ess-process-put 'funargs-cache (make-hash-table :test 'equal))
+    (ess-process-put 'funargs-pre-cache nil)
+    (ess-process-put 'accum-buffer-name (format " *%s:accum*" ess-local-process-name))
+    (ess-load-extras)
+
+    (when inferior-ess-language-start
+      (ess-eval-linewise inferior-ess-language-start
+                         nil nil nil 'wait-prompt))))
 
 
  ; Provide package

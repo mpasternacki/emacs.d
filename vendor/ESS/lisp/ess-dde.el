@@ -20,9 +20,9 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; A copy of the GNU General Public License is available at
+;; http://www.r-project.org/Licenses/
+
 
 ;;; Commentary:
 
@@ -38,12 +38,9 @@
 (defun ess-eval-region-ddeclient (start end even-empty)
   "Loop through lines in region and send them to ESS via ddeclient."
   (setq ;; set the following variables for the current ddeESS process.
-   inferior-ess-ddeclient (ess-get-process-variable
-                           ess-current-process-name 'inferior-ess-ddeclient)
-   inferior-ess-client-name (ess-get-process-variable
-                             ess-current-process-name 'inferior-ess-client-name)
-   inferior-ess-client-command (ess-get-process-variable
-                                ess-current-process-name 'inferior-ess-client-command))
+   inferior-ess-ddeclient (ess-get-process-variable 'inferior-ess-ddeclient)
+   inferior-ess-client-name (ess-get-process-variable 'inferior-ess-client-name)
+   inferior-ess-client-command (ess-get-process-variable 'inferior-ess-client-command))
   (narrow-to-region start end)
   (goto-char (point-min))
   (let ((beg))
@@ -103,7 +100,7 @@ nor offer alternate buffers or editing capability."
             ;; it calls ess-command which requires two-way communication
             ;; with the S-Plus process
             )))
-    (ess-eval-linewise-ddeclient (format inferior-ess-load-command filename)))
+    (ess-eval-linewise-ddeclient (format ess-load-command filename)))
   (widen))
 
 

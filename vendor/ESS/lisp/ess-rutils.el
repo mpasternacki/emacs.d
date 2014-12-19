@@ -2,12 +2,12 @@
 
 ;; Author:       Sebastian Luque <sluque@gmail.com>
 ;; Created:      Thu Nov 10 02:20:36 2004 (UTC)
-;; Last-Updated: Wed Mar  2 21:08:11 2011 (UTC)
+;; Last-Updated: 2013-09-22T16:08:47+0000
 ;;           By: Sebastian P. Luque
 ;; Version: $Id$
 ;; Compatibility: GNU Emacs >= 22.0.50.1
 
-;; Copyright (c) 2005, 2006, 2007, 2008, 2009, 2010, 2011 Sebastian P. Luque
+;; Copyright (c) 2005-2013 Sebastian P. Luque
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -17,10 +17,9 @@
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ;; GNU General Public License for more details.
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING. If not, write to the
-;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-;; Boston, MA 02111-1307, USA.
+
+;; A copy of the GNU General Public License is available at
+;; http://www.r-project.org/Licenses/
 
 ;;; Commentary:
 
@@ -443,10 +442,9 @@ Options should be separated by value of `crm-default-separator'."
                       ess-rutils-mode-menu))
 
 (add-hook 'inferior-ess-mode-hook 'ess-rutils-keys t)
-
-(add-hook 'ess-post-run-hook
+(add-hook 'ess-R-post-run-hook
           (lambda ()
-            (ess-load-file ess-rutils-rhtml-fn)) t)
+            (ess--inject-code-from-file ess-rutils-rhtml-fn)) t)
 
 
 (provide 'ess-rutils)
