@@ -25,7 +25,7 @@ git 'https://github.com/capitaomorte/yasnippet.git' do
   system <<EOF
 set -e -x
 git submodule update --init --recursive
-find . -name .git | xargs rm -rf
+git submodule --quiet foreach --recursive 'echo `pwd`/.git' | xargs rm -rf
 EOF
 end
 
