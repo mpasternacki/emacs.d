@@ -109,7 +109,7 @@ This path gets added to the PATH variable and the exec-path list.")
   "reflects the path to the current 'rubygems' executables.
 This path gets added to the PATH variable and the exec-path list.")
 
-(defvar rvm--info-option-regexp "\s+\\(.+\\):\s+\"\\(.+\\)\""
+(defvar rvm--info-option-regexp "\s+\\(.+?\\):\s+\"\\(.+?\\)\""
   "regular expression to parse the options from rvm info")
 
 (defvar rvm--list-ruby-regexp "\s*\\(=?[>\*]\\)?\s*\\(.+?\\)\s*\\[\\(.+\\)\\]\s*$"
@@ -121,8 +121,11 @@ This path gets added to the PATH variable and the exec-path list.")
 (defvar rvm--gemset-list-regexp "\s*\\(=>\\)?\s*\\(.+?\\)\s*$"
   "regular expression to parse the gemset from the 'rvm gemset list' output")
 
-(defvar rvm--gemfile-parse-ruby-regexp "\\#ruby=\\(.+\\)"
-  "regular expression to parse the ruby version from the Gemfile")
+(defvar rvm--gemfile-parse-ruby-regexp-as-comment "\\#ruby=\\(.+\\)"
+  "regular expression to parse the ruby version from the Gemfile as comment")
+
+(defvar rvm--gemfile-parse-ruby-regexp-as-directive "ruby [\'\"]\\(.+\\)[\'\"]"
+  "regular expression to parse the ruby version from the Gemfile as directive")
 
 (defvar rvm--gemfile-parse-gemset-regexp "#ruby-gemset=\\(.+\\)"
   "regular expression to parse the ruby gemset from the Gemfile")
@@ -377,10 +380,11 @@ function."
             (rvm--string-trim (or (match-string 2 rvmrc-without-comments) rvm--gemset-default))))))
 
 (defun rvm--gemfile-parse-version (gemfile-line)
-  (let ((ruby-version (when (string-match rvm--gemfile-parse-ruby-regexp gemfile-line)
-                       (match-string 1 gemfile-line)))
-    (ruby-gemset (when (string-match rvm--gemfile-parse-gemset-regexp gemfile-line)
-                   (match-string 1 gemfile-line))))
+  (let ((ruby-version (when (or (string-match rvm--gemfile-parse-ruby-regexp-as-comment gemfile-line)
+				(string-match rvm--gemfile-parse-ruby-regexp-as-directive gemfile-line))
+			(match-string 1 gemfile-line)))
+	(ruby-gemset (when (string-match rvm--gemfile-parse-gemset-regexp gemfile-line)
+		       (match-string 1 gemfile-line))))
     (if ruby-version
         (list ruby-version (or ruby-gemset rvm--gemset-default))
       nil)))
