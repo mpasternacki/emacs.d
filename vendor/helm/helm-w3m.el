@@ -20,7 +20,7 @@
 (require 'cl-lib)
 (require 'helm)
 (require 'helm-utils)
-(require 'helm-adaptative)
+(require 'helm-adaptive)
 ;; Some users have the emacs-w3m library in load-path
 ;; without having the w3m executable :-;
 ;; So check if w3m program is present before trying to load
@@ -73,7 +73,7 @@
     (persistent-action . (lambda (candidate)
                            (if current-prefix-arg
                                (helm-w3m-browse-bookmark candidate t)
-                               (helm-w3m-browse-bookmark candidate nil t))))
+                             (helm-w3m-browse-bookmark candidate nil t))))
     (persistent-help . "Open URL with emacs-w3m in new tab / \
 C-u \\[helm-execute-persistent-action]: Open URL with Firefox"))
   "Needs w3m and emacs-w3m.
@@ -93,9 +93,9 @@ http://emacs-w3m.namazu.org/")
 
 (defun helm-highlight-w3m-bookmarks (bookmarks _source)
   (cl-loop for i in bookmarks
-           collect (propertize
-                    i 'face 'helm-w3m-bookmarks
-                    'help-echo (helm-w3m-bookmarks-get-value i))))
+        collect (propertize
+                 i 'face 'helm-w3m-bookmarks
+                 'help-echo (helm-w3m-bookmarks-get-value i))))
 
 
 (defun helm-w3m-delete-bookmark (elm)
@@ -114,7 +114,7 @@ http://emacs-w3m.namazu.org/")
 (defun helm-w3m-rename-bookmark (elm)
   "Rename w3m bookmark in `w3m-bookmark-file'."
   (let* ((old-title (replace-regexp-in-string ">" "" elm))
-         (new-title (read-string "NewTitle: " old-title)))
+         (new-title (helm-read-string "NewTitle: " old-title)))
     (with-current-buffer
         (find-file-literally w3m-bookmark-file)
       (goto-char (point-min))

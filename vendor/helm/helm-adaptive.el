@@ -1,4 +1,4 @@
-;;; helm-adaptative.el --- Adaptive Sorting of Candidates. -*- lexical-binding: t -*-
+;;; helm-adaptive.el --- Adaptive Sorting of Candidates. -*- lexical-binding: t -*-
 
 ;; Original Author: Tamas Patrovics
 
@@ -49,35 +49,35 @@ selection.")
   "Contains the stored history information.
 Format: ((SOURCE-NAME (SELECTED-CANDIDATE (PATTERN . NUMBER-OF-USE) ...) ...) ...)")
 
-(defun helm-adaptative-done-reset ()
+(defun helm-adaptive-done-reset ()
   (setq helm-adaptive-done nil))
 
-(define-minor-mode helm-adaptative-mode
-    "Toggle adaptative sorting in all sources."
+(define-minor-mode helm-adaptive-mode
+    "Toggle adaptive sorting in all sources."
   :group 'helm-adapt
-  :require 'helm-adaptative
+  :require 'helm-adaptive
   :global t
-  (if helm-adaptative-mode
+  (if helm-adaptive-mode
       (progn
         (unless helm-adaptive-history
-          (helm-adaptative-maybe-load-history))
+          (helm-adaptive-maybe-load-history))
         (add-hook 'kill-emacs-hook 'helm-adaptive-save-history)
         ;; Should run at beginning of `helm-initial-setup'.
-        (add-hook 'helm-before-initialize-hook 'helm-adaptative-done-reset)
+        (add-hook 'helm-before-initialize-hook 'helm-adaptive-done-reset)
         ;; Should run at beginning of `helm-exit-minibuffer'.
         (add-hook 'helm-before-action-hook 'helm-adaptive-store-selection)
         ;; Should run at beginning of `helm-select-action'.
         (add-hook 'helm-select-action-hook 'helm-adaptive-store-selection))
-      (helm-adaptive-save-history)
-      (setq helm-adaptive-history nil)
-      (remove-hook 'kill-emacs-hook 'helm-adaptive-save-history)
-      (remove-hook 'helm-before-initialize-hook 'helm-adaptative-done-reset)
-      (remove-hook 'helm-before-action-hook 'helm-adaptive-store-selection)
-      (remove-hook 'helm-select-action-hook 'helm-adaptive-store-selection)))
+    (helm-adaptive-save-history)
+    (setq helm-adaptive-history nil)
+    (remove-hook 'kill-emacs-hook 'helm-adaptive-save-history)
+    (remove-hook 'helm-before-initialize-hook 'helm-adaptive-done-reset)
+    (remove-hook 'helm-before-action-hook 'helm-adaptive-store-selection)
+    (remove-hook 'helm-select-action-hook 'helm-adaptive-store-selection)))
 
-(defun helm-adapt-use-adaptative-p (&optional source-name)
-  "Return current source only if it use adaptative history, nil otherwise."
-  (when helm-adaptative-mode
+(defun helm-adapt-use-adaptive-p (&optional source-name)
+  "Return current source only if it use adaptive history, nil otherwise."
+  (when helm-adaptive-mode
     (let* ((source (or source-name (helm-get-current-source)))
            (adapt-source (or (assoc-default 'filtered-candidate-transformer
                                             (assoc (assoc-default 'type source)
@@ -89,13 +89,13 @@ Format: ((SOURCE-NAME (SELECTED-CANDIDATE (PATTERN . NUMBER-OF-USE) ...) ...) ..
                              (assoc-default 'candidate-transformer source))))
       (if (listp adapt-source)
           (and (member 'helm-adaptive-sort adapt-source) source)
-          (and (eq adapt-source 'helm-adaptive-sort) source)))))
+        (and (eq adapt-source 'helm-adaptive-sort) source)))))
 
 (defun helm-adaptive-store-selection ()
   "Store history information for the selected candidate."
   (unless helm-adaptive-done
     (setq helm-adaptive-done t)
-    (let ((source (helm-adapt-use-adaptative-p)))
+    (let ((source (helm-adapt-use-adaptive-p)))
       (when source
         (let* ((source-name (or (assoc-default 'type source)
                                 (assoc-default 'name source)))
@@ -111,13 +111,13 @@ Format: ((SOURCE-NAME (SELECTED-CANDIDATE (PATTERN . NUMBER-OF-USE) ...) ...) ..
                                             (if (not found)
                                                 ;; new entry
                                                 (list selection)
-                                                ;; move entry to the beginning of the
-                                                ;; list, so that it doesn't get
-                                                ;; trimmed when the history is
-                                                ;; truncated
-                                                (setcdr source-info
-                                                        (delete found (cdr source-info)))
-                                                found))
+                                              ;; move entry to the beginning of the
+                                              ;; list, so that it doesn't get
+                                              ;; trimmed when the history is
+                                              ;; truncated
+                                              (setcdr source-info
+                                                      (delete found (cdr source-info)))
+                                              found))
                                           (cdr source-info)))
                                  (cadr source-info)))
                (pattern-info (progn
@@ -128,13 +128,13 @@ Format: ((SOURCE-NAME (SELECTED-CANDIDATE (PATTERN . NUMBER-OF-USE) ...) ...) ..
                                               ;; new entry
                                               (cons helm-pattern 0)
 
-                                              ;; move entry to the beginning of the
-                                              ;; list, so if two patterns used the
-                                              ;; same number of times then the one
-                                              ;; used last appears first in the list
-                                              (setcdr selection-info
-                                                      (delete found (cdr selection-info)))
-                                              found))
+                                            ;; move entry to the beginning of the
+                                            ;; list, so if two patterns used the
+                                            ;; same number of times then the one
+                                            ;; used last appears first in the list
+                                            (setcdr selection-info
+                                                    (delete found (cdr selection-info)))
+                                            found))
                                         (cdr selection-info)))
                                (cadr selection-info))))
 
@@ -146,7 +146,7 @@ Format: ((SOURCE-NAME (SELECTED-CANDIDATE (PATTERN . NUMBER-OF-USE) ...) ...) ..
               (setcdr selection-info
                       (cl-subseq (cdr selection-info) 0 helm-adaptive-history-length))))))))
 
-(defun helm-adaptative-maybe-load-history ()
+(defun helm-adaptive-maybe-load-history ()
   "Load `helm-adaptive-history-file' which contain `helm-adaptive-history'.
 Returns nil if `helm-adaptive-history-file' doesn't exist."
   (when (file-readable-p helm-adaptive-history-file)
@@ -183,13 +183,13 @@ This is a filtered candidate transformer you can use with the
                                              helm-pattern))
                                  (cl-incf count (cdr pattern-info))
 
-                                 ;; if current pattern is equal to the previously
-                                 ;; used one then this candidate has priority
-                                 ;; (that's why its count is boosted by 10000) and
-                                 ;; it only has to compete with other candidates
-                                 ;; which were also selected with the same pattern
-                                 (setq count (+ 10000 (cdr pattern-info)))
-                                 (cl-return)))
+                               ;; if current pattern is equal to the previously
+                               ;; used one then this candidate has priority
+                               ;; (that's why its count is boosted by 10000) and
+                               ;; it only has to compete with other candidates
+                               ;; which were also selected with the same pattern
+                               (setq count (+ 10000 (cdr pattern-info)))
+                               (cl-return)))
                            (cons (car candidate-info) count)))
                        (cdr source-info))))
           (if (and usage (consp usage))
@@ -201,23 +201,23 @@ This is a filtered candidate transformer you can use with the
 
                 ;; put those candidates first which have the highest usage count
                 (cl-loop for (info . _freq) in usage
-                         for member = (cl-member info candidates
-                                                 :test 'helm-adaptive-compare)
-                         when member collect (car member) into sorted
-                         and do
-                         (setq candidates (cl-remove info candidates
-                                                     :test 'helm-adaptive-compare))
-                         finally return (append sorted candidates)))
-              (message "Your `%s' is maybe corrupted or too old, \
-you should reinitialize it with `helm-reset-adaptative-history'"
-                       helm-adaptive-history-file)
-              (sit-for 1)
-              candidates))
-        ;; if there is no information stored for this source then do nothing
-        candidates)))
+                      for member = (cl-member info candidates
+                                              :test 'helm-adaptive-compare)
+                      when member collect (car member) into sorted
+                      and do
+                      (setq candidates (cl-remove info candidates
+                                                  :test 'helm-adaptive-compare))
+                      finally return (append sorted candidates)))
+            (message "Your `%s' is maybe corrupted or too old, \
+you should reinitialize it with `helm-reset-adaptive-history'"
+                     helm-adaptive-history-file)
+            (sit-for 1)
+            candidates))
+      ;; if there is no information stored for this source then do nothing
+      candidates)))
 
 ;;;###autoload
-(defun helm-reset-adaptative-history ()
+(defun helm-reset-adaptive-history ()
   "Delete all `helm-adaptive-history' and his file.
 Useful when you have a old or corrupted `helm-adaptive-history-file'."
   (interactive)
@@ -232,7 +232,7 @@ candidate can be in (DISPLAY . REAL) format."
          (if (listp y) (cdr y) y)))
 
 
-(provide 'helm-adaptative)
+(provide 'helm-adaptive)
 
 ;; Local Variables:
 ;; byte-compile-warnings: (not cl-functions obsolete)
@@ -240,4 +240,4 @@ candidate can be in (DISPLAY . REAL) format."
 ;; indent-tabs-mode: nil
 ;; End:
 
-;;; helm-adaptative.el ends here
+;;; helm-adaptive.el ends here
