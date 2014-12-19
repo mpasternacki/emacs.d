@@ -30,7 +30,7 @@ archive 'org-mode',
         version: '8.2.10',
         url: 'http://orgmode.org/org-8.2.10.tar.gz'
 
-vendor 'python-mode', :version => '0.20140208.1' do
+vendor 'python-mode', :version => '0.20141219.1' do
   FileUtils::rm_rf Dir.entries('.') - %w|. ..|
   system 'bzr branch --use-existing-dir lp:python-mode .'
   FileUtils::rm_rf '.bzr'
