@@ -22,8 +22,11 @@ git 'ledger', repository: 'https://github.com/ledger/ledger.git', subdirectory: 
 git 'git://notmuchmail.org/git/notmuch', subdirectory: 'emacs'
 
 git 'https://github.com/capitaomorte/yasnippet.git' do
-  system 'git submodule update --init --recursive'
-  system 'git submodule foreach --recursive "rm -rf .git"'
+  system <<EOF
+set -e -x
+git submodule update --init --recursive
+find . -name .git | xargs rm -rf
+EOF
 end
 
 archive 'org-mode',
