@@ -13,7 +13,7 @@
 
 (define-key nxml-mode-map (kbd "M-<down>") 'nxml-down-element)
 
-(define-key message-mode-map "\C-c\C-c" 'server-edit)
+; (define-key message-mode-map "\C-c\C-c" 'server-edit)
 
 (define-key nxml-mode-map (kbd "M-<right>")
   '(lambda (arg)

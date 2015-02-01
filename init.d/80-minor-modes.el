@@ -13,3 +13,4 @@
 (add-hook 'lisp-mode-hook 'paredit-mode)
 (add-hook 'emacs-lisp-mode-hook 'paredit-mode)
 (electric-pair-mode 1)
+(ido-mode 1)

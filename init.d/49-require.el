@@ -16,6 +16,7 @@
 (require 'paredit)
 (require 'coffee-mode)
 (require 'ledger-mode)
+(require 'ido)
 (load "auctex")
 (load "preview-latex")
 (load "darcsum/darcsum")

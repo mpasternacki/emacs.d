@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: if-err
+# key: ife
+# --
+if err${1:, …} := ${2:aCall()}; err != nil {
+	return ${3:$$(yas-choose-value '("errors.Trace(err)" "err"))}
+}

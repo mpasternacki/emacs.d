@@ -17,13 +17,15 @@
                 "helm"
                 "ruby-mode"
                 "git-modes"
-                "ledger"))
+                "ledger"
+                "notmuch"))
              load-path)
 
       exec-path
-      (nconc (list (expand-file-name "~/.rvm/bin")
-                   "/usr/local/sbin"
-                   "/usr/local/bin")
-             exec-path))
+      (split-string (setenv "PATH" (replace-regexp-in-string
+                      (rx (* (any " \t\n")) eos) ""
+                      (shell-command-to-string "zsh -l -c 'echo $PATH'")))
+                    ":"))
+
 
 (require 'package)
