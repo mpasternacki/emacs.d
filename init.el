@@ -22,6 +22,7 @@
  '(erc-modules
    (quote
     (button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands readonly ring services stamp track)))
+ '(focus-follows-mouse t)
  '(graphviz-dot-auto-indent-on-newline nil)
  '(graphviz-dot-auto-indent-on-semi nil)
  '(graphviz-dot-indent-width 4)
@@ -40,6 +41,7 @@
  '(message-sendmail-envelope-from (quote header))
  '(mm-inline-large-images nil)
  '(mm-inline-large-images-proportion 0.1)
+ '(mouse-autoselect-window t)
  '(notmuch-address-command "~/Mail/bin/search-addressbook.pl")
  '(notmuch-archive-tags (quote ("-inbox" "-unread")))
  '(notmuch-fcc-dirs
@@ -69,9 +71,8 @@
  '(org-agenda-files nil)
  '(package-archives
    (quote
-    (("gnu" . "http://elpa.gnu.org/packages/")
-     ("melpa" . "http://melpa.milkbox.net/packages/"))))
- '(pr-gv-command "open")
+    (("MELPA" . "http://melpa.org/packages/")
+     ("gnu" . "http://elpa.gnu.org/packages/"))))
  '(ps-default-bg 1.0)
  '(ps-default-fg 0.0)
  '(ps-print-color-p nil)
@@ -108,6 +109,6 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "#EAF0F0" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 140 :width normal :foundry "nil" :family "DejaVu Sans Mono")))))
+ '(default ((t (:inherit nil :stipple nil :background "#EAF0F0" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 100 :width normal :foundry "unknown" :family "DejaVu Sans Mono")))))
 (put 'scroll-left 'disabled nil)
 (put 'upcase-region 'disabled nil)

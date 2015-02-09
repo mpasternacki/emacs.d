@@ -3,25 +3,28 @@ set -e -x
 
 rm -rf site-lisp
 cp -R vendor site-lisp
+rm -rf site-lisp/auctex
 
 cd site-lisp
 /usr/local/bin/emacs -batch -f batch-byte-compile *.el || :
 
-mkdir _src
-mv auctex _src
-cd _src/auctex
-./configure --prefix=`pwd` \
-    --with-texmf-dir=$HOME/Library/texmf \
-    --with-lispdir=$HOME/.emacs.d/site-lisp
-make
-make install
+# mkdir _src
+# mv auctex _src
+# cd _src/auctex
+# ./configure --prefix=`pwd` \
+#     --with-texmf-dir=$HOME/Library/texmf \
+#     --with-lispdir=$HOME/.emacs.d/site-lisp
+# make
+# make install
+# cd ../../
 
-cd ../../gnuplot-mode
+cd gnuplot-mode
 ./configure
-make
+gmake
 
 cd ../org-mode
-make autoloads
+gmake autoloads
 
 cd ../cedet
-make
+find . -name Makefile | xargs touch
+gmake

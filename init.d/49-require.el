@@ -7,7 +7,7 @@
 (require 'boxquote)
 (require 'psvn)
 (require 'uniquify)
-(require 'ess-site)
+; (require 'ess-site)
 (require 'gnuplot)
 (require 'moccur-edit)
 (require 'scratch)

@@ -1,6 +1,6 @@
 ;;; Add subdirs of ~/.emacs.d/site-lisp/ to load-path.
 (setq load-path
-      (nconc (list "~/Projekty/chef-mode")
+      (nconc (list "~/Src/github.com/mpasternacki/chef-mode")
              (mapcar
               (lambda (dir) (concat "~/.emacs.d/site-lisp/" dir))
               '(""
