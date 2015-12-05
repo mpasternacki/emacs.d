@@ -23,9 +23,11 @@
    (quote
     (button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands readonly ring services stamp track)))
  '(focus-follows-mouse t)
+ '(gofmt-command "goimports")
  '(graphviz-dot-auto-indent-on-newline nil)
  '(graphviz-dot-auto-indent-on-semi nil)
  '(graphviz-dot-indent-width 4)
+ '(grep-command "ack --nogroup -H ")
  '(helm-full-frame t)
  '(helm-idle-delay 0.05)
  '(helm-input-idle-delay 0.25)
@@ -42,6 +44,13 @@
  '(mm-inline-large-images nil)
  '(mm-inline-large-images-proportion 0.1)
  '(mouse-autoselect-window t)
+ '(mouse-avoidance-banish-position
+   (quote
+    ((frame-or-window . window)
+     (side . right)
+     (side-pos . 3)
+     (top-or-bottom . top)
+     (top-or-bottom-pos . 0))))
  '(notmuch-address-command "~/Mail/bin/search-addressbook.pl")
  '(notmuch-archive-tags (quote ("-inbox" "-unread")))
  '(notmuch-fcc-dirs
@@ -69,10 +78,7 @@
  '(notmuch-show-part-button-default-action (quote notmuch-show-view-part))
  '(notmuch-tree-show-out t)
  '(org-agenda-files nil)
- '(package-archives
-   (quote
-    (("MELPA" . "http://melpa.org/packages/")
-     ("gnu" . "http://elpa.gnu.org/packages/"))))
+ '(package-archives (quote (("MELPA" . "http://melpa.org/packages/"))))
  '(ps-default-bg 1.0)
  '(ps-default-fg 0.0)
  '(ps-print-color-p nil)
@@ -80,7 +86,9 @@
  '(ruby-deep-indent-paren-style nil)
  '(safe-local-variable-values
    (quote
-    ((auto-fill-mode . 0)
+    ((TeX-auto-save . t)
+     (TeX-parse-self . t)
+     (auto-fill-mode . 0)
      (jph/gofmt-before-save)
      (encoding . utf-8)
      (word-wrap . t)
@@ -104,11 +112,12 @@
  '(woman-fill-frame t)
  '(woman-imenu t)
  '(woman-use-own-frame nil))
+ 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "#EAF0F0" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 100 :width normal :foundry "unknown" :family "DejaVu Sans Mono")))))
+ '(default ((t (:inherit nil :stipple nil :background "#EAF0F0" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 100 :width normal :foundry "unknown" :family "Liberation Mono")))))
 (put 'scroll-left 'disabled nil)
 (put 'upcase-region 'disabled nil)

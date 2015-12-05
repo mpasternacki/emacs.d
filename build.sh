@@ -3,7 +3,7 @@ set -e -x
 
 rm -rf site-lisp
 cp -R vendor site-lisp
-rm -rf site-lisp/auctex
+rm -rf site-lisp/auctex site-lisp/pretty-symbols
 
 cd site-lisp
 /usr/local/bin/emacs -batch -f batch-byte-compile *.el || :

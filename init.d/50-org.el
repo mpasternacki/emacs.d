@@ -98,9 +98,12 @@
     (replace-regexp "\\([^\n]+\n\\)\\1+" "\\1")
     (save-buffer)))
 
-(defun jph/org-mac-iCal ()
-  (interactive)
-  (org-mac-iCal)
-  (jph/uniquify-diary))
+;; (defun jph/org-mac-iCal ()
+;;   (interactive)
+;;   (org-mac-iCal)
+;;   (jph/uniquify-diary))
 
-(add-hook 'org-agenda-mode-hook 'jph/org-mac-iCal)
+;; (add-hook 'org-agenda-mode-hook 'jph/org-mac-iCal)
+
+;(require 'org-trello)
+;(setq org-trello-files '("/home/japhy/Documents/Codility/infrastructure.org"))
