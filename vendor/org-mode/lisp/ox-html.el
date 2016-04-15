@@ -170,10 +170,8 @@
     "progress" "section" "video")
   "New elements in html5.
 
-<hgroup> is not included because it's currently impossible to
-wrap special blocks around multiple headlines. For other blocks
-that should contain headlines, use the HTML_CONTAINER property on
-the headline itself.")
+For blocks that should contain headlines, use the HTML_CONTAINER
+property on the headline itself.")
 
 (defconst org-html-special-string-regexps
   '(("\\\\-" . "&#x00ad;")		; shy
@@ -457,6 +455,7 @@ export back-end currently used."
 	      (not org-html-use-infojs)
 	      (and (eq org-html-use-infojs 'when-configured)
 		   (or (not (plist-get exp-plist :infojs-opt))
+		       (string= "" (plist-get exp-plist :infojs-opt))
 		       (string-match "\\<view:nil\\>"
 				     (plist-get exp-plist :infojs-opt)))))
     (let* ((template org-html-infojs-template)
@@ -2276,83 +2275,70 @@ holding contextual information."
   "Transcode a HEADLINE element from Org to HTML.
 CONTENTS holds the contents of the headline.  INFO is a plist
 holding contextual information."
-  ;; Empty contents?
-  (setq contents (or contents ""))
-  (let* ((numberedp (org-export-numbered-headline-p headline info))
-	 (level (org-export-get-relative-level headline info))
-	 (text (org-export-data (org-element-property :title headline) info))
-	 (todo (and (plist-get info :with-todo-keywords)
-		    (let ((todo (org-element-property :todo-keyword headline)))
-		      (and todo (org-export-data todo info)))))
-	 (todo-type (and todo (org-element-property :todo-type headline)))
-	 (tags (and (plist-get info :with-tags)
-		    (org-export-get-tags headline info)))
-	 (priority (and (plist-get info :with-priority)
-			(org-element-property :priority headline)))
-	 (section-number (and (org-export-numbered-headline-p headline info)
-			      (mapconcat 'number-to-string
-					 (org-export-get-headline-number
-					  headline info) ".")))
-	 ;; Create the headline text.
-	 (full-text (org-html-format-headline--wrap headline info)))
-    (cond
-     ;; Case 1: This is a footnote section: ignore it.
-     ((org-element-property :footnote-section-p headline) nil)
-     ;; Case 2. This is a deep sub-tree: export it as a list item.
-     ;;         Also export as items headlines for which no section
-     ;;         format has been found.
-     ((org-export-low-level-p headline info)
-      ;; Build the real contents of the sub-tree.
-      (let* ((type (if numberedp 'ordered 'unordered))
-	     (itemized-body (org-html-format-list-item
-			     contents type nil info nil full-text)))
-	(concat
-	 (and (org-export-first-sibling-p headline info)
-	      (org-html-begin-plain-list type))
-	 itemized-body
-	 (and (org-export-last-sibling-p headline info)
-	      (org-html-end-plain-list type)))))
-     ;; Case 3. Standard headline.  Export it as a section.
-     (t
-      (let* ((section-number (mapconcat 'number-to-string
-					(org-export-get-headline-number
-					 headline info) "-"))
-	     (ids (remove 'nil
-			  (list (org-element-property :CUSTOM_ID headline)
-				(concat "sec-" section-number)
-				(org-element-property :ID headline))))
-	     (preferred-id (car ids))
-	     (extra-ids (cdr ids))
-	     (extra-class (org-element-property :HTML_CONTAINER_CLASS headline))
-	     (level1 (+ level (1- org-html-toplevel-hlevel)))
-	     (first-content (car (org-element-contents headline))))
-	(format "<%s id=\"%s\" class=\"%s\">%s%s</%s>\n"
-		(org-html--container headline info)
-		(format "outline-container-%s"
-			(or (org-element-property :CUSTOM_ID headline)
-			    (concat "sec-" section-number)))
-		(concat (format "outline-%d" level1) (and extra-class " ")
-			extra-class)
-		(format "\n<h%d id=\"%s\">%s%s</h%d>\n"
-			level1
-			preferred-id
-			(mapconcat
-			 (lambda (x)
-			   (let ((id (org-export-solidify-link-text
-				      (if (org-uuidgen-p x) (concat "ID-" x)
-					x))))
-			     (org-html--anchor id)))
-			 extra-ids "")
-			full-text
-			level1)
-		;; When there is no section, pretend there is an empty
-		;; one to get the correct <div class="outline- ...>
-		;; which is needed by `org-info.js'.
-		(if (not (eq (org-element-type first-content) 'section))
-		    (concat (org-html-section first-content "" info)
-			    contents)
-		  contents)
-		(org-html--container headline info)))))))
+  (unless (org-element-property :footnote-section-p headline)
+    (let* ((contents (or contents ""))
+	   (numberedp (org-export-numbered-headline-p headline info))
+	   (level (org-export-get-relative-level headline info))
+	   (text (org-export-data (org-element-property :title headline) info))
+	   (todo (and (plist-get info :with-todo-keywords)
+		      (let ((todo (org-element-property :todo-keyword headline)))
+			(and todo (org-export-data todo info)))))
+	   (todo-type (and todo (org-element-property :todo-type headline)))
+	   (tags (and (plist-get info :with-tags)
+		      (org-export-get-tags headline info)))
+	   (priority (and (plist-get info :with-priority)
+			  (org-element-property :priority headline)))
+	   (section-number (mapconcat #'number-to-string
+				      (org-export-get-headline-number
+				       headline info) "-"))
+	   (ids (delq 'nil
+		      (list (org-element-property :CUSTOM_ID headline)
+			    (concat "sec-" section-number)
+			    (org-element-property :ID headline))))
+	   (preferred-id (car ids))
+	   (extra-ids (mapconcat
+		       (lambda (id)
+			 (org-html--anchor
+			  (org-export-solidify-link-text
+			   (if (org-uuidgen-p id) (concat "ID-" id) id))))
+		       (cdr ids) ""))
+	   ;; Create the headline text.
+	   (full-text (org-html-format-headline--wrap headline info)))
+      (if (org-export-low-level-p headline info)
+	  ;; This is a deep sub-tree: export it as a list item.
+	  (let* ((type (if numberedp 'ordered 'unordered))
+		 (itemized-body
+		  (org-html-format-list-item
+		   contents type nil info nil
+		   (concat (org-html--anchor preferred-id) extra-ids
+			   full-text))))
+	    (concat
+	     (and (org-export-first-sibling-p headline info)
+		  (org-html-begin-plain-list type))
+	     itemized-body
+	     (and (org-export-last-sibling-p headline info)
+		  (org-html-end-plain-list type))))
+	;; Standard headline.  Export it as a section.
+	(let ((extra-class (org-element-property :HTML_CONTAINER_CLASS headline))
+	      (level1 (+ level (1- org-html-toplevel-hlevel)))
+	      (first-content (car (org-element-contents headline))))
+	  (format "<%s id=\"%s\" class=\"%s\">%s%s</%s>\n"
+		  (org-html--container headline info)
+		  (format "outline-container-%s"
+			  (or (org-element-property :CUSTOM_ID headline)
+			      (concat "sec-" section-number)))
+		  (concat (format "outline-%d" level1) (and extra-class " ")
+			  extra-class)
+		  (format "\n<h%d id=\"%s\">%s%s</h%d>\n"
+			  level1 preferred-id extra-ids full-text level1)
+		  ;; When there is no section, pretend there is an
+		  ;; empty one to get the correct <div class="outline-
+		  ;; ...> which is needed by `org-info.js'.
+		  (if (not (eq (org-element-type first-content) 'section))
+		      (concat (org-html-section first-content "" info)
+			      contents)
+		    contents)
+		  (org-html--container headline info)))))))
 
 (defun org-html--container (headline info)
   (or (org-element-property :HTML_CONTAINER headline)
@@ -2597,18 +2583,17 @@ if its description is a single link targeting an image file."
 
 (defvar org-html-standalone-image-predicate)
 (defun org-html-standalone-image-p (element info)
-  "Test if ELEMENT is a standalone image.
+  "Non-nil if ELEMENT is a standalone image.
 
 INFO is a plist holding contextual information.
 
-Return non-nil, if ELEMENT is of type paragraph and its sole
-content, save for white spaces, is a link that qualifies as an
-inline image.
+An element or object is a standalone image when
 
-Return non-nil, if ELEMENT is of type link and its containing
-paragraph has no other content save white spaces.
+  - its type is `paragraph' and its sole content, save for white
+    spaces, is a link that qualifies as an inline image;
 
-Return nil, otherwise.
+  - its type is `link' and its containing paragraph has no other
+    content save white spaces.
 
 Bind `org-html-standalone-image-predicate' to constrain paragraph
 further.  For example, to check for only captioned standalone
@@ -2619,19 +2604,21 @@ images, set it to:
 		     (paragraph element)
 		     (link (org-export-get-parent element)))))
     (and (eq (org-element-type paragraph) 'paragraph)
-	 (or (not (and (boundp 'org-html-standalone-image-predicate)
-		       (functionp org-html-standalone-image-predicate)))
+	 (or (not (fboundp 'org-html-standalone-image-predicate))
 	     (funcall org-html-standalone-image-predicate paragraph))
-	 (not (let ((link-count 0))
-		(org-element-map (org-element-contents paragraph)
-		    (cons 'plain-text org-element-all-objects)
-		  (lambda (obj) (case (org-element-type obj)
-			     (plain-text (org-string-nw-p obj))
-			     (link
-			      (or (> (incf link-count) 1)
-				  (not (org-html-inline-image-p obj info))))
-			     (otherwise t)))
-		  info 'first-match 'link))))))
+	 (catch 'exit
+	   (let ((link-count 0))
+	     (org-element-map (org-element-contents paragraph)
+		 (cons 'plain-text org-element-all-objects)
+	       #'(lambda (obj)
+		   (when (case (org-element-type obj)
+			   (plain-text (org-string-nw-p obj))
+			   (link (or (> (incf link-count) 1)
+				     (not (org-html-inline-image-p obj info))))
+			   (otherwise t))
+		     (throw 'exit nil)))
+	       info nil 'link)
+	     (= link-count 1))))))
 
 (defun org-html-link (link desc info)
   "Transcode a LINK object from Org to HTML.
@@ -2661,19 +2648,20 @@ INFO is a plist holding contextual information.  See
 	 (path
 	  (cond
 	   ((member type '("http" "https" "ftp" "mailto"))
-	    (concat type ":" raw-path))
+	    (org-link-escape
+	     (org-link-unescape
+	      (concat type ":" raw-path)) org-link-escape-chars-browser))
 	   ((string= type "file")
 	    ;; Treat links to ".org" files as ".html", if needed.
 	    (setq raw-path
 		  (funcall link-org-files-as-html-maybe raw-path info))
 	    ;; If file path is absolute, prepend it with protocol
-	    ;; component - "file://".
-	    (cond ((file-name-absolute-p raw-path)
-		   (setq raw-path
-			 (concat "file://" (expand-file-name
-					    raw-path))))
-		  ((and home use-abs-url)
-		   (setq raw-path (concat (file-name-as-directory home) raw-path))))
+	    ;; component - "file:".
+	    (cond
+	     ((file-name-absolute-p raw-path)
+	      (setq raw-path (concat "file:" raw-path)))
+	     ((and home use-abs-url)
+	      (setq raw-path (concat (file-name-as-directory home) raw-path))))
 	    ;; Add search option, if any.  A search option can be
 	    ;; relative to a custom-id or a headline title.  Any other
 	    ;; option is ignored.
@@ -2719,11 +2707,11 @@ INFO is a plist holding contextual information.  See
      ;; link's description.
      ((string= type "radio")
       (let ((destination (org-export-resolve-radio-link link info)))
-	(when destination
+	(if (not destination) desc
 	  (format "<a href=\"#%s\"%s>%s</a>"
-		  (org-export-solidify-link-text path)
-		  attributes
-		  (org-export-data (org-element-contents destination) info)))))
+		  (org-export-solidify-link-text
+		   (org-element-property :value destination))
+		  attributes desc))))
      ;; Links pointing to a headline: Find destination and build
      ;; appropriate referencing command.
      ((member type '("custom-id" "fuzzy" "id"))
