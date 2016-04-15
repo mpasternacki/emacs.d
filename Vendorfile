@@ -44,7 +44,7 @@ vendor 'darcsum', :version => '0.20130214.2' do
 end
 
 archive 'go-mode', version: '1.6.1',
-        url: 'https://go.googlecode.com/files/go1.6.1.src.tar.gz',
+        url:  'https://storage.googleapis.com/golang/go1.6.1.src.tar.gz',
         subdirectory: 'misc/emacs'
 
 vendor 'cedet', version: 'HEAD-20140208' do
