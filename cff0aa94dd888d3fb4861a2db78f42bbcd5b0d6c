@@ -1,0 +1,15 @@
+---
+:vendorificator_version: 0.6.0
+:current_branch: master
+:current_sha: 31e69953e60ae44381407d7ba72ae1a54a8de535
+:git_describe: vendor/python-mode/0.20141219.1-273-g31e6995
+:module_name: ruby-mode
+:module_version: a945eb9ddab99357a9f831c5dae99f33f223ac71
+:module_group:
+:unparsed_args:
+  :repository: https://github.com/ruby/ruby.git
+  :subdirectory: misc
+:parsed_args:
+  :repository: https://github.com/ruby/ruby.git
+  :subdirectory: misc
+:git_revision: a945eb9ddab99357a9f831c5dae99f33f223ac71
