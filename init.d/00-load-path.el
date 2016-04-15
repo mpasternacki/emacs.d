@@ -12,11 +12,9 @@
                 "yasnippet"
                 "clojure-mode"
                 "rvm.el"
-                "magit"
                 "coffee-mode"
                 "helm"
                 "ruby-mode"
-                "git-modes"
                 "ledger"
                 "notmuch"))
              load-path)

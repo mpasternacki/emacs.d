@@ -100,6 +100,7 @@
      (Syntax . COMMON-LISP))))
  '(scss-sass-command "pretend-sass")
  '(size-indication-mode t)
+ '(terraform-indent-level 2)
  '(tildify-pattern-alist
    (quote
     ((t "\\([,:;(][ 	]*[a]\\|\\<[AIKOSUVZUWikosuvzuw]\\)\\([ 	]+\\|[ 	]*

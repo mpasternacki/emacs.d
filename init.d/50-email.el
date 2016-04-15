@@ -1,3 +1,8 @@
+(require 'gnus)
+
+(setq gnus-select-method '(nnnil "")
+      gnus-secondary-select-methods '((nnmaildir "mailbox.org" (directory "~/Mail"))))
+
 (require 'message)
 
 (setq sendmail-program "msmtp"
