@@ -1,0 +1,22 @@
+---
+:vendorificator_version: 0.6.0
+:current_branch: master
+:current_sha: a740c2507013b842d60d9e4ab9318ad4397c3634
+:git_describe: vendor/auctex/11.87-271-ga740c25
+:module_name: org-mode
+:module_version: 8.2.10
+:module_group:
+:unparsed_args:
+  :version: 8.2.10
+  :url: http://orgmode.org/org-8.2.10.tar.gz
+:parsed_args:
+  :version: 8.2.10
+  :url: http://orgmode.org/org-8.2.10.tar.gz
+  :filename: org-8.2.10.tar.gz
+  :type: :targz
+  :unpack: tar -xzf
+  :basename: org-8.2.10
+  :extname: ".tar.gz"
+:archive_checksum: df09451829219f4ff25185670823ad319f96839962b44b6836c78ccc3fb2a8f6
+:archive_filesize: 4259396
+:archive_url: http://orgmode.org/org-8.2.10.tar.gz
