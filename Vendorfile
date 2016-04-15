@@ -43,8 +43,8 @@ vendor 'darcsum', :version => '0.20130214.2' do
   system 'rm -rf * && darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/ && mv -v darcsum/* . && rm -rf _darcs && rmdir darcsum'
 end
 
-archive 'go-mode', version: '1.2',
-        url: 'https://go.googlecode.com/files/go1.2.src.tar.gz',
+archive 'go-mode', version: '1.6.1',
+        url: 'https://go.googlecode.com/files/go1.6.1.src.tar.gz',
         subdirectory: 'misc/emacs'
 
 vendor 'cedet', version: 'HEAD-20140208' do
