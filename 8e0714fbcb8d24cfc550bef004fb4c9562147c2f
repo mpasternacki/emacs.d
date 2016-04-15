@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.6.0
+:current_branch: master
+:current_sha: a740c2507013b842d60d9e4ab9318ad4397c3634
+:git_describe: vendor/auctex/11.87-271-ga740c25
+:module_name: python-mode
+:module_version: 0.20141219.1
+:module_group:
+:unparsed_args:
+  :version: 0.20141219.1
+:parsed_args:
+  :version: 0.20141219.1
