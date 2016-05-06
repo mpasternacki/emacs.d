@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.6.0
+:current_branch: master
+:current_sha: fccee5cd0159a25e746bc54585b481cdf85d64a9
+:git_describe: vendor/ruby-mode/a945eb9ddab99357a9f831c5dae99f33f223ac71-276-gfccee5c
+:module_name: use-package
+:module_version: 22c63c8f98fc318c357b51a658cee62d64601e16
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/jwiegley/use-package.git
+:git_revision: 22c63c8f98fc318c357b51a658cee62d64601e16
