@@ -1,0 +1,14 @@
+---
+:vendorificator_version: 0.6.0
+:current_branch: master
+:current_sha: fccee5cd0159a25e746bc54585b481cdf85d64a9
+:git_describe: vendor/ruby-mode/a945eb9ddab99357a9f831c5dae99f33f223ac71-276-gfccee5c
+:module_name: slang-mode.el
+:module_version: 21220fc4230f83744436686e9755c22677a1cc6245d99aee5c61f49cef6c4083
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :url: https://www.emacswiki.org/cgi-bin/wiki/download/slang-mode.el
+:download_checksum: 21220fc4230f83744436686e9755c22677a1cc6245d99aee5c61f49cef6c4083
+:download_filesize: 21368
+:download_url: https://www.emacswiki.org/cgi-bin/wiki/download/slang-mode.el
