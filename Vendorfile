@@ -1,10 +1,10 @@
 # -*- ruby -*-
 #MiniGit.debug = true
 
+git 'https://github.com/jwiegley/use-package.git'
 git 'https://github.com/drothlis/pretty-symbols.git'
 git 'https://github.com/magit/magit.git'
 git 'https://github.com/technomancy/clojure-mode.git'
-git 'https://github.com/senny/rvm.el.git'
 git 'https://github.com/nex3/haml-mode.git'
 git 'https://github.com/emacs-helm/helm.git'
 git 'https://github.com/michaelklishin/cucumber.el.git'
@@ -42,10 +42,6 @@ end
 vendor 'darcsum', :version => '0.20130214.2' do
   system 'rm -rf * && darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/ && mv -v darcsum/* . && rm -rf _darcs && rmdir darcsum'
 end
-
-archive 'go-mode', version: '1.6.1',
-        url:  'https://storage.googleapis.com/golang/go1.6.1.src.tar.gz',
-        subdirectory: 'misc/emacs'
 
 vendor 'cedet', version: 'HEAD-20140208' do
   FileUtils::rm_rf Dir.entries('.') - %w|. ..|
