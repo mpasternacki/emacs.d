@@ -8,3 +8,7 @@ elpa
 /srecode-map.el
 /helm-c-adaptive-history
 /.org-id-locations
+/abbrev_defs
+/ido.last
+/recentf
+/.mc-lists.el
