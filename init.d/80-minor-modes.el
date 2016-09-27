@@ -11,4 +11,3 @@
 (pretty-symbols-mode 1)
 (display-time)
 (electric-pair-mode 1)
-(ido-mode 1)

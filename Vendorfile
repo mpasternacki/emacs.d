@@ -5,9 +5,6 @@ def emacswiki(filename)
   download "https://www.emacswiki.org/cgi-bin/wiki/download/#{filename}"
 end
 
-git 'https://github.com/jwiegley/use-package.git'
-
 ## used, not available via packages
 download 'http://www.wonderworks.com/download/filladapt.el'
 emacswiki 'sierotki.el'
-

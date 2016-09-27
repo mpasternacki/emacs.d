@@ -16,20 +16,12 @@
  '(css-electric-semi-behavior t)
  '(css-tab-mode (quote auto))
  '(display-time-mode t)
- '(ecb-options-version "2.40")
  '(epg-gpg-program "/usr/local/bin/gpg")
- '(erc-modules
-   (quote
-    (button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands readonly ring services stamp track)))
  '(focus-follows-mouse t)
- '(gofmt-command "goimports")
  '(graphviz-dot-auto-indent-on-newline nil)
  '(graphviz-dot-auto-indent-on-semi nil)
  '(graphviz-dot-indent-width 4)
  '(grep-command "ack --nogroup -H ")
- '(js2-basic-offset 2)
- '(js2-mode-assume-strict t)
- '(js2-strict-trailing-comma-warning nil)
  '(longlines-show-effect "¶
 ")
  '(longlines-show-hard-newlines t)
@@ -51,8 +43,6 @@
  '(ps-default-bg 1.0)
  '(ps-default-fg 0.0)
  '(ps-print-color-p nil)
- '(ruby-deep-arglist nil)
- '(ruby-deep-indent-paren-style nil)
  '(safe-local-variable-values
    (quote
     ((TeX-auto-save . t)
@@ -69,7 +59,6 @@
      (Syntax . COMMON-LISP))))
  '(scss-sass-command "pretend-sass")
  '(size-indication-mode t)
- '(terraform-indent-level 2)
  '(tildify-pattern-alist
    (quote
     ((t "\\([,:;(][ 	]*[a]\\|\\<[AIKOSUVZUWikosuvzuw]\\)\\([ 	]+\\|[ 	]*
@@ -77,12 +66,10 @@
  '(tool-bar-mode nil)
  '(tramp-default-method "ssh")
  '(vc-rcs-diff-switches "-u")
- '(w3m-cookie-accept-bad-cookies (quote ask))
- '(w3m-use-cookies t)
  '(woman-fill-frame t)
  '(woman-imenu t)
  '(woman-use-own-frame nil))
- 
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
