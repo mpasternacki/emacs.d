@@ -1,0 +1,12 @@
+---
+:vendorificator_version: 0.6.0
+:current_branch: master
+:current_sha: dbd205415733eef0fb8f976e0b68afe84e5e2844
+:git_describe: vendor/slang-mode.el/21220fc4230f83744436686e9755c22677a1cc6245d99aee5c61f49cef6c4083-4-gdbd2054
+:module_name: use-package
+:module_version: cc3193b1da1698c93092d5f602936e59527cb1c5
+:module_group:
+:unparsed_args: {}
+:parsed_args:
+  :repository: https://github.com/jwiegley/use-package.git
+:git_revision: cc3193b1da1698c93092d5f602936e59527cb1c5
