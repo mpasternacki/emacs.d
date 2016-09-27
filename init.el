@@ -86,8 +86,8 @@
   :mode "\\.feature\\'"
   :ensure t)
 
-(use-package filladapt
-  :load-path "~/.emacs.d/vendor"
+(use-package filladapt ; http://www.wonderworks.com/download/filladapt.el
+  :load-path "~/.emacs.d/site-lisp"
   :demand t)
 
 (use-package gnuplot
@@ -271,8 +271,8 @@
   :ensure t
   :mode "\\.scss\\'")
 
-(use-package sierotki
-  :load-path "~/.emacs.d/vendor"
+(use-package sierotki ; emacswiki:sierotki.el
+  :load-path "~/.emacs.d/site-lisp"
   :demand t)
 
 (use-package terraform-mode
