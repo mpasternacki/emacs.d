@@ -23,8 +23,6 @@
  mouse-1-click-follows-link 'double
  ;; mouse-autoselect-window t ; Non-nil means autoselect window with mouse pointer.
  next-line-add-newlines nil
- nxml-bind-meta-tab-to-complete-flag t
- nxml-slash-auto-complete-flag t
  prolog-program-name "pl"
  require-final-newline 'ask
  same-window-buffer-names (delete "*shell*" (delete "*info*" same-window-buffer-names))

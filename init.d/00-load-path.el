@@ -4,19 +4,7 @@
              (mapcar
               (lambda (dir) (concat "~/.emacs.d/site-lisp/" dir))
               '(""
-                "color-theme"
-                "gnuplot-mode"
-                "org-mode/lisp"
-                "org-mode/contrib/lisp"
-                "ess/lisp"
-                "yasnippet"
-                "clojure-mode"
-                "rvm.el"
-                "coffee-mode"
-                "helm"
-                "ruby-mode"
-                "ledger"
-                "notmuch"))
+                "use-package"))
              load-path)
 
       exec-path

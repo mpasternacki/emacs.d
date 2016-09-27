@@ -1,6 +1,6 @@
-(require 'rvm)
-
-(rvm-use-default)
+(use-package ruby-mode
+  :mode "\\.rb\\'"
+  :interpreter "ruby")
 
 (require 'chef-mode)
 (global-chef-mode 1)

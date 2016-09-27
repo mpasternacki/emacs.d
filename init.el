@@ -10,7 +10,6 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(blink-cursor-mode nil)
- '(coffee-tab-width 2)
  '(column-number-mode t)
  '(cperl-indent-parens-as-block t)
  '(css-electric-brace-behavior t)
@@ -28,12 +27,9 @@
  '(graphviz-dot-auto-indent-on-semi nil)
  '(graphviz-dot-indent-width 4)
  '(grep-command "ack --nogroup -H ")
- '(helm-full-frame t)
- '(helm-idle-delay 0.05)
- '(helm-input-idle-delay 0.25)
- '(htmlize-html-charset "utf-8")
- '(htmlize-output-type (quote inline-css))
  '(js2-basic-offset 2)
+ '(js2-mode-assume-strict t)
+ '(js2-strict-trailing-comma-warning nil)
  '(longlines-show-effect "¶
 ")
  '(longlines-show-hard-newlines t)
@@ -51,34 +47,7 @@
      (side-pos . 3)
      (top-or-bottom . top)
      (top-or-bottom-pos . 0))))
- '(notmuch-address-command "~/Mail/bin/search-addressbook.pl")
- '(notmuch-archive-tags (quote ("-inbox" "-unread")))
- '(notmuch-fcc-dirs
-   (quote
-    (("maciej@pasternacki\\.net" . "mailbox.org/INBOX")
-     ("mpasternacki.*@mailbox\\.org" . "mailbox.org/INBOX"))))
- '(notmuch-message-headers
-   (quote
-    ("Subject" "From" "To" "Cc" "Date" "Message-ID" "X-Mailer" "User-Agent" "X-URL")))
- '(notmuch-poll-script "/Users/japhy/Mail/bin/sync")
- '(notmuch-print-mechanism (quote notmuch-print-muttprint))
- '(notmuch-saved-searches
-   (quote
-    ((:name "pasternacki.net/INBOX" :query "tag:inbox AND tag:pasternacki.net")
-     (:name "3ofcoins.net/INBOX" :query "tag:inbox AND tag:3ofcoins.net")
-     (:name "inbox" :query "tag:inbox" :key "i")
-     (:name "unread" :query "tag:unread" :key "u")
-     (:name "flagged" :query "tag:flagged" :key "f")
-     (:name "sent" :query "tag:sent" :key "t")
-     (:name "drafts" :query "tag:draft" :key "d")
-     (:name "all mail" :query "*" :key "a")
-     (:name "spam" :query "tag:spam")
-     (:name "junk" :query "tag:junk"))))
- '(notmuch-search-oldest-first nil)
- '(notmuch-show-part-button-default-action (quote notmuch-show-view-part))
- '(notmuch-tree-show-out t)
  '(org-agenda-files nil)
- '(package-archives (quote (("MELPA" . "http://melpa.org/packages/"))))
  '(ps-default-bg 1.0)
  '(ps-default-fg 0.0)
  '(ps-print-color-p nil)

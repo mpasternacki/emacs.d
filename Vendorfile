@@ -1,77 +1,13 @@
 # -*- ruby -*-
 #MiniGit.debug = true
 
+def emacswiki(filename)
+  download "https://www.emacswiki.org/cgi-bin/wiki/download/#{filename}"
+end
+
 git 'https://github.com/jwiegley/use-package.git'
-git 'https://github.com/drothlis/pretty-symbols.git'
-git 'https://github.com/magit/magit.git'
-git 'https://github.com/technomancy/clojure-mode.git'
-git 'https://github.com/nex3/haml-mode.git'
-git 'https://github.com/emacs-helm/helm.git'
-git 'https://github.com/michaelklishin/cucumber.el.git'
-git 'https://github.com/yoshiki/yaml-mode.git'
-git 'https://github.com/defunkt/coffee-mode.git'
-git 'https://github.com/emacs-ess/ESS.git'
-git 'https://github.com/bmaland/yasnippet-ruby-mode.git'
-git 'https://github.com/antonj/scss-mode.git'
-git 'https://github.com/magit/git-modes.git'
-git 'https://github.com/alexott/ecb.git'
 
-git 'ruby-mode', repository: 'https://github.com/ruby/ruby.git', subdirectory: 'misc'
-git 'ledger', repository: 'https://github.com/ledger/ledger.git', subdirectory: 'lisp'
-
-# git 'git://notmuchmail.org/git/notmuch', subdirectory: 'emacs'
-
-git 'https://github.com/capitaomorte/yasnippet.git' do
-  system <<EOF
-set -e -x
-git submodule update --init --recursive
-git submodule --quiet foreach --recursive 'echo `pwd`/.git' | xargs rm -rf
-EOF
-end
-
-archive 'org-mode',
-        version: '8.2.10',
-        url: 'http://orgmode.org/org-8.2.10.tar.gz'
-
-vendor 'python-mode', :version => '0.20141219.1' do
-  FileUtils::rm_rf Dir.entries('.') - %w|. ..|
-  system 'bzr branch --use-existing-dir lp:python-mode .'
-  FileUtils::rm_rf '.bzr'
-end
-
-vendor 'darcsum', :version => '0.20130214.2' do
-  system 'rm -rf * && darcs get --ephemeral --lazy http://chneukirchen.org/repos/darcsum/ && mv -v darcsum/* . && rm -rf _darcs && rmdir darcsum'
-end
-
-vendor 'cedet', version: 'HEAD-20140208' do
-  FileUtils::rm_rf Dir.entries('.') - %w|. ..|
-  system 'bzr checkout --lightweight bzr://cedet.bzr.sourceforge.net/bzrroot/cedet/code/trunk .'
-  FileUtils::rm_rf '.bzr'
-end
-
-archive 'color-theme',  :version => '6.6.0',       :url =>'http://mirror.lihnidos.org/GNU/savannah/color-theme/color-theme-6.6.0.tar.gz'
-archive 'php-mode',     :version => '1.5.0',       :url => 'http://downloads.sourceforge.net/php-mode/php-mode-1.5.0.tar.gz'
-archive 'gnuplot-mode', :version => '0.6.0',       :url => 'http://feff.phys.washington.edu/~ravel/software/gnuplot-mode/gnuplot-mode.0.6.0.tar.gz'
-archive 'auctex',       :version => '11.87',       :url => 'http://ftp.gnu.org/pub/gnu/auctex/auctex-11.87.tar.gz'
-archive 'nxhtml',       :version => '2.08-100425', :url => 'http://ourcomments.org/Emacs/DL/elisp/nxhtml/zip/nxhtml-2.08-100425.zip'
-
-download 'http://brian.mastenbrook.net/static/files/dotfiles/color-theme-pastelmac.el'
-download 'http://www.davep.org/emacs/boxquote.el'
+## used, not available via packages
 download 'http://www.wonderworks.com/download/filladapt.el'
-download 'socks.el', :url => 'http://cvs.savannah.gnu.org/viewvc/*checkout*/w3/lisp/socks.el?root=w3&revision=HEAD'
-download 'http://mumble.net/~campbell/emacs/paredit.el'
-download 'http://users.skynet.be/ppareit/projects/graphviz-dot-mode/graphviz-dot-mode.el'
-download 'htmlize.el', :url => 'http://fly.srk.fer.hr/~hniksic/emacs/htmlize.el.cgi'
-download 'http://homepage1.nifty.com/bmonkey/emacs/elisp/screen-lines.el'
-download 'http://www.xsteve.at/prg/emacs/psvn.el'
-download 'https://github.com/ieure/scratch-el/raw/master/scratch.el'
-download 'http://jblevins.org/projects/markdown-mode/markdown-mode.el'
-download 'http://js2-mode.googlecode.com/files/js2-mode.el'
-
-def emacswiki(filename) ; download "https://www.emacswiki.org/cgi-bin/wiki/download/#{filename}" end
 emacswiki 'sierotki.el'
-emacswiki 'typopunct.el'
-emacswiki 'anything.el'
-emacswiki 'moccur-edit.el'
-emacswiki 'color-moccur.el'
-emacswiki 'slang-mode.el'
+

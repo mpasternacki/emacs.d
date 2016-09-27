@@ -1,4 +1,6 @@
-(load "go-mode/go-mode")
+(use-package go-mode
+  :mode "\\.go\'"
+  :ensure t)
 
 (setq jph/gofmt-before-save t)
 
