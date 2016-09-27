@@ -1,8 +1,7 @@
 *.elc
 *~
-tramp
-/site-lisp
-elpa
+/tramp
+/elpa
 /semanticdb
 /ede-projects.el
 /srecode-map.el
