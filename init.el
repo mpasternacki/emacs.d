@@ -1,10 +1,6 @@
 ;;; Use packages
 (require 'package)
-
-(dolist (archive '(("marmalade" . "http://marmalade-repo.org/packages/")
-                   ("melpa" . "http://melpa.milkbox.net/packages/")))
-  (add-to-list 'package-archives archive))
-
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
 ;;; Use use-package to manage packages
@@ -47,6 +43,7 @@
       display-time-load-average-threshold 0.77
       font-lock-maximum-decoration t
       input-method-verbose-flag t
+      is-indent-level 2
       mouse-1-click-follows-link 'double
       next-line-add-newlines nil
       ns-command-modifier 'meta
@@ -65,6 +62,11 @@
 
 ;;; Packages
 
+(use-package bbdb
+  :ensure t
+  :init (setq bbdb-offer-save 1)
+  :config (bbdb-initialize))
+
 (use-package boxquote
   :ensure t
   :init (load "boxquote-autoloads"))
@@ -76,11 +78,15 @@
               chef-use-rvm nil)
   :config (global-chef-mode 1))
 
-(use-package ess-site
-  :mode "\\.[rR]\\'"
-  :commands R
-  :functions R-mode
-  :ensure ess)
+;; (use-package ess-site
+;;   :mode "\\.[rR]\\'"
+;;   :commands R
+;;   :functions R-mode
+;;   :ensure ess)
+
+(use-package ess
+  :init (require 'ess-site)
+  :ensure t)
 
 (use-package feature-mode
   :mode "\\.feature\\'"
@@ -119,10 +125,18 @@
   (setq htmlize-html-charset "utf-8"
         htmlize-output-type 'inline-css))
 
-(use-package ido
-  ;; builtin
-  :demand t
-  :config (ido-mode 1))
+(use-package ivy
+  :ensure t
+  :config
+  (ivy-mode 1)
+  ; Use Enter on a directory to navigate into the directory, not open it with dired.
+  (define-key ivy-minibuffer-map (kbd "C-m") 'ivy-alt-done)
+  :init
+  (setq ivy-use-selectable-prompt t))
+
+(use-package ivy-pass
+  :ensure t
+  :commands ivy-pass)
 
 (use-package js2-mode
   :ensure t
@@ -131,16 +145,15 @@
   :mode ("\\.tfstate$" . js2-mode)
   :interpreter ("node" . js2-mode)
 
-  :mode ("\\.jsx\\'" . js2-jsx-mode)
-  :interpreter ("node" . js2-jsx-mode)
-
-  :init
-  (setq js2-basic-offset 2
-        js2-mode-assume-strict t
-        js2-strict-trailing-comma-warning nil)
+  ;; :mode ("\\.jsx\\'" . js2-jsx-mode)
+  ;; :interpreter ("node" . js2-jsx-mode)
 
   :config
   (progn
+    (setq js2-basic-offset 2
+          js2-mode-assume-strict t
+          js2-strict-trailing-comma-warning nil)
+
     (defadvice js2-reparse (before json)
       (setq js2-buffer-file-name buffer-file-name))
     (ad-activate 'js2-reparse)
@@ -160,6 +173,12 @@
           (setq ad-return-value (js2-parse-assign-expr))
         ad-do-it))
     (ad-activate 'js2-parse-statement)))
+
+(use-package rjsx-mode
+  :ensure t
+
+  :mode ("\\.jsx\\'" . rjsx-mode)
+  :interpreter ("node" . rjsx-mode))
 
 (use-package lua-mode
   :ensure t
@@ -275,6 +294,10 @@
   :load-path "~/.emacs.d/site-lisp"
   :demand t)
 
+(use-package swiper
+  :ensure t
+  :commands swiper)
+
 (use-package terraform-mode
   :ensure t
   :mode "\\.tf\\(vars\\)?\\'"
@@ -283,7 +306,62 @@
 
 (use-package tex-site
   :ensure auctex
-  :demand t) ;; it's all autoloads anyway
+  :demand t                             ; it's all autoloads anyway
+
+  :init
+  ;; https://emacs.stackexchange.com/questions/3083/how-to-indent-items-in-latex-auctex-itemize-environments
+  (defun LaTeX-indent-item ()
+    "Provide proper indentation for LaTeX \"itemize\",\"enumerate\", and
+\"description\" environments.
+
+  \"\\item\" is indented `LaTeX-indent-level' spaces relative to
+  the the beginning of the environment.
+
+  Continuation lines are indented either twice
+  `LaTeX-indent-level', or `LaTeX-indent-level-item-continuation'
+  if the latter is bound."
+    (save-match-data
+      (let* ((offset LaTeX-indent-level)
+             (contin (or (and (boundp 'LaTeX-indent-level-item-continuation)
+                              LaTeX-indent-level-item-continuation)
+                         (* 2 LaTeX-indent-level)))
+             (re-beg "\\\\begin{")
+             (re-end "\\\\end{")
+             (re-env "\\(itemize\\|\\enumerate\\|description\\)")
+             (indent (save-excursion
+                       (when (looking-at (concat re-beg re-env "}"))
+                         (end-of-line))
+                       (LaTeX-find-matching-begin)
+                       (current-column))))
+        (cond ((looking-at (concat re-beg re-env "}"))
+               (or (save-excursion
+                     (beginning-of-line)
+                     (ignore-errors
+                       (LaTeX-find-matching-begin)
+                       (+ (current-column)
+                          (if (looking-at (concat re-beg re-env "}"))
+                              contin
+                            offset))))
+                   indent))
+              ((looking-at (concat re-end re-env "}"))
+               indent)
+              ((looking-at "\\\\item")
+               (+ offset indent))
+              (t
+               (+ contin indent))))))
+
+  (defcustom LaTeX-indent-level-item-continuation 4
+    "*Indentation of continuation lines for items in itemize-like
+environments."
+    :group 'LaTeX-indentation
+    :type 'integer)
+
+  (eval-after-load "latex"
+  '(setq LaTeX-indent-environment-list
+         (nconc '(("itemize" LaTeX-indent-item)
+                  ("enumerate" LaTeX-indent-item)
+                  ("description" LaTeX-indent-item))
+                LaTeX-indent-environment-list))))
 
 (use-package uniquify
   ;; builtin
@@ -333,6 +411,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(LaTeX-item-indent 0)
  '(blink-cursor-mode nil)
  '(column-number-mode t)
  '(cperl-indent-parens-as-block t)
@@ -341,6 +420,7 @@
  '(css-tab-mode (quote auto))
  '(display-time-mode t)
  '(epg-gpg-program "/usr/local/bin/gpg")
+ '(flycheck-javascript-eslint-executable "dwim.eslint")
  '(focus-follows-mouse t)
  '(graphviz-dot-auto-indent-on-newline nil)
  '(graphviz-dot-auto-indent-on-semi nil)
@@ -364,12 +444,20 @@
      (top-or-bottom . top)
      (top-or-bottom-pos . 0))))
  '(org-agenda-files nil)
+ '(package-selected-packages
+   (quote
+    (preseed-generic-mode nov ivy-pass swiper ivy flycheck haskell-mode graphql-mode less-css-mode rjsx-mode groovy-mode bbdb-vcard emms bbdb yaml-mode use-package tracwiki-mode terraform-mode scss-mode scratch python-mode psvn projectile pretty-symbols php-mode pastelmac-theme paredit org-trello multiple-cursors markdown-mode magit lua-mode logstash-conf js2-mode htmlize haml-mode grizzl graphviz-dot-mode go-eldoc gnuplot feature-mode f ess epresent color-theme cmake-mode boxquote avy auctex ace-jump-mode)))
  '(ps-default-bg 1.0)
  '(ps-default-fg 0.0)
  '(ps-print-color-p nil)
  '(safe-local-variable-values
    (quote
-    ((TeX-auto-save . t)
+    ((js2-additional-externs "__dirname")
+     (js2-additional-externs "after" "before" "describe" "it")
+     (js2-additional-externs "describe" "it")
+     (js2-additional-externs "fetch")
+     (js2-include-node-externs . t)
+     (TeX-auto-save . t)
      (TeX-parse-self . t)
      (auto-fill-mode . 0)
      (jph/gofmt-before-save)
@@ -383,10 +471,14 @@
      (Syntax . COMMON-LISP))))
  '(scss-sass-command "pretend-sass")
  '(size-indication-mode t)
+ '(tildify-pattern
+   "\\(?:[,:;(][ 	]*[a]\\|\\<[AIKOSUVWZikosuvwz]\\)\\([ 	]+\\|[ 	]*
+[ 	]*\\)\\(?:\\w\\|[([{\\]\\|<[a-zA-Z]\\)")
  '(tildify-pattern-alist
-   (quote
-    ((t "\\([,:;(][ 	]*[a]\\|\\<[AIKOSUVZUWikosuvzuw]\\)\\([ 	]+\\|[ 	]*
+(quote
+ ((t "\\([,:;(][ 	]*[a]\\|\\<[AIKOSUVZUWikosuvzuw]\\)\\([ 	]+\\|[ 	]*
 [ 	]*\\)\\(\\w\\|[([{\\]\\|<[a-zA-Z]\\)" 2))))
+ '(tildify-string-alist (quote ((latex-mode . "~"))))
  '(tool-bar-mode nil)
  '(tramp-default-method "ssh")
  '(vc-rcs-diff-switches "-u")
@@ -399,6 +491,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "#EAF0F0" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 100 :width normal :foundry "unknown" :family "Liberation Mono")))))
+ '(default ((t (:inherit nil :stipple nil :background "#EAF0F0" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 100 :width normal :foundry "unknown" :family "Liberation Mono"))))
+ '(whitespace-line ((t (:underline (:color "dark magenta" :style wave))))))
 (put 'scroll-left 'disabled nil)
 (put 'upcase-region 'disabled nil)
